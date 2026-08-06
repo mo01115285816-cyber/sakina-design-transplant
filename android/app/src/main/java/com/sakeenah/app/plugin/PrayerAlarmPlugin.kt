@@ -1,0 +1,292 @@
+package com.sakeenah.app.plugin
+
+import com.getcapacitor.JSObject
+import com.getcapacitor.Plugin
+import com.getcapacitor.PluginCall
+import com.getcapacitor.PluginMethod
+import com.getcapacitor.annotation.CapacitorPlugin
+import com.sakeenah.app.util.AlarmScheduler
+import com.sakeenah.app.util.BatteryOptimizationHelper
+import com.sakeenah.app.util.MuezzinHelper
+import android.util.Log
+
+/**
+ * PrayerAlarmPlugin — Capacitor bridge to the native AlarmScheduler.
+ *
+ * This plugin replaces the unreliable Capacitor LocalNotifications with
+ * native Android Exact Alarms that survive Doze Mode and App Standby.
+ *
+ * Methods:
+ * - schedulePrayer: Schedule a single prayer (pre-prayer + prayer time)
+ * - scheduleAllPrayers: Schedule all prayers for today
+ * - cancelAll: Cancel all scheduled alarms
+ * - canScheduleExactAlarms: Check if SCHEDULE_EXACT_ALARM permission is granted
+ * - requestExactAlarmPermission: Open settings to grant the permission
+ * - isBatteryOptimizationEnabled: Check if battery optimization is active
+ * - requestIgnoreBatteryOptimization: Request battery optimization bypass
+ * - openAutoStartSettings: Open manufacturer-specific auto-start settings
+ */
+@CapacitorPlugin(name = "PrayerAlarm")
+class PrayerAlarmPlugin : Plugin() {
+
+    companion object {
+        private const val TAG = "PrayerAlarmPlugin"
+    }
+
+    private lateinit var scheduler: AlarmScheduler
+    private lateinit var batteryHelper: BatteryOptimizationHelper
+
+    override fun load() {
+        super.load()
+        scheduler = AlarmScheduler(context)
+        batteryHelper = BatteryOptimizationHelper(context)
+    }
+
+    /**
+     * Schedule a single prayer alarm.
+     *
+     * Expected parameters:
+     * {
+     *   "prayerKey": "fajr",
+     *   "prayerName": "الفجر",
+     *   "prayerTimeMs": 1754400000000
+     * }
+     */
+    @PluginMethod
+    fun schedulePrayer(call: PluginCall) {
+        try {
+            val prayerKey = call.getString("prayerKey") ?: ""
+            val prayerName = call.getString("prayerName") ?: ""
+            val prayerTimeMs = call.getLong("prayerTimeMs") ?: 0L
+
+            if (prayerKey.isEmpty() || prayerName.isEmpty() || prayerTimeMs == 0L) {
+                call.reject("Missing required parameters")
+                return
+            }
+
+            scheduler.schedulePrayer(prayerKey, prayerName, prayerTimeMs)
+            Log.d(TAG, "Scheduled prayer: $prayerName at $prayerTimeMs")
+
+            call.resolve(JSObject().apply {
+                put("success", true)
+                put("prayerKey", prayerKey)
+                put("prayerName", prayerName)
+            })
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to schedule prayer", e)
+            call.reject("Failed to schedule prayer: ${e.message}")
+        }
+    }
+
+    /**
+     * Schedule all prayers for today.
+     *
+     * Expected parameters:
+     * {
+     *   "prayers": [
+     *     {"key": "fajr", "name": "الفجر", "timeMs": 1754400000000},
+     *     ...
+     *   ]
+     * }
+     */
+    @PluginMethod
+    fun scheduleAllPrayers(call: PluginCall) {
+        try {
+            val prayersArray = call.getArray("prayers")
+            val prayers = mutableListOf<Triple<String, String, Long>>()
+
+            for (i in 0 until (prayersArray?.length() ?: 0)) {
+                val prayer = prayersArray?.getJSONObject(i)
+                val key = prayer?.getString("key") ?: ""
+                val name = prayer?.getString("name") ?: ""
+                val timeMs = prayer?.getLong("timeMs") ?: 0L
+                if (key.isNotEmpty() && name.isNotEmpty() && timeMs > 0) {
+                    prayers.add(Triple(key, name, timeMs))
+                }
+            }
+
+            if (prayers.isEmpty()) {
+                call.reject("No valid prayers provided")
+                return
+            }
+
+            scheduler.scheduleAllPrayers(prayers)
+            Log.d(TAG, "Scheduled ${prayers.size} prayers")
+
+            call.resolve(JSObject().apply {
+                put("success", true)
+                put("count", prayers.size)
+            })
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to schedule all prayers", e)
+            call.reject("Failed to schedule all prayers: ${e.message}")
+        }
+    }
+
+    /**
+     * Cancel all scheduled alarms.
+     */
+    @PluginMethod
+    fun cancelAll(call: PluginCall) {
+        try {
+            scheduler.cancelAllPrayers()
+            Log.d(TAG, "Cancelled all prayers")
+
+            call.resolve(JSObject().apply {
+                put("success", true)
+            })
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to cancel all prayers", e)
+            call.reject("Failed to cancel all prayers: ${e.message}")
+        }
+    }
+
+    /**
+     * Check if SCHEDULE_EXACT_ALARM permission is granted.
+     * Required on Android 12+ for exact alarms.
+     */
+    @PluginMethod
+    fun canScheduleExactAlarms(call: PluginCall) {
+        val canSchedule = scheduler.canScheduleExactAlarms()
+        Log.d(TAG, "Can schedule exact alarms: $canSchedule")
+
+        call.resolve(JSObject().apply {
+            put("canSchedule", canSchedule)
+        })
+    }
+
+    /**
+     * Open settings to grant SCHEDULE_EXACT_ALARM permission.
+     */
+    @PluginMethod
+    fun requestExactAlarmPermission(call: PluginCall) {
+        try {
+            val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+
+            call.resolve(JSObject().apply {
+                put("success", true)
+            })
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to open exact alarm settings", e)
+            call.reject("Failed to open exact alarm settings: ${e.message}")
+        }
+    }
+
+    /**
+     * Check if battery optimization is enabled for this app.
+     * Returns true if the app WILL be killed by the system.
+     */
+    @PluginMethod
+    fun isBatteryOptimizationEnabled(call: PluginCall) {
+        val isEnabled = batteryHelper.isBatteryOptimizationEnabled()
+        Log.d(TAG, "Battery optimization enabled: $isEnabled")
+
+        call.resolve(JSObject().apply {
+            put("enabled", isEnabled)
+        })
+    }
+
+    /**
+     * Request battery optimization bypass.
+     * Opens system settings for user approval.
+     */
+    @PluginMethod
+    fun requestIgnoreBatteryOptimization(call: PluginCall) {
+        val success = batteryHelper.requestIgnoreBatteryOptimization()
+        Log.d(TAG, "Battery optimization bypass requested: $success")
+
+        call.resolve(JSObject().apply {
+            put("success", success)
+        })
+    }
+
+    /**
+     * Open manufacturer-specific auto-start settings.
+     * Required for Xiaomi, OPPO, Vivo, Samsung.
+     */
+    @PluginMethod
+    fun openAutoStartSettings(call: PluginCall) {
+        val success = batteryHelper.openAutoStartSettings()
+        Log.d(TAG, "Auto-start settings opened: $success")
+
+        call.resolve(JSObject().apply {
+            put("success", success)
+        })
+    }
+
+    /**
+     * Check if running on an aggressive manufacturer (Xiaomi, OPPO, Vivo, Samsung, Huawei).
+     */
+    @PluginMethod
+    fun isAggressiveManufacturer(call: PluginCall) {
+        val isAggressive = batteryHelper.isAggressiveManufacturer()
+        Log.d(TAG, "Aggressive manufacturer: $isAggressive")
+
+        call.resolve(JSObject().apply {
+            put("isAggressive", isAggressive)
+        })
+    }
+
+    /**
+     * Save the selected muezzin ID and file name.
+     * Called from React when user selects a muezzin.
+     */
+    @PluginMethod
+    fun saveSelectedMuezzin(call: PluginCall) {
+        try {
+            val muezzinId = call.getString("muezzinId") ?: ""
+            val fileName = call.getString("fileName") ?: ""
+
+            if (muezzinId.isEmpty() || fileName.isEmpty()) {
+                call.reject("Missing required parameters: muezzinId, fileName")
+                return
+            }
+
+            MuezzinHelper.saveSelectedMuezzin(context, muezzinId, fileName)
+            call.resolve(JSObject().apply { put("success", true) })
+        } catch (e: Exception) {
+            call.reject("Failed to save selected muezzin: ${e.message}")
+        }
+    }
+
+    /**
+     * Check if a muezzin file is downloaded.
+     */
+    @PluginMethod
+    fun isMuezzinDownloaded(call: PluginCall) {
+        try {
+            val fileName = call.getString("fileName") ?: ""
+            if (fileName.isEmpty()) {
+                call.reject("Missing required parameter: fileName")
+                return
+            }
+
+            val isDownloaded = MuezzinHelper.isMuezzinDownloaded(context, fileName)
+            call.resolve(JSObject().apply { put("isDownloaded", isDownloaded) })
+        } catch (e: Exception) {
+            call.reject("Failed to check muezzin download status: ${e.message}")
+        }
+    }
+
+    /**
+     * Delete a muezzin file.
+     */
+    @PluginMethod
+    fun deleteMuezzin(call: PluginCall) {
+        try {
+            val fileName = call.getString("fileName") ?: ""
+            if (fileName.isEmpty()) {
+                call.reject("Missing required parameter: fileName")
+                return
+            }
+
+            val deleted = MuezzinHelper.deleteMuezzinFile(context, fileName)
+            call.resolve(JSObject().apply { put("success", deleted) })
+        } catch (e: Exception) {
+            call.reject("Failed to delete muezzin file: ${e.message}")
+        }
+    }
+}

@@ -1,0 +1,10 @@
+{
+  "name": "Remix: سكينه 5",
+  "description": "Organizes uploaded code files into professional folder structures for perfect execution without writing or modifying any original source code.",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
