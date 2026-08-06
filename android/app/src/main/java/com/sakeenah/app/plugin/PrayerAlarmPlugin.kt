@@ -8,6 +8,7 @@ import com.getcapacitor.annotation.CapacitorPlugin
 import com.sakeenah.app.util.AlarmScheduler
 import com.sakeenah.app.util.BatteryOptimizationHelper
 import com.sakeenah.app.util.MuezzinHelper
+import com.sakeenah.app.util.PrayerPreferencesReader
 import android.util.Log
 
 /**
@@ -215,6 +216,107 @@ class PrayerAlarmPlugin : Plugin() {
         call.resolve(JSObject().apply {
             put("success", success)
         })
+    }
+
+    /**
+     * Get prayer notification preferences.
+     *
+     * Expected parameters:
+     * {
+     *   "prayerKey": "fajr"
+     * }
+     *
+     * Returns:
+     * {
+     *   "enabled": true,
+     *   "mode": "azan_short"
+     * }
+     */
+    @PluginMethod
+    fun getPrayerPreference(call: PluginCall) {
+        try {
+            val prayerKey = call.getString("prayerKey") ?: ""
+
+            if (prayerKey.isEmpty()) {
+                call.reject("Missing required parameter: prayerKey")
+                return
+            }
+
+            val enabled = PrayerPreferencesReader.isPrayerEnabled(context, prayerKey)
+            val mode = PrayerPreferencesReader.getPrayerMode(context, prayerKey)
+
+            call.resolve(JSObject().apply {
+                put("enabled", enabled)
+                put("mode", mode)
+            })
+        } catch (e: Exception) {
+            call.reject("Failed to get prayer preference: ${e.message}")
+        }
+    }
+
+    /**
+     * Save prayer notification preferences.
+     *
+     * Expected parameters:
+     * {
+     *   "prayerKey": "fajr",
+     *   "enabled": true,
+     *   "mode": "azan_short"
+     * }
+     */
+    @PluginMethod
+    fun savePrayerPreference(call: PluginCall) {
+        try {
+            val prayerKey = call.getString("prayerKey") ?: ""
+            val enabled = call.getBoolean("enabled", true)
+            val mode = call.getString("mode", "beep") ?: "beep"
+
+            if (prayerKey.isEmpty()) {
+                call.reject("Missing required parameter: prayerKey")
+                return
+            }
+
+            PrayerPreferencesReader.savePrayerPreference(context, prayerKey, enabled, mode)
+
+            call.resolve(JSObject().apply {
+                put("success", true)
+            })
+        } catch (e: Exception) {
+            call.reject("Failed to save prayer preference: ${e.message}")
+        }
+    }
+
+    /**
+     * Check if adhan should be played for a prayer.
+     *
+     * Expected parameters:
+     * {
+     *   "prayerKey": "fajr"
+     * }
+     *
+     * Returns:
+     * {
+     *   "shouldPlayAdhan": true
+     * }
+     */
+    @PluginMethod
+    fun shouldPlayAdhan(call: PluginCall) {
+        try {
+            val prayerKey = call.getString("prayerKey") ?: ""
+
+            if (prayerKey.isEmpty()) {
+                call.reject("Missing required parameter: prayerKey")
+                return
+            }
+
+            val shouldPlay = PrayerPreferencesReader.shouldPlayAdhan(context, prayerKey)
+
+            call.resolve(JSObject().apply {
+                put("shouldPlayAdhan", shouldPlay)
+            })
+        } catch (e: Exception) {
+            call.reject("Failed to check shouldPlayAdhan: ${e.message}")
+        }
     }
 
     /**
