@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">سَكِينَة</string>
+    <string name="title_activity_main">سَكِينَة</string>
+    <string name="package_name">com.sakeenah.app</string>
+    <string name="custom_url_scheme">com.sakeenah.app</string>
+    <string name="countdown_channel_name">العدّاد التنازلي قبل الأذان</string>
+    <string name="countdown_channel_description">عدّاد تنازلي حيّ يظهر قبل الأذان بـ 10 دقائق — لا يمكن تعطيله</string>
+    <string name="pre_prayer_channel_name">تنبيه ما قبل الصلاة</string>
+    <string name="pre_prayer_channel_description">عدّاد تنازلي حيّ يظهر قبل الصلاة بـ 10 دقائق</string>
+</resources>

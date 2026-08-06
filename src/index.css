@@ -1,0 +1,449 @@
+@font-face {
+  font-family: 'KFGQPC Uthman Taha Naskh';
+  src: url('/fonts/KFGQPC_Uthmanic_Script_HAFS_Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyahsans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyahsans-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Text';
+  src: url('/fonts/thmanyahseriftext-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Text';
+  src: url('/fonts/thmanyahseriftext-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('/fonts/thmanyahserifdisplay-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Thmanyah Serif Display';
+  src: url('/fonts/thmanyahserifdisplay-Black.woff2') format('woff2');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@import "tailwindcss";
+@import "./styles/player.css";
+
+@theme {
+  --font-sans: "Thmanyah Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Thmanyah Serif Text", ui-serif, Georgia, serif;
+  --font-display: "Thmanyah Serif Display", ui-serif, Georgia, serif;
+}
+
+:root {
+  font-family: var(--font-sans);
+  --top-space: 72px;
+  --side-space: 48px;
+  --bottom-space: 90px;
+
+  /* Sakeenah Authentic Apple iOS 27 Cut-Crystal Optics */
+  --glass-blur: 26px;
+  --glass-saturate: 210%;
+  --glass-border: rgba(43, 26, 16, 0.09); /* 9% Espresso perimeter cut (NO WHITE BORDER STROKES) */
+  
+  /* Pure Ambient Z-Axis Elevation Shadow */
+  --glass-ambient: 0 16px 36px -12px rgba(43, 26, 16, 0.14), 0 4px 10px -2px rgba(43, 26, 16, 0.06);
+  
+  /* TRUE APPLE SPECULAR HIGHLIGHT: Exactly 1px on TOP EDGE ONLY (inset 0 1px 0 0). 
+     ZERO 360° white rings, ZERO blurry inner fog! */
+  --glass-lensing: inset 0 1px 0 0 rgba(255, 255, 255, 0.90), 
+                   inset 0 -1px 0 0 rgba(43, 26, 16, 0.05);
+}
+
+/* 1. UNIVERSAL CUT-CRYSTAL PANEL (Clean, crisp, no cloudy white borders) */
+.cut-crystal-panel {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    rgba(253, 252, 251, 0.75) 0%,
+    rgba(244, 240, 234, 0.60) 100%
+  );
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) contrast(99%) brightness(102%);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate)) contrast(99%) brightness(102%);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-ambient), var(--glass-lensing);
+  transition: all 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.cut-crystal-panel:hover {
+  border-color: rgba(43, 26, 16, 0.14);
+  box-shadow: 0 20px 42px -10px rgba(43, 26, 16, 0.18), 
+              0 6px 14px -2px rgba(43, 26, 16, 0.08),
+              inset 0 1px 0 0 rgba(255, 255, 255, 1.0), 
+              inset 0 -1px 0 0 rgba(43, 26, 16, 0.08);
+}
+.cut-crystal-panel:active {
+  box-shadow: 0 10px 24px -12px rgba(43, 26, 16, 0.12),
+              0 2px 6px -2px rgba(43, 26, 16, 0.04),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
+              inset 0 -1px 0 0 rgba(43, 26, 16, 0.06);
+}
+
+/* 2. UNIVERSAL CUT-CRYSTAL CAPSULE / PILL (For Navbar, Header Badges, Page Title Capsules) */
+.cut-crystal-capsule {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    rgba(253, 252, 251, 0.82) 0%,
+    rgba(244, 240, 234, 0.68) 100%
+  );
+  -webkit-backdrop-filter: blur(30px) saturate(220%) contrast(99%) brightness(103%);
+  backdrop-filter: blur(30px) saturate(220%) contrast(99%) brightness(103%);
+  border: 1px solid rgba(43, 26, 16, 0.10);
+  /* Notice: inset 0 1px 0 0 (Top only), ZERO white stroke rings around sides/bottom! */
+  box-shadow: 0 16px 36px -10px rgba(43, 26, 16, 0.18),
+              0 4px 10px -2px rgba(43, 26, 16, 0.06),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.95),
+              inset 0 -1px 0 0 rgba(43, 26, 16, 0.05);
+  border-radius: 9999px;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.cut-crystal-capsule:hover {
+  border-color: rgba(43, 26, 16, 0.15);
+  box-shadow: 0 20px 42px -8px rgba(43, 26, 16, 0.22),
+              0 6px 14px -1px rgba(43, 26, 16, 0.08),
+              inset 0 1px 0 0 rgba(255, 255, 255, 1.0),
+              inset 0 -1px 0 0 rgba(43, 26, 16, 0.08);
+}
+.cut-crystal-capsule:active {
+  box-shadow: 0 8px 24px -12px rgba(43, 26, 16, 0.14),
+              0 2px 6px -2px rgba(43, 26, 16, 0.04),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.90),
+              inset 0 -1px 0 0 rgba(43, 26, 16, 0.05);
+}
+
+/* 3. UNIVERSAL CUT-CRYSTAL INPUT & SEARCH BAR */
+.cut-crystal-input {
+  position: relative;
+  background: rgba(253, 252, 251, 0.85);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(43, 26, 16, 0.12);
+  box-shadow: inset 0 2px 4px rgba(43, 26, 16, 0.05),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.90);
+  border-radius: 9999px;
+  transition: all 0.25s ease;
+}
+.cut-crystal-input:focus-within {
+  border-color: #deab65;
+  box-shadow: 0 0 0 3px rgba(222, 171, 101, 0.22), inset 0 1px 0 0 rgba(255, 255, 255, 1);
+}
+
+/* 4. HIGH-LEGIBILITY SATIN CRYSTAL CARD */
+.cut-crystal-satin {
+  position: relative;
+  background: linear-gradient(
+    180deg,
+    rgba(253, 252, 251, 0.93) 0%,
+    rgba(248, 245, 240, 0.86) 100%
+  );
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgba(43, 26, 16, 0.08);
+  box-shadow: 0 10px 28px -10px rgba(43, 26, 16, 0.10),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.95);
+  border-radius: 28px;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.cut-crystal-satin:hover {
+  border-color: rgba(43, 26, 16, 0.12);
+  box-shadow: 0 14px 36px -8px rgba(43, 26, 16, 0.14),
+              inset 0 1px 0 0 rgba(255, 255, 255, 1.0);
+}
+.cut-crystal-satin:active {
+  box-shadow: 0 6px 18px -10px rgba(43, 26, 16, 0.08),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.92);
+}
+
+/* 5. CLEAN GEMSTONE HIGHLIGHT (For Azkar Category Grid Buttons) */
+/* Replaced muddy ::after mask with crisp top-edge highlight and superellipse curve */
+.gem-rim-glow {
+  position: relative;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 8px 24px -6px rgba(43, 26, 16, 0.18),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.90),
+              inset 0 -1px 0 0 rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.gem-rim-glow:hover {
+  border-color: rgba(255, 255, 255, 0.50) !important;
+  box-shadow: 0 12px 32px -4px rgba(43, 26, 16, 0.22),
+              inset 0 1px 0 0 rgba(255, 255, 255, 1.0),
+              inset 0 -1px 0 0 rgba(0, 0, 0, 0.12) !important;
+}
+.gem-rim-glow:active {
+  box-shadow: 0 4px 16px -8px rgba(43, 26, 16, 0.14),
+              inset 0 1px 0 0 rgba(255, 255, 255, 0.85),
+              inset 0 -1px 0 0 rgba(0, 0, 0, 0.06) !important;
+}
+
+.font-quran {
+  font-family: 'KFGQPC Uthman Taha Naskh', 'Amiri', 'Traditional Arabic', serif !important;
+}
+
+.mushaf-page {
+  width: min(100%, 850px);
+  margin: auto;
+  min-height: 100vh;
+  padding: 70px 45px 90px 45px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 768px) {
+  .mushaf-page {
+    padding: 70px 24px 90px 24px;
+  }
+}
+
+#pageContent {
+  text-align: justify;
+  line-height: 2.2;
+  font-size: clamp(2rem, 4vw, 2.4rem);
+  font-family: 'KFGQPC Uthman Taha Naskh', serif !important;
+  direction: rtl;
+  color: inherit;
+}
+
+.ayah {
+  display: inline;
+}
+
+/* Hide all scrollbars globally across the entire app */
+* {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
+}
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.hero-image {
+  animation: heroZoom 24s ease-in-out infinite alternate;
+  transform-origin: center center;
+}
+
+.ring-motion {
+  animation: ringPulse 3.8s ease-in-out infinite;
+}
+
+.progress-motion {
+  animation: progressGlow 2.8s ease-in-out infinite;
+}
+
+@keyframes heroZoom {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes ringPulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 0 rgba(43, 26, 15, 0));
+  }
+  50% {
+    filter: drop-shadow(0 0 8px rgba(43, 26, 15, 0.25));
+  }
+}
+
+@keyframes progressGlow {
+  0%,
+  100% {
+    opacity: 0.88;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Tab transition */
+.tab-content-enter {
+  animation: tabFadeIn 250ms ease-out;
+}
+
+@keyframes tabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+
+
+
+
+
+/* --- Preserved QCF reader styles from Sakina a4b380c for protected Quran reader screens --- */
+.qcf-page {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 4px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  user-select: none;
+}
+
+.qcf-line {
+  font-size: clamp(18px, 4.2vw, 30px);
+  line-height: 1.85;
+  text-align: center;
+  direction: rtl;
+  white-space: nowrap;
+  letter-spacing: 0;
+  word-spacing: 0;
+}
+
+.qcf-line.qcf-justify {
+  text-align: justify;
+  text-align-last: center;
+  white-space: nowrap;
+}
+
+.qcf-word {
+  display: inline;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+  border-radius: 3px;
+}
+
+.qcf-word:hover {
+  background: var(--qcf-hover, rgba(184, 147, 90, 0.1));
+}
+
+.qcf-highlighted {
+  background: var(--qcf-highlight, rgba(184, 147, 90, 0.18));
+  color: var(--qcf-accent, #8a6a3d);
+}
+
+.qcf-playing {
+  background: var(--qcf-playing, rgba(184, 147, 90, 0.28));
+  color: var(--qcf-accent, #8a6a3d);
+}
+
+.qcf-end-mark {
+  color: var(--qcf-accent, #8a6a3d);
+  cursor: pointer;
+}
+
+.qcf-basmala {
+  text-align: center !important;
+  white-space: nowrap;
+  margin: 6px 0 3px;
+  opacity: 1;
+}
+
+/* Responsive */
+@media (min-width: 700px) {
+  .qcf-page { padding: 8px 16px; }
+}
+
+@media (min-width: 1024px) {
+  .qcf-page { padding: 12px 24px; }
+}
+
+/* ===== Surah Name Ornament (SuraNames font) ===== */
+@font-face {
+  font-family: 'SuraNames';
+  src: url('/fonts/sura_names.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+.surah-ornament {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 18px 0 14px;
+  padding: 8px 48px;
+  border: 1.5px solid var(--qcf-accent, #b8935a);
+  border-radius: 6px;
+  position: relative;
+}
+
+.surah-ornament::before,
+.surah-ornament::after {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 0.5px solid var(--qcf-accent-light, #d9b877);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.surah-glyph {
+  font-size: 32px;
+  color: var(--qcf-accent, #111);
+  line-height: 1;
+  font-family: 'SuraNames', serif;
+}
+
+@media (min-width: 700px) {
+  .surah-ornament { padding: 10px 64px; margin: 24px 0 18px; }
+  .surah-glyph { font-size: 38px; }
+}
+
+/* ===== Quran Title (for circles, headers, decorative titles) ===== */
+.quran-title {
+  font-family: 'Amiri Quran', 'Amiri', serif;
+  direction: rtl;
+  text-align: center;
+  color: #2b1a10;
+  line-height: 1.3;
+  letter-spacing: 0;
+  user-select: none;
+}

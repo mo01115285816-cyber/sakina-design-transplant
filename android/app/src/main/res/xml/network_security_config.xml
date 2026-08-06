@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Default: HTTPS only, block cleartext -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- القاعدة #7: استثناء لـ radiojar.com
+         stream.radiojar.com يُعيد redirect 302 إلى http://n08.radiojar.com/...
+         وهو HTTP cleartext. بدون هذا الاستثناء، سيفشل البث في WebView -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">radiojar.com</domain>
+    </domain-config>
+
+    <!-- السماح بـ cleartext للسيرفر المحلي (تطوير) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>
