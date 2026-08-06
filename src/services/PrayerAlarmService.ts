@@ -296,6 +296,66 @@ class PrayerAlarmServiceImpl {
       return false;
     }
   }
+
+  /**
+   * Get prayer notification preferences.
+   *
+   * @param prayerKey Prayer key (fajr, dhuhr, asr, maghrib, isha)
+   * @returns Object with enabled and mode properties
+   */
+  async getPrayerPreference(prayerKey: string): Promise<{ enabled: boolean; mode: string } | null> {
+    if (!this.isNative) return null;
+
+    try {
+      const result = await this.callPlugin('getPrayerPreference', { prayerKey });
+      return {
+        enabled: result?.enabled ?? true,
+        mode: result?.mode ?? 'beep',
+      };
+    } catch (e) {
+      console.warn('PrayerAlarmService.getPrayerPreference failed:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Save prayer notification preferences.
+   *
+   * @param prayerKey Prayer key (fajr, dhuhr, asr, maghrib, isha)
+   * @param enabled Whether the prayer notification is enabled
+   * @param mode Notification mode (beep, azan_short, azan_full, vibrate_only, silent)
+   * @returns true if saved successfully
+   */
+  async savePrayerPreference(prayerKey: string, enabled: boolean, mode: string): Promise<boolean> {
+    if (!this.isNative) return false;
+
+    try {
+      const result = await this.callPlugin('savePrayerPreference', { prayerKey, enabled, mode });
+      return result?.success ?? false;
+    } catch (e) {
+      console.warn('PrayerAlarmService.savePrayerPreference failed:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Check if adhan should be played for a prayer.
+   * Returns true only if prayer is enabled AND mode is azan_short or azan_full.
+   *
+   * @param prayerKey Prayer key (fajr, dhuhr, asr, maghrib, isha)
+   * @returns true if adhan should be played
+   */
+  async shouldPlayAdhan(prayerKey: string): Promise<boolean> {
+    if (!this.isNative) return false;
+
+    try {
+      const result = await this.callPlugin('shouldPlayAdhan', { prayerKey });
+      return result?.shouldPlayAdhan ?? false;
+    } catch (e) {
+      console.warn('PrayerAlarmService.shouldPlayAdhan failed:', e);
+      return false;
+    }
+  }
 }
 
 export const PrayerAlarmService = new PrayerAlarmServiceImpl();

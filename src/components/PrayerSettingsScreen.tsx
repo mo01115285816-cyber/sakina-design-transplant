@@ -1,6 +1,7 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { X, Check } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { Capacitor } from "@capacitor/core";
 import type {
   PrayerSettingsId,
   SinglePrayerPreference,
@@ -10,6 +11,7 @@ import type {
 } from "@/types/prayer-settings";
 import { UnsavedChangesModal } from "./UnsavedChangesModal";
 import { MuezzinSelectorSection } from "./MuezzinSelectorSection";
+import { PrayerAlarmService } from "@/services/PrayerAlarmService";
 
 interface PrayerSettingsScreenProps {
   prayerId: PrayerSettingsId;
@@ -87,8 +89,31 @@ export const PrayerSettingsScreen = React.memo(function PrayerSettingsScreen({
     }
   }, [isDirty, onClose]);
 
-  const handleSaveAndClose = useCallback(() => {
+  const handleSaveAndClose = useCallback(async () => {
+    // Save to React state (existing behavior)
     onSave(localPrefs);
+
+    // ═══════════════════════════════════════════════════════════════
+    // SAVE TO NATIVE ANDROID SHARED PREFERENCES
+    // This ensures AlarmReceiver can read the preferences
+    // ═══════════════════════════════════════════════════════════════
+    const isNative = Capacitor.isNativePlatform();
+    if (isNative) {
+      try {
+        // Save all prayer preferences to native SharedPreferences
+        for (const [key, pref] of Object.entries(localPrefs)) {
+          await PrayerAlarmService.savePrayerPreference(
+            key,
+            pref.enabled,
+            pref.mode
+          );
+        }
+        console.log("Saved prayer preferences to native SharedPreferences");
+      } catch (e) {
+        console.warn("Failed to save prayer preferences to native:", e);
+      }
+    }
+
     onClose();
   }, [localPrefs, onSave, onClose]);
 

@@ -9,6 +9,7 @@ import android.util.Log
 import com.sakeenah.app.service.CountdownForegroundService
 import com.sakeenah.app.service.AdhanPlayerService
 import com.sakeenah.app.data.AudioStateHolder
+import com.sakeenah.app.util.PrayerPreferencesReader
 
 /**
  * AlarmReceiver — fires Exact Alarms scheduled by AlarmScheduler.
@@ -55,6 +56,17 @@ class AlarmReceiver : BroadcastReceiver() {
                 // Cancel the countdown service (10 minutes are up)
                 CountdownForegroundService.stop(context, prayerKey)
 
+                // ═══════════════════════════════════════════════════════════════
+                // READ PRAYER PREFERENCES BEFORE PLAYING ADHAN
+                // ═══════════════════════════════════════════════════════════════
+                
+                val shouldPlayAdhan = PrayerPreferencesReader.shouldPlayAdhan(context, prayerKey)
+                
+                if (!shouldPlayAdhan) {
+                    Log.d(TAG, "Prayer $prayerName adhan is disabled or mode is not azan — skipping")
+                    return
+                }
+
                 // Get the selected muezzin URI from AudioStateHolder
                 val muezzinUri = AudioStateHolder.state.value.artworkUrl.takeIf { it.isNotEmpty() }
 
@@ -71,7 +83,7 @@ class AlarmReceiver : BroadcastReceiver() {
                     muezzinUri
                 )
 
-                Log.d(TAG, "Started adhan player for $prayerName")
+                Log.d(TAG, "Started adhan player for $prayerName (user enabled adhan)")
             }
         }
     }
