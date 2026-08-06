@@ -192,6 +192,8 @@ export default function App() {
     }
   });
 
+  const [isPrePrayerReminderEnabled, setIsPrePrayerReminderEnabled] = useState<boolean>(true);
+
   const [isPrayerReminderEnabled, setIsPrayerReminderEnabled] =
     useState<boolean>(() => {
       try {
