@@ -3,9 +3,9 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig } from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
   return {
-    base: './',  // مهم لـ Capacitor — المسارات النسبية
+    base: mode === 'production' ? '/' : './',  // '/' for Vercel, './' for Capacitor dev
     plugins: [react(), tailwindcss()],  // Tailwind v4 design plugin + React
     resolve: {
       alias: {
