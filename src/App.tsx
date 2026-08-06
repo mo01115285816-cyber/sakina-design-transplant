@@ -27,7 +27,7 @@ import QcfVerse from "@/components/QcfVerse";
 import { prefetchQcfFont } from "@/hooks/useQcfFont";
 import { PRELOAD_QCF_PAGES } from "@/constants/appVerses";
 import QuranTabScreen from "@/components/QuranTabScreen";
-import { SakeenahAIScreen } from "@/components/SakeenahAIScreen";
+import SakeenahAIScreen from "@/components/SakeenahAIScreen";
 import AsmaAlHusnaScreen from "@/components/AsmaAlHusnaScreen";
 import { SettingsScreen } from "@/components/SettingsScreen";
 import { PrayerSettingsScreen } from "@/components/PrayerSettingsScreen";
