@@ -962,15 +962,27 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
             })}
 
             {isLoading && (
-              <div className="flex justify-start w-full pr-1 py-1">
-                <span className="shimmer-text text-[15px] font-bold tracking-widest font-sans select-none">
-                  Thinking...
-                </span>
+              <div className="flex justify-start w-full pr-1 py-2 pl-12">
+                <div className="relative inline-flex items-center">
+                  <span className="text-[14px] font-display font-bold text-[#7f6a55] select-none overflow-hidden">
+                    <span className="inline-block animate-shimmer-text bg-gradient-to-r from-[#7f6a55] via-[#b88a4f] to-[#7f6a55] bg-[length:200%_100%] bg-clip-text text-transparent">
+                      تفكير عميق
+                    </span>
+                  </span>
+                  <span className="ml-1.5 flex gap-0.5">
+                    <span className="w-1 h-1 rounded-full bg-[#b88a4f] animate-bounce [animation-delay:-0.3s]" />
+                    <span className="w-1 h-1 rounded-full bg-[#b88a4f] animate-bounce [animation-delay:-0.15s]" />
+                    <span className="w-1 h-1 rounded-full bg-[#b88a4f] animate-bounce" />
+                  </span>
+                </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
         )}
+
+        {/* ── BACKGROUND UNDER INPUT BAR ── */}
+        <div className="fixed inset-x-0 bottom-0 z-10 pointer-events-none h-20 bg-gradient-to-t from-[#ece7de] via-[#ece7de]/80 to-transparent" />
 
         {/* ── FLOATING INPUT FIELD BAR ── */}
         <div className="fixed inset-x-0 bottom-0 z-20 flex justify-center pointer-events-none px-4 pb-4">
@@ -989,7 +1001,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                 placeholder="اسأل عن أي أمر فقهي أو شرعي..."
                 disabled={isLoading}
                 rows={1}
-                className="flex-1 min-h-[38px] text-right bg-transparent border-none outline-none px-3 py-2 text-[13.5px] font-sans font-bold text-[#2b1a10] placeholder-[#7f6a55]/60 disabled:opacity-50 resize-none max-h-[130px] overflow-y-auto leading-relaxed"
+                className="flex-1 min-h-[38px] text-right bg-transparent border-none outline-none px-3 py-2 text-[13.5px] font-sans font-bold text-[#2b1a10] placeholder-[#7f6a55]/60 disabled:opacity-50 resize-none max-h-[130px] overflow-y-auto leading-relaxed break-words"
               />
               
               <motion.button
@@ -998,7 +1010,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                 disabled={!inputValue.trim() || isLoading}
                 className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
                   inputValue.trim() && !isLoading
-                    ? "bg-[#2b1a10] text-[#fff9f1] shadow-md hover:bg-[#3a2517] active:scale-90 cursor-pointer"
+                    ? "bg-[#b88a4f] text-[#fff9f1] shadow-md hover:bg-[#a0753e] active:scale-90 cursor-pointer"
                     : "bg-[#e8dfd4]/60 text-[#7f6a55]/40 cursor-not-allowed"
                 }`}
                 aria-label="إرسال السؤال"
