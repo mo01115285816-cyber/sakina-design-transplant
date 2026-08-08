@@ -352,15 +352,17 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
 
     utterance.onstart = () => setSpeakingMsgId(msgId);
     utterance.onend = () => setSpeakingMsgId(null);
-    utterance.onerror = () => setSpeakingMsgId(null);
-
-    // Chrome bug workaround: pause then resume to keep alive for long texts
-    utterance.onboundary = () => {
-      if (synth.paused) synth.resume();
+    utterance.onerror = (e) => {
+      console.warn("TTS error:", e);
+      setSpeakingMsgId(null);
     };
 
-    setSpeakingMsgId(msgId);
-    synth.speak(utterance);
+    // Chrome bug workaround: delay speak() after cancel()
+    // Chrome ignores speak() if called immediately after cancel()
+    setTimeout(() => {
+      setSpeakingMsgId(msgId);
+      synth.speak(utterance);
+    }, 100);
   }, [speakingMsgId, arabicVoice]);
 
   // Cancel speech on unmount
