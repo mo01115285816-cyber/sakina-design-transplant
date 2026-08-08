@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, startTransition, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback, startTransition, useMemo } from "react";
 import { Capacitor } from "@capacitor/core";
 import { GoogleGenAI } from "@google/genai";
 import { motion, AnimatePresence } from "motion/react";
@@ -14,7 +14,7 @@ import remarkGfm from "remark-gfm";
 const NATIVE_GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
 
 // System prompt for Sakeenah AI — Islamic scholarly assistant
-const SAKEENAH_SYSTEM_PROMPT = `أنت "سكينة AI" — مساعد ذكي إسلامي متخصص. تجيب بدقة ومسؤولية من القرآن الكريم والكتب الستة في الحديث الشريف (البخاري، مسلم، الترمذي، النسائي، أبو داود، ابن ماجه). 
+const SAKEENAH_SYSTEM_PROMPT = `أنت "سَكِينَة AI" — مساعد ذكي إسلامي متخصص. تجيب بدقة ومسؤولية من القرآن الكريم والكتب الستة في الحديث الشريف (البخاري، مسلم، الترمذي، النسائي، أبو داود، ابن ماجه). 
 
 قواعد صارمة:
 1. أجب دائماً باللغة العربية الفصحى
@@ -88,18 +88,18 @@ const CodeBlock = ({ children }: { children: string }) => {
 
 const markdownComponents = {
   h3: ({ children }: any) => (
-    <h3 className="text-[16px] font-black text-[#2b1a10] mt-4 mb-2 text-right">
+    <h3 className="text-[16px] font-display font-display font-black text-[#2b1a10] mt-4 mb-2 text-right">
       {children}
     </h3>
   ),
   h4: ({ children }: any) => (
-    <h4 className="text-[15px] font-black text-[#2b1a10] mt-3 mb-1 text-right">
+    <h4 className="text-[15px] font-display font-display font-black text-[#2b1a10] mt-3 mb-1 text-right">
       {children}
     </h4>
   ),
   p: ({ children }: any) => (
     <p 
-      className="text-[14px] leading-relaxed text-[#2b1a10] mb-2 text-right break-words whitespace-pre-wrap"
+      className="text-[14px] font-sans leading-relaxed text-[#2b1a10] mb-2 text-right break-words whitespace-pre-wrap"
       dir="auto"
       style={{ unicodeBidi: "plaintext" }}
     >
@@ -107,7 +107,7 @@ const markdownComponents = {
     </p>
   ),
   strong: ({ children }: any) => (
-    <strong className="font-black text-[#2b1a10]">
+    <strong className="font-display font-black text-[#2b1a10]">
       {children}
     </strong>
   ),
@@ -136,7 +136,7 @@ const markdownComponents = {
     if (ordered) {
       return (
         <li 
-          className="text-[14px] leading-relaxed text-[#2b1a10] my-0.5 text-right inline-block w-full"
+          className="text-[14px] font-sans leading-relaxed text-[#2b1a10] my-0.5 text-right inline-block w-full"
           dir="auto"
           style={{ unicodeBidi: "plaintext" }}
         >
@@ -146,7 +146,7 @@ const markdownComponents = {
     }
     return (
       <li 
-        className="flex items-start gap-2 text-[14px] leading-relaxed text-[#2b1a10] my-0.5"
+        className="flex items-start gap-2 text-[14px] font-sans leading-relaxed text-[#2b1a10] my-0.5"
         dir="auto"
         style={{ unicodeBidi: "plaintext" }}
       >
@@ -178,11 +178,11 @@ const markdownComponents = {
       </table>
     </div>
   ),
-  thead: ({ children }: any) => <thead className="bg-[#f7f2ea] text-[#2b1a10] font-black">{children}</thead>,
+  thead: ({ children }: any) => <thead className="bg-[#f7f2ea] text-[#2b1a10] font-display font-black">{children}</thead>,
   tbody: ({ children }: any) => <tbody className="divide-y divide-[#e6dccf]/60">{children}</tbody>,
   tr: ({ children }: any) => <tr className="hover:bg-white/40 transition-colors">{children}</tr>,
-  th: ({ children }: any) => <th className="p-2.5 font-black border-b border-[#e6dccf]">{children}</th>,
-  td: ({ children }: any) => <td className="p-2.5 text-[#2b1a10]/90">{children}</td>,
+  th: ({ children }: any) => <th className="p-2.5 font-display font-black border-b border-[#e6dccf]">{children}</th>,
+  td: ({ children }: any) => <td className="p-2.5 font-sans text-[#2b1a10]/90">{children}</td>,
 };
 
 const MarkdownRenderer = ({ content, animate = false, onComplete }: { content: string; animate?: boolean; onComplete?: () => void }) => {
@@ -297,46 +297,73 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
     setTimeout(() => setCopiedResponseId(null), 2000);
   };
 
-  // Text-To-Speech helper
-  const handleSpeech = (msgId: string, text: string) => {
-    if (!window.speechSynthesis) return;
+  // Text-To-Speech helper — fixed: waits for voices to load asynchronously
+  const [ttsReady, setTtsReady] = useState(false);
+  const [arabicVoice, setArabicVoice] = useState<SpeechSynthesisVoice | null>(null);
 
-    if (window.speechSynthesis.speaking) {
-      window.speechSynthesis.cancel();
-      if (speakingMsgId === msgId) {
-        setSpeakingMsgId(null);
-        return;
-      }
+  useEffect(() => {
+    if (!window.speechSynthesis) return;
+    const synth = window.speechSynthesis;
+
+    const loadVoices = () => {
+      const voices = synth.getVoices();
+      const ar = voices.find(v => v.lang.startsWith("ar")) || null;
+      setArabicVoice(ar);
+      setTtsReady(true);
+    };
+
+    // Chrome loads voices async
+    if (synth.onvoiceschanged !== undefined) {
+      synth.onvoiceschanged = loadVoices;
     }
+    // Firefox & some browsers have voices ready immediately
+    loadVoices();
+
+    return () => { synth.onvoiceschanged = null; };
+  }, []);
+
+  const handleSpeech = useCallback((msgId: string, text: string) => {
+    if (!window.speechSynthesis) return;
+    const synth = window.speechSynthesis;
+
+    // If already speaking this message, stop it
+    if (speakingMsgId === msgId) {
+      synth.cancel();
+      setSpeakingMsgId(null);
+      return;
+    }
+
+    // Stop any other speech
+    synth.cancel();
 
     const cleanText = cleanArabicTextForSpeech(text);
     if (!cleanText) return;
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = "ar";
-    
-    // Attempt to set Arabic voice if available
-    const voices = window.speechSynthesis.getVoices();
-    const arabicVoice = voices.find(v => v.lang.startsWith("ar"));
+    utterance.rate = 0.95;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    // Set Arabic voice once loaded
     if (arabicVoice) {
       utterance.voice = arabicVoice;
     }
-    
-    utterance.onend = () => {
-      setSpeakingMsgId(null);
-    };
-    utterance.onerror = () => {
-      setSpeakingMsgId(null);
-    };
-    
-    setSpeakingMsgId(msgId);
-    
-    // Resume is sometimes necessary on Chrome/Safari before calling speak
-    window.speechSynthesis.resume();
-    window.speechSynthesis.speak(utterance);
-  };
 
-  // Clean up synthesis on unmount
+    utterance.onstart = () => setSpeakingMsgId(msgId);
+    utterance.onend = () => setSpeakingMsgId(null);
+    utterance.onerror = () => setSpeakingMsgId(null);
+
+    // Chrome bug workaround: pause then resume to keep alive for long texts
+    utterance.onboundary = () => {
+      if (synth.paused) synth.resume();
+    };
+
+    setSpeakingMsgId(msgId);
+    synth.speak(utterance);
+  }, [speakingMsgId, arabicVoice]);
+
+  // Cancel speech on unmount
   useEffect(() => {
     return () => {
       if (window.speechSynthesis) {
@@ -613,7 +640,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
   };
 
   return (
-    <div dir="rtl" className="mx-auto w-full max-w-[390px] px-5 pt-0 pb-4 font-[Cairo] bg-[#ece7de] h-screen relative flex flex-col overflow-hidden">
+    <div dir="rtl" className="mx-auto w-full max-w-[390px] px-5 pt-0 pb-4 font-sans bg-[#ece7de] h-screen relative flex flex-col overflow-hidden">
       
       {/* Background soft ambient shapes */}
       <div className="absolute top-[-20%] right-[-10%] w-[300px] h-[300px] bg-[#b88a4f]/5 rounded-full blur-[120px] pointer-events-none" />
@@ -622,9 +649,9 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
       {/* ── FLOATING TOP HEADER ── */}
       <div className="absolute top-6 left-5 right-5 flex items-center justify-between z-[45] pointer-events-none">
         {/* Right Element (in RTL): Title Capsule */}
-        <div className="h-10 px-5 rounded-full bg-[#fcfaf7]/85 backdrop-blur-md border border-[#e6dccf] shadow-[0_6px_20px_rgba(43,26,16,0.06),0_1px_3px_rgba(43,26,16,0.03)] text-[#2b1a10] flex items-center justify-center gap-1.5 pointer-events-auto transition-all duration-300">
+        <div className="cut-crystal-capsule px-5 h-10 rounded-full shadow-md flex items-center justify-center gap-1.5 pointer-events-auto transition-all duration-300">
           <Sparkles size={14} className="text-[#b88a4f] animate-pulse" fill="currentColor" />
-          <span className="text-[13px] font-black whitespace-nowrap pt-0.5">سكينة AI</span>
+          <span className="text-[14.5px] font-display font-black whitespace-nowrap pt-0.5">سكينة AI</span>
         </div>
 
         {/* Left Elements: Controls */}
@@ -632,7 +659,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
           {messages.length > 0 && (
             <button
               onClick={clearChat}
-              className="w-10 h-10 rounded-full bg-[#fcfaf7]/85 backdrop-blur-md border border-[#e6dccf] shadow-[0_6px_20px_rgba(43,26,16,0.06),0_1px_3px_rgba(43,26,16,0.03)] text-[#7f6a55] hover:text-red-600 hover:border-red-200 hover:bg-white flex items-center justify-center active:scale-[0.95] transition-all duration-300 cursor-pointer"
+              className="w-10 h-10 cut-crystal-capsule rounded-full shadow-md text-[#7f6a55] hover:text-red-600 hover:border-red-200 hover:bg-white flex items-center justify-center active:scale-[0.95] transition-all duration-300 cursor-pointer"
               aria-label="مسح المحادثة"
               title="مسح المحادثة"
             >
@@ -642,7 +669,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
 
           <button
             onClick={onBack}
-            className="w-10 h-10 rounded-full bg-[#fcfaf7]/85 backdrop-blur-md border border-[#e6dccf] shadow-[0_6px_20px_rgba(43,26,16,0.06),0_1px_3px_rgba(43,26,16,0.03)] text-[#2b1a10] hover:text-[#b88a4f] hover:border-[#b88a4f]/40 hover:bg-white flex items-center justify-center active:scale-[0.95] transition-all duration-300 cursor-pointer"
+            className="w-10 h-10 cut-crystal-capsule rounded-full shadow-md text-[#2b1a10] hover:text-[#b88a4f] hover:border-[#b88a4f]/40 hover:bg-white flex items-center justify-center active:scale-[0.95] transition-all duration-300 cursor-pointer"
             aria-label="رجوع"
           >
             <ChevronRight size={18} className="mr-0.5" />
@@ -679,10 +706,10 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                   </div>
 
                   {/* Title */}
-                  <h3 className="text-[19px] font-black text-[#2b1a10] mb-1">ملاذك الآمن للأسئلة الشرعية</h3>
+                  <h3 className="text-[19px] font-display font-display font-black text-[#2b1a10] mb-1">ملاذك الآمن للأسئلة الشرعية</h3>
 
                   {/* Subtitle */}
-                  <p className="text-[13px] text-[#7f6a55] font-bold leading-relaxed mt-2 mb-4 max-w-[280px]">
+                  <p className="text-[13px] font-sans text-[#7f6a55] font-bold leading-relaxed mt-2 mb-4 max-w-[280px]">
                     تحدث بحرية تامة وبخصوصية مطلقة دون حرج. سأجيبك بدقة ومسؤولية من القرآن الكريم والكتب الستة في الحديث الشريف.
                   </p>
 
@@ -699,7 +726,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                       localStorage.setItem("sakeenah_welcome_dismissed", "true");
                       setShowWelcomeCard(false);
                     }}
-                    className="w-full bg-[#2b1a10] text-[#fff9f1] hover:bg-[#3a2517] active:scale-[0.98] transition-all py-3 rounded-[16px] font-black text-[14px] shadow-[0_4px_12px_rgba(43,26,16,0.15)] cursor-pointer"
+                    className="w-full bg-[#2b1a10] text-[#fff9f1] hover:bg-[#3a2517] active:scale-[0.98] transition-all py-3 rounded-[16px] font-display font-black text-[14px] shadow-[0_4px_12px_rgba(43,26,16,0.15)] cursor-pointer"
                   >
                     بدء المحادثة المباركة
                   </button>
@@ -726,7 +753,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
               </div>
 
               <div>
-                <h3 className="text-[17px] font-black text-[#2b1a10]">طرح أسئلة شرعية</h3>
+                <h3 className="text-[17px] font-display font-display font-black text-[#2b1a10]">طرح أسئلة شرعية</h3>
                 <p className="text-[11.5px] text-[#7f6a55] font-black mt-1">كيف يمكنني مساعدتك اليوم؟</p>
               </div>
 
@@ -737,7 +764,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                   <button
                     type="button"
                     onClick={handleRefreshQuestions}
-                    className="w-7 h-7 bg-[#f7f2ea] border border-[#e6dccf] rounded-full flex items-center justify-center text-[#7f6a55] hover:text-[#b88a4f] active:scale-95 transition-all cursor-pointer shadow-sm"
+                    className="w-7 h-7 cut-crystal-capsule rounded-full flex items-center justify-center text-[#7f6a55] hover:text-[#b88a4f] active:scale-95 transition-all cursor-pointer shadow-sm"
                     title="تحديث الأسئلة المقترحة"
                   >
                     <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
@@ -793,7 +820,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                     }
                   >
                     {!isUser && (
-                      <div className="flex items-center gap-1.5 mb-2 text-[11px] font-black text-[#b88a4f] select-none">
+                      <div className="flex items-center gap-1.5 mb-2 text-[11px] font-display font-black text-[#b88a4f] select-none">
                         <Sparkles size={11} className="text-[#b88a4f]" />
                         <span>سكينة AI</span>
                       </div>
@@ -801,7 +828,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                     
                     <div className="whitespace-pre-wrap">
                       {isUser ? (
-                        <p className="text-[14px] leading-relaxed font-bold">{m.content}</p>
+                        <p className="text-[14px] font-sans leading-relaxed font-bold">{m.content}</p>
                       ) : m.content.trim() === "" && m.isStreaming ? (
                         <div className="flex items-center gap-1.5 py-3 justify-start">
                           <span className="w-2 h-2 rounded-full bg-[#b88a4f] animate-bounce [animation-delay:-0.3s]"></span>
@@ -821,7 +848,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                       )}
                     </div>
                     
-                    <div className="mt-1.5 text-[9px] opacity-50 font-bold">
+                    <div className="mt-1.5 text-[9px] font-sans opacity-50 font-bold">
                       {m.timestamp.toLocaleTimeString("ar-EG", {
                         hour: "2-digit",
                         minute: "2-digit"
@@ -834,7 +861,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                         <button
                           type="button"
                           onClick={() => handleCopyMsgContent(m.id, m.content)}
-                          className={`w-8 h-8 rounded-full border border-[#e6dccf] bg-transparent text-[#7f6a55] hover:text-[#b88a4f] hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm ${
+                          className={`w-8 h-8 cut-crystal-capsule rounded-full text-[#7f6a55] hover:text-[#b88a4f] hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm ${
                             copiedResponseId === m.id ? "border-emerald-500/40 text-emerald-600 bg-emerald-500/5" : ""
                           }`}
                           title="نسخ الإجابة"
@@ -850,7 +877,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                         <button
                           type="button"
                           onClick={() => handleSpeech(m.id, m.content)}
-                          className={`w-8 h-8 rounded-full border border-[#e6dccf] bg-transparent text-[#7f6a55] hover:text-[#b88a4f] hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm ${
+                          className={`w-8 h-8 cut-crystal-capsule rounded-full text-[#7f6a55] hover:text-[#b88a4f] hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm ${
                             speakingMsgId === m.id ? "border-[#b88a4f] text-[#b88a4f] bg-white" : ""
                           }`}
                           title={speakingMsgId === m.id ? "إيقاف الاستماع" : "استماع للإجابة"}
@@ -866,7 +893,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                         <button
                           type="button"
                           onClick={() => setFeedback(prev => ({ ...prev, [m.id]: prev[m.id] === 'like' ? undefined : 'like' }))}
-                          className={`w-8 h-8 rounded-full border border-[#e6dccf] bg-transparent text-[#7f6a55] hover:text-[#b88a4f] hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm ${
+                          className={`w-8 h-8 cut-crystal-capsule rounded-full text-[#7f6a55] hover:text-[#b88a4f] hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm ${
                             feedback[m.id] === 'like' ? 'border-[#b88a4f] text-[#b88a4f] bg-[#b88a4f]/10' : ''
                           }`}
                           title="أعجبني"
@@ -878,7 +905,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                         <button
                           type="button"
                           onClick={() => setFeedback(prev => ({ ...prev, [m.id]: prev[m.id] === 'dislike' ? undefined : 'dislike' }))}
-                          className={`w-8 h-8 rounded-full border border-[#e6dccf] bg-transparent text-[#7f6a55] hover:text-red-500 hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm ${
+                          className={`w-8 h-8 cut-crystal-capsule rounded-full text-[#7f6a55] hover:text-red-500 hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm ${
                             feedback[m.id] === 'dislike' ? 'border-red-500/40 text-red-600 bg-red-500/5' : ''
                           }`}
                           title="لم يعجبني"
@@ -890,7 +917,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                         <button
                           type="button"
                           onClick={handleRetry}
-                          className="w-8 h-8 rounded-full border border-[#e6dccf] bg-transparent text-[#7f6a55] hover:text-[#b88a4f] hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm"
+                          className="w-8 h-8 cut-crystal-capsule rounded-full text-[#7f6a55] hover:text-[#b88a4f] hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm"
                           title="إعادة المحاولة"
                         >
                           <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
@@ -922,7 +949,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
             }}
             className={`flex ${
               isMultiline ? "items-end rounded-[22px]" : "items-center rounded-full"
-            } gap-2 bg-[#fcfaf7]/90 backdrop-blur-md border border-[#e6dccf] p-1.5 shadow-[0_6px_20px_rgba(43,26,16,0.05)] focus-within:border-[#b88a4f]/60 transition-all duration-300`}
+            } gap-2 cut-crystal-capsule p-1.5 shadow-md focus-within:border-[#b88a4f]/60 transition-all duration-300`}
           >
             <textarea
               ref={textareaRef}
@@ -938,7 +965,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
               whileTap={{ scale: 0.92 }}
               type="submit"
               disabled={!inputValue.trim() || isLoading}
-              className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
+              className={`w-9 h-9 cut-crystal-capsule rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
                 isMultiline ? "mb-0.5" : ""
               } ${
                 inputValue.trim() && !isLoading
@@ -950,7 +977,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
               <Send size={13} className="rotate-180" />
             </motion.button>
           </form>
-          <div className="text-center mt-2 flex items-center justify-center gap-1 text-[10px] text-[#7f6a55]/80 font-bold">
+          <div className="text-center mt-2 flex items-center justify-center gap-1 text-[10px] font-sans text-[#7f6a55]/80 font-bold">
             <AlertCircle size={10} className="text-[#b88a4f]" />
             <span>الإجابات تقتصر بدقة على القرآن الكريم والبخاري ومسلم.</span>
           </div>
