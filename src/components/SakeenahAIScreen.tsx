@@ -270,6 +270,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMultiline, setIsMultiline] = useState(false);
   const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set());
+  const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set());
 
   // Auto-resize the textarea — professional scrollHeight approach
   const adjustTextareaHeight = useCallback(() => {
@@ -285,6 +286,14 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
   useEffect(() => {
     adjustTextareaHeight();
   }, [adjustTextareaHeight]);
+
+  const toggleExpand = useCallback((msgId: string) => {
+    setExpandedMsgs(prev => {
+      const next = new Set(prev);
+      if (next.has(msgId)) next.delete(msgId); else next.add(msgId);
+      return next;
+    });
+  }, []);
 
   // Toggle message expand/collapse
   const toggleExpand = useCallback((msgId: string) => {
@@ -857,7 +866,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                   <div
                     className={
                       isUser
-                        ? "p-3.5 rounded-[22px] shadow-[0_4px_16px_rgba(43,26,16,0.03)] max-w-[85%] text-right bg-[#1a1a1a] text-[#fff9f1]"
+                        ? "p-3.5 rounded-[22px] shadow-[0_4px_16px_rgba(43,26,16,0.03)] max-w-[85%] text-right bg-gradient-to-br from-[#2b1a10] to-[#3a2517] text-[#fff9f1]"
                         : "w-full text-right bg-transparent border-none shadow-none px-0 py-2 text-[#2b1a10]"
                     }
                   >
@@ -870,9 +879,9 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                     
                     <div className="whitespace-pre-wrap">
                       {isUser ? (
-                        <div>
+                        <div className="flex items-end gap-1.5">
                           <p
-                            className={`text-[14px] font-sans leading-relaxed font-bold transition-all duration-300 ease-out ${
+                            className={`flex-1 min-w-0 text-[14px] font-sans leading-relaxed font-bold transition-all duration-300 ease-out ${
                               expandedMsgs.has(m.id) ? "" : "line-clamp-3"
                             }`}
                           >
@@ -881,7 +890,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                           {m.content.split("\n").length > 3 && (
                             <button
                               onClick={() => toggleExpand(m.id)}
-                              className="mt-1.5 ml-auto flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
+                              className="shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200 mb-0.5"
                               aria-label={expandedMsgs.has(m.id) ? "طي الرسالة" : "توسيع الرسالة"}
                             >
                               <svg
@@ -915,13 +924,6 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                           }} 
                         />
                       )}
-                    </div>
-                    
-                    <div className="mt-1.5 text-[9px] font-sans opacity-50 font-bold">
-                      {m.timestamp.toLocaleTimeString("ar-EG", {
-                        hour: "2-digit",
-                        minute: "2-digit"
-                      })}
                     </div>
 
                     {isLastAI && (
