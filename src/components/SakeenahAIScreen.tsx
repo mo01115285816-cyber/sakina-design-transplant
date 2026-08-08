@@ -323,50 +323,73 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
   }, []);
 
   const handleSpeech = useCallback((msgId: string, text: string) => {
-    if (!window.speechSynthesis) return;
-    const synth = window.speechSynthesis;
+    console.log('[TTS] === CLICK === msgId:', msgId, 'currentSpeaking:', speakingMsgId);
 
-    // If already speaking this message, stop it
+    const synth = window.speechSynthesis;
+    if (!synth) {
+      console.log('[TTS] FAIL: speechSynthesis not available');
+      return;
+    }
+    console.log('[TTS] voices loaded:', synth.getVoices().length, 'speaking:', synth.speaking, 'pending:', synth.pending);
+
+    // Toggle off if same message
     if (speakingMsgId === msgId) {
+      console.log('[TTS] STOP requested');
       synth.cancel();
       setSpeakingMsgId(null);
+      if (navigator.vibrate) navigator.vibrate(50);
       return;
     }
 
-    const cleanText = cleanArabicTextForSpeech(text);
-    if (!cleanText) return;
-
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = "ar";
-    utterance.rate = 0.95;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
-    // Set Arabic voice once loaded
-    if (arabicVoice) {
-      utterance.voice = arabicVoice;
+    // Clean text
+    const clean = cleanArabicTextForSpeech(text);
+    console.log('[TTS] cleaned text length:', clean.length, 'preview:', clean.substring(0, 60));
+    if (!clean) {
+      console.log('[TTS] FAIL: no text after cleaning');
+      return;
     }
 
-    utterance.onstart = () => setSpeakingMsgId(msgId);
-    utterance.onend = () => setSpeakingMsgId(null);
+    // Cancel any current speech
+    if (synth.speaking || synth.pending) {
+      console.log('[TTS] cancelling current speech');
+      synth.cancel();
+    }
+
+    // Create utterance
+    const utterance = new SpeechSynthesisUtterance(clean);
+    utterance.lang = 'ar';
+    utterance.rate = 0.9;
+    utterance.volume = 1;
+    if (arabicVoice) {
+      utterance.voice = arabicVoice;
+      console.log('[TTS] voice:', arabicVoice.name, arabicVoice.lang);
+    } else {
+      console.log('[TTS] WARNING: no Arabic voice available');
+    }
+
+    utterance.onstart = () => {
+      console.log('[TTS] STARTED');
+      setSpeakingMsgId(msgId);
+      if (navigator.vibrate) navigator.vibrate([50, 50, 50]);
+    };
+    utterance.onend = () => {
+      console.log('[TTS] ENDED');
+      setSpeakingMsgId(null);
+    };
     utterance.onerror = (e) => {
-      console.warn("TTS error:", e);
+      console.error('[TTS] ERROR:', e);
       setSpeakingMsgId(null);
     };
 
-    // Only cancel if something is currently speaking
-    // Chrome bug: cancel() followed by speak() ignores speak()
-    // Safari requirement: speak() must be in user gesture handler
-    if (synth.speaking || synth.pending) {
-      synth.cancel();
-      // Chrome needs delay after cancel before speak
-      setTimeout(() => {
-        synth.speak(utterance);
-      }, 150);
-    } else {
-      // No current speech - speak directly (works in all browsers)
+    // CRITICAL FIX: use requestAnimationFrame instead of setTimeout
+    // - Chrome: cancel() needs next frame before speak() works
+    // - Safari: requestAnimationFrame stays within user gesture window (~5s)
+    // - setTimeout would break Safari's user gesture requirement
+    requestAnimationFrame(() => {
+      console.log('[TTS] calling speak()');
       synth.speak(utterance);
-    }
+      console.log('[TTS] speak() done - speaking:', synth.speaking, 'pending:', synth.pending);
+    });
   }, [speakingMsgId, arabicVoice]);
 
   // Cancel speech on unmount
