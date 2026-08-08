@@ -3,7 +3,7 @@ import { Capacitor } from "@capacitor/core";
 import { GoogleGenAI } from "@google/genai";
 import { motion, AnimatePresence } from "motion/react";
 import { 
-  Sparkles, Send, RefreshCw, ChevronRight, 
+  Sparkles, ArrowUp, RefreshCw, ChevronRight, 
   BookOpen, ShieldCheck, Heart, AlertCircle, Bot,
   Check, Copy, Volume2, ThumbsUp, ThumbsDown, Play, Pause, HelpCircle
 } from "lucide-react";
@@ -270,17 +270,20 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMultiline, setIsMultiline] = useState(false);
 
-  // Auto-resize the textarea based on its scrollHeight
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      const scrollHeight = textareaRef.current.scrollHeight;
-      textareaRef.current.style.height = `${Math.min(scrollHeight, 130)}px`;
-      setIsMultiline(scrollHeight > 38 || inputValue.includes("\n"));
-    } else {
-      setIsMultiline(false);
-    }
+  // Auto-resize the textarea — professional scrollHeight approach
+  const adjustTextareaHeight = useCallback(() => {
+    if (!textareaRef.current) return;
+    const el = textareaRef.current;
+    el.style.height = 'auto';
+    const scrollH = el.scrollHeight;
+    const newH = Math.max(38, Math.min(scrollH, 130));
+    el.style.height = `${newH}px`;
+    setIsMultiline(scrollH > 38 || inputValue.includes("\n"));
   }, [inputValue]);
+
+  useEffect(() => {
+    adjustTextareaHeight();
+  }, [adjustTextareaHeight]);
 
   // Find the last assistant message index
   const lastAssistantMessageIndex = useMemo(() => {
@@ -832,7 +835,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
           </div>
         ) : (
           /* Active Chat Thread */
-          <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-1 pt-24 pb-4 space-y-4 mb-4 scrollbar-thin hide-scrollbar">
+          <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-1 pt-24 pb-36 space-y-4 scrollbar-thin hide-scrollbar">
             {messages.map((m, idx) => {
               const isUser = m.role === "user";
               const isLastAI = !isUser && idx === lastAssistantMessageIndex && m.isNew !== true && m.isStreaming !== true;
@@ -969,46 +972,44 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
           </div>
         )}
 
-        {/* ── BOTTOM INPUT FIELD BAR ── */}
-        <div className="bg-[#ece7de] pt-2 pb-2 sticky bottom-0 z-20">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendMessage(inputValue);
-            }}
-            className={`flex ${
-              isMultiline ? "items-end rounded-[22px]" : "items-center rounded-full"
-            } gap-2 cut-crystal-capsule p-1.5 shadow-md focus-within:border-[#b88a4f]/60 transition-all duration-300`}
-          >
-            <textarea
-              ref={textareaRef}
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="اسأل عن أي أمر فقهي أو شرعي..."
-              disabled={isLoading}
-              rows={1}
-              className="flex-1 text-right bg-transparent border-none outline-none px-4 text-[13.5px] font-bold text-[#2b1a10] placeholder-[#7f6a55]/60 disabled:opacity-50 resize-none py-1.5 max-h-[130px] overflow-y-auto leading-relaxed"
-            />
-            
-            <motion.button
-              whileTap={{ scale: 0.92 }}
-              type="submit"
-              disabled={!inputValue.trim() || isLoading}
-              className={`w-9 h-9 cut-crystal-capsule rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
-                isMultiline ? "mb-0.5" : ""
-              } ${
-                inputValue.trim() && !isLoading
-                  ? "bg-[#b88a4f] text-[#fff9f1] shadow-[0_4px_12px_rgba(184,138,79,0.25)] border border-[#b88a4f]/20 hover:bg-[#a0753e] active:scale-95 cursor-pointer"
-                  : "bg-[#e8dfd4]/60 text-[#7f6a55]/40 border border-transparent cursor-not-allowed"
-              }`}
-              aria-label="إرسال السؤال"
+        {/* ── FLOATING INPUT FIELD BAR ── */}
+        <div className="fixed inset-x-0 bottom-0 z-20 flex justify-center pointer-events-none px-4 pb-4">
+          <div className="w-full max-w-[390px] pointer-events-auto">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendMessage(inputValue);
+              }}
+              className="flex items-end gap-2 cut-crystal-capsule rounded-[22px] p-2 shadow-sm focus-within:shadow-md transition-shadow duration-300"
             >
-              <Send size={13} className="rotate-180" />
-            </motion.button>
-          </form>
-          <div className="text-center mt-2 flex items-center justify-center gap-1 text-[10px] font-sans text-[#7f6a55]/80 font-bold">
-            <AlertCircle size={10} className="text-[#b88a4f]" />
-            <span>الإجابات تقتصر بدقة على القرآن الكريم والبخاري ومسلم.</span>
+              <textarea
+                ref={textareaRef}
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder="اسأل عن أي أمر فقهي أو شرعي..."
+                disabled={isLoading}
+                rows={1}
+                className="flex-1 min-h-[38px] text-right bg-transparent border-none outline-none px-3 py-2 text-[13.5px] font-sans font-bold text-[#2b1a10] placeholder-[#7f6a55]/60 disabled:opacity-50 resize-none max-h-[130px] overflow-y-auto leading-relaxed"
+              />
+              
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                type="submit"
+                disabled={!inputValue.trim() || isLoading}
+                className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
+                  inputValue.trim() && !isLoading
+                    ? "bg-[#2b1a10] text-[#fff9f1] shadow-md hover:bg-[#3a2517] active:scale-90 cursor-pointer"
+                    : "bg-[#e8dfd4]/60 text-[#7f6a55]/40 cursor-not-allowed"
+                }`}
+                aria-label="إرسال السؤال"
+              >
+                <ArrowUp size={15} strokeWidth={2.5} />
+              </motion.button>
+            </form>
+            <div className="text-center mt-1.5 flex items-center justify-center gap-1 text-[10px] font-sans text-[#7f6a55]/80 font-bold">
+              <AlertCircle size={10} className="text-[#b88a4f]" />
+              <span>الإجابات تقتصر بدقة على القرآن الكريم والبخاري ومسلم.</span>
+            </div>
           </div>
         </div>
 
