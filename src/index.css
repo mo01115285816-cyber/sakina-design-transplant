@@ -320,6 +320,20 @@
   }
 }
 
+/* Shimmer text effect for "تفكير عميق" loading indicator */
+@keyframes shimmer-text {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-shimmer-text {
+  animation: shimmer-text 2.5s ease-in-out infinite;
+}
+
 
 
 
