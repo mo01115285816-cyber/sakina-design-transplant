@@ -333,9 +333,6 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
       return;
     }
 
-    // Stop any other speech
-    synth.cancel();
-
     const cleanText = cleanArabicTextForSpeech(text);
     if (!cleanText) return;
 
@@ -357,12 +354,19 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
       setSpeakingMsgId(null);
     };
 
-    // Chrome bug workaround: delay speak() after cancel()
-    // Chrome ignores speak() if called immediately after cancel()
-    setTimeout(() => {
-      setSpeakingMsgId(msgId);
+    // Only cancel if something is currently speaking
+    // Chrome bug: cancel() followed by speak() ignores speak()
+    // Safari requirement: speak() must be in user gesture handler
+    if (synth.speaking || synth.pending) {
+      synth.cancel();
+      // Chrome needs delay after cancel before speak
+      setTimeout(() => {
+        synth.speak(utterance);
+      }, 150);
+    } else {
+      // No current speech - speak directly (works in all browsers)
       synth.speak(utterance);
-    }, 100);
+    }
   }, [speakingMsgId, arabicVoice]);
 
   // Cancel speech on unmount
