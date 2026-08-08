@@ -992,7 +992,16 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                 e.preventDefault();
                 handleSendMessage(inputValue);
               }}
-              className="flex items-end gap-2 cut-crystal-panel rounded-[22px] p-2 shadow-sm focus-within:shadow-md transition-shadow duration-300"
+              className="flex items-end gap-2 p-2 transition-shadow duration-300"
+              style={{
+                borderRadius: '22px',
+                overflow: 'hidden',
+                background: 'linear-gradient(180deg, rgba(253,252,251,0.75) 0%, rgba(244,240,234,0.60) 100%)',
+                backdropFilter: 'blur(26px) saturate(210%) contrast(99%) brightness(102%)',
+                WebkitBackdropFilter: 'blur(26px) saturate(210%) contrast(99%) brightness(102%)',
+                border: '1px solid rgba(43,26,16,0.09)',
+                boxShadow: '0 16px 36px -12px rgba(43,26,16,0.14), 0 4px 10px -2px rgba(43,26,16,0.06), inset 0 1px 0 0 rgba(255,255,255,0.90), inset 0 -1px 0 0 rgba(43,26,16,0.05)',
+              }}
             >
               <textarea
                 ref={textareaRef}
