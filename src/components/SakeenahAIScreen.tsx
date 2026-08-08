@@ -269,6 +269,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMultiline, setIsMultiline] = useState(false);
+  const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set());
 
   // Auto-resize the textarea — professional scrollHeight approach
   const adjustTextareaHeight = useCallback(() => {
@@ -284,6 +285,15 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
   useEffect(() => {
     adjustTextareaHeight();
   }, [adjustTextareaHeight]);
+
+  // Toggle message expand/collapse
+  const toggleExpand = useCallback((msgId: string) => {
+    setExpandedMsgs(prev => {
+      const next = new Set(prev);
+      if (next.has(msgId)) next.delete(msgId); else next.add(msgId);
+      return next;
+    });
+  }, []);
 
   // Find the last assistant message index
   const lastAssistantMessageIndex = useMemo(() => {
@@ -847,7 +857,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                   <div
                     className={
                       isUser
-                        ? "p-3.5 rounded-[22px] shadow-[0_4px_16px_rgba(43,26,16,0.03)] max-w-[85%] text-right bg-gradient-to-br from-[#2b1a10] to-[#3a2517] text-[#fff9f1] rounded-[22px] rounded-bl-none"
+                        ? "p-3.5 rounded-[22px] shadow-[0_4px_16px_rgba(43,26,16,0.03)] max-w-[85%] text-right bg-[#1a1a1a] text-[#fff9f1]"
                         : "w-full text-right bg-transparent border-none shadow-none px-0 py-2 text-[#2b1a10]"
                     }
                   >
@@ -860,7 +870,34 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                     
                     <div className="whitespace-pre-wrap">
                       {isUser ? (
-                        <p className="text-[14px] font-sans leading-relaxed font-bold">{m.content}</p>
+                        <div>
+                          <p
+                            className={`text-[14px] font-sans leading-relaxed font-bold transition-all duration-300 ease-out ${
+                              expandedMsgs.has(m.id) ? "" : "line-clamp-3"
+                            }`}
+                          >
+                            {m.content}
+                          </p>
+                          {m.content.split("\n").length > 3 && (
+                            <button
+                              onClick={() => toggleExpand(m.id)}
+                              className="mt-1.5 ml-auto flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200"
+                              aria-label={expandedMsgs.has(m.id) ? "طي الرسالة" : "توسيع الرسالة"}
+                            >
+                              <svg
+                                className={`w-3.5 h-3.5 text-white/70 transition-transform duration-300 ease-out ${
+                                  expandedMsgs.has(m.id) ? "rotate-180" : ""
+                                }`}
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2.5}
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
                       ) : m.content.trim() === "" && m.isStreaming ? (
                         <div className="flex items-center gap-1.5 py-3 justify-start">
                           <span className="w-2 h-2 rounded-full bg-[#b88a4f] animate-bounce [animation-delay:-0.3s]"></span>
