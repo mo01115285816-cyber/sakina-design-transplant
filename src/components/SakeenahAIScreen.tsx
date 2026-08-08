@@ -992,7 +992,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                 e.preventDefault();
                 handleSendMessage(inputValue);
               }}
-              className="flex items-end gap-2 cut-crystal-capsule rounded-[22px] p-2 shadow-sm focus-within:shadow-md transition-shadow duration-300"
+              className="flex items-end gap-2 cut-crystal-panel rounded-[22px] p-2 shadow-sm focus-within:shadow-md transition-shadow duration-300"
             >
               <textarea
                 ref={textareaRef}
