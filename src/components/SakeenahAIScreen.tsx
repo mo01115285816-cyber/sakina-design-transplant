@@ -865,13 +865,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                   key={m.id}
                   className={`flex ${isUser ? "justify-end" : "justify-start"} w-full`}
                 >
-                  <div
-                    className={
-                      isUser
-                        ? "p-3.5 rounded-[22px] shadow-[0_4px_16px_rgba(43,26,16,0.03)] max-w-[85%] text-right bg-gradient-to-br from-[#2b1a10] to-[#3a2517] text-[#fff9f1]"
-                        : "w-full text-right bg-transparent border-none shadow-none px-0 py-2 text-[#2b1a10]"
-                    }
-                  >
+                  <div className="w-full">
                     {!isUser && (
                       <div className="flex items-center gap-1.5 mb-2 text-[11px] font-display font-black text-[#b88a4f] select-none">
                         <Sparkles size={11} className="text-[#b88a4f]" />
