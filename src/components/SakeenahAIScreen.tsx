@@ -270,7 +270,6 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMultiline, setIsMultiline] = useState(false);
   const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set());
-  const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set());
 
   // Auto-resize the textarea — professional scrollHeight approach
   const adjustTextareaHeight = useCallback(() => {
@@ -287,15 +286,6 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
     adjustTextareaHeight();
   }, [adjustTextareaHeight]);
 
-  const toggleExpand = useCallback((msgId: string) => {
-    setExpandedMsgs(prev => {
-      const next = new Set(prev);
-      if (next.has(msgId)) next.delete(msgId); else next.add(msgId);
-      return next;
-    });
-  }, []);
-
-  // Toggle message expand/collapse
   const toggleExpand = useCallback((msgId: string) => {
     setExpandedMsgs(prev => {
       const next = new Set(prev);
