@@ -862,9 +862,11 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
               return (
                 <div
                   key={m.id}
-                  className={`flex ${isUser ? "justify-end" : "justify-start"} w-full`}
+                  className="w-full"
                 >
-                  <div className={`${isUser ? "max-w-[85%]" : "w-full"}`}>
+                  <div
+                    className={isUser ? "ml-auto max-w-[85%]" : "w-full"}
+                  >
                     {!isUser && (
                       <div className="flex items-center gap-1.5 mb-2 text-[11px] font-display font-black text-[#b88a4f] select-none">
                         <span>سكينة AI</span>
@@ -872,7 +874,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                     )}
                     
                     {isUser ? (
-                      <div className="relative max-w-[85%] text-right bg-gradient-to-br from-[#2b1a10] to-[#3f281a] text-[#fff9f1] border border-[#2b1a10]/20 rounded-[28px] shadow-md transition-all duration-300 overflow-hidden">
+                      <div className="relative text-right bg-gradient-to-br from-[#2b1a10] to-[#3f281a] text-[#fff9f1] border border-[#2b1a10]/20 rounded-[28px] shadow-md transition-all duration-300 overflow-hidden">
                         <div className={`p-4 transition-all duration-300 ease-in-out ${
                           longMsgs.has(m.id) && !expandedMsgs.has(m.id) ? "max-h-[105px] overflow-hidden relative" : "max-h-none"
                         }`}>
