@@ -703,7 +703,6 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
       <div className="absolute top-6 left-5 right-5 flex items-center justify-between z-[45] pointer-events-none">
         {/* Right Element (in RTL): Title Capsule */}
         <div className="cut-crystal-capsule px-5 h-10 rounded-full shadow-md flex items-center justify-center gap-1.5 pointer-events-auto transition-all duration-300">
-          <Sparkles size={14} className="text-[#b88a4f] animate-pulse" fill="currentColor" />
           <span className="text-[14.5px] font-display font-black whitespace-nowrap pt-0.5">سكينة AI</span>
         </div>
 
@@ -863,7 +862,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
               return (
                 <div
                   key={m.id}
-                  className={`flex ${isUser ? "justify-end" : "justify-start"} w-full`}
+                  className={`flex ${isUser ? "justify-start" : "justify-end"} w-full`}
                 >
                   <div className={`${isUser ? "max-w-[85%]" : "w-full"}`}>
                     {!isUser && (
