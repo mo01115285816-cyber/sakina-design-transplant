@@ -862,7 +862,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
               return (
                 <div
                   key={m.id}
-                  className={`flex ${isUser ? "justify-start" : "justify-end"} w-full`}
+                  className={`flex ${isUser ? "justify-end" : "justify-start"} w-full`}
                 >
                   <div className={`${isUser ? "max-w-[85%]" : "w-full"}`}>
                     {!isUser && (
