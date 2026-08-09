@@ -865,10 +865,9 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                   key={m.id}
                   className={`flex ${isUser ? "justify-end" : "justify-start"} w-full`}
                 >
-                  <div className="w-full">
+                  <div className={`${isUser ? "max-w-[85%]" : "w-full"}`}>
                     {!isUser && (
                       <div className="flex items-center gap-1.5 mb-2 text-[11px] font-display font-black text-[#b88a4f] select-none">
-                        <Sparkles size={11} className="text-[#b88a4f]" />
                         <span>سكينة AI</span>
                       </div>
                     )}
@@ -900,10 +899,6 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                       </div>
                     ) : (
                       <div className="w-full text-right bg-transparent border-none shadow-none px-0 py-2 text-[#2b1a10]">
-                        <div className="flex items-center gap-1.5 mb-2 text-[11px] font-display font-black text-[#b88a4f] select-none">
-                          <Sparkles size={11} className="text-[#b88a4f]" />
-                          <span>سكينة AI</span>
-                        </div>
                         <div className="whitespace-pre-wrap">
                           {m.content.trim() === "" && m.isStreaming ? (
                         <div className="flex items-center gap-1.5 py-3 justify-start">
