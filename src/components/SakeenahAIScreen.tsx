@@ -3,7 +3,7 @@ import { Capacitor } from "@capacitor/core";
 import { GoogleGenAI } from "@google/genai";
 import { motion, AnimatePresence } from "motion/react";
 import { 
-  Sparkles, ArrowUp, RefreshCw, ChevronRight, 
+  Sparkles, ArrowUp, RefreshCw, ChevronRight, ChevronDown, ChevronUp, 
   BookOpen, ShieldCheck, Heart, AlertCircle, Bot,
   Check, Copy, Volume2, ThumbsUp, ThumbsDown, Play, Pause, HelpCircle
 } from "lucide-react";
@@ -269,6 +269,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMultiline, setIsMultiline] = useState(false);
+  const [longMsgs, setLongMsgs] = useState<Set<string>>(new Set());
   const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set());
 
   // Auto-resize the textarea — professional scrollHeight approach
@@ -285,6 +286,17 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
   useEffect(() => {
     adjustTextareaHeight();
   }, [adjustTextareaHeight]);
+
+  // Auto-detect long messages
+  useEffect(() => {
+    const newLongMsgs = new Set<string>();
+    messages.forEach(m => {
+      if (m.role === 'user' && (m.content.length > 110 || m.content.split("\n").length > 3)) {
+        newLongMsgs.add(m.id);
+      }
+    });
+    setLongMsgs(newLongMsgs);
+  }, [messages]);
 
   const toggleExpand = useCallback((msgId: string) => {
     setExpandedMsgs(prev => {
@@ -867,37 +879,39 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                       </div>
                     )}
                     
-                    <div className="whitespace-pre-wrap">
-                      {isUser ? (
-                        <div className="flex items-end gap-1.5">
-                          <p
-                            className={`flex-1 min-w-0 text-[14px] font-sans leading-relaxed font-bold transition-all duration-300 ease-out ${
-                              expandedMsgs.has(m.id) ? "" : "line-clamp-3"
-                            }`}
-                          >
+                    {isUser ? (
+                      <div className="relative max-w-[85%] text-right bg-gradient-to-br from-[#2b1a10] to-[#3f281a] text-[#fff9f1] border border-[#2b1a10]/20 rounded-[28px] shadow-md transition-all duration-300 overflow-hidden">
+                        <div className={`p-4 transition-all duration-300 ease-in-out ${
+                          longMsgs.has(m.id) && !expandedMsgs.has(m.id) ? "max-h-[105px] overflow-hidden relative" : "max-h-none"
+                        }`}>
+                          <p className="font-sans text-[14px] leading-relaxed font-bold whitespace-pre-wrap break-words">
                             {m.content}
                           </p>
-                          {m.content.split("\n").length > 3 && (
-                            <button
-                              onClick={() => toggleExpand(m.id)}
-                              className="shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 transition-colors duration-200 mb-0.5"
-                              aria-label={expandedMsgs.has(m.id) ? "طي الرسالة" : "توسيع الرسالة"}
-                            >
-                              <svg
-                                className={`w-3.5 h-3.5 text-white/70 transition-transform duration-300 ease-out ${
-                                  expandedMsgs.has(m.id) ? "rotate-180" : ""
-                                }`}
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                                strokeWidth={2.5}
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-                              </svg>
-                            </button>
+                          {longMsgs.has(m.id) && !expandedMsgs.has(m.id) && (
+                            <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#2b1a10] via-[#2b1a10]/85 to-transparent pointer-events-none rounded-b-[28px]" />
                           )}
                         </div>
-                      ) : m.content.trim() === "" && m.isStreaming ? (
+                        {longMsgs.has(m.id) && (
+                          <div className={`flex items-center justify-start ${!expandedMsgs.has(m.id) ? "absolute bottom-2.5 left-2.5 z-10" : "px-4 pb-3 pt-0"}`}>
+                            <button
+                              type="button"
+                              onClick={() => toggleExpand(m.id)}
+                              className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 border border-white/25 flex items-center justify-center text-white cursor-pointer transition-all active:scale-90 shadow-md backdrop-blur-xs"
+                              title={expandedMsgs.has(m.id) ? "طي النص" : "توسيع النص"}
+                            >
+                              {expandedMsgs.has(m.id) ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="w-full text-right bg-transparent border-none shadow-none px-0 py-2 text-[#2b1a10]">
+                        <div className="flex items-center gap-1.5 mb-2 text-[11px] font-display font-black text-[#b88a4f] select-none">
+                          <Sparkles size={11} className="text-[#b88a4f]" />
+                          <span>سكينة AI</span>
+                        </div>
+                        <div className="whitespace-pre-wrap">
+                          {m.content.trim() === "" && m.isStreaming ? (
                         <div className="flex items-center gap-1.5 py-3 justify-start">
                           <span className="w-2 h-2 rounded-full bg-[#b88a4f] animate-bounce [animation-delay:-0.3s]"></span>
                           <span className="w-2 h-2 rounded-full bg-[#b88a4f] animate-bounce [animation-delay:-0.15s]"></span>
@@ -913,10 +927,9 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                             );
                           }} 
                         />
-                      )}
-                    </div>
-
-                    {isLastAI && (
+                          )}
+                        </div>
+                        {isLastAI && (
                       <div className="flex items-center gap-4 mt-4 text-[#7f6a55] select-none justify-center border-t border-[#e6dccf]/40 pt-3 max-w-[280px] mx-auto">
                         {/* Copy Button */}
                         <button
@@ -983,6 +996,8 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                         >
                           <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
                         </button>
+                      </div>
+                    )}
                       </div>
                     )}
                   </div>
