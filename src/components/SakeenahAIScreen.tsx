@@ -865,7 +865,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                   className="w-full"
                 >
                   <div
-                    className={isUser ? "ml-auto max-w-[85%]" : "w-full"}
+                    className={isUser ? "mr-auto max-w-[85%]" : "w-full"}
                   >
                     {!isUser && (
                       <div className="flex items-center gap-1.5 mb-2 text-[11px] font-display font-black text-[#b88a4f] select-none">
