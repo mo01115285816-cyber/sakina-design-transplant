@@ -243,10 +243,10 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
                     <button
                       key={surah.id}
                       onClick={() => onReadSurah(surah.id)}
-                      className="w-full h-[60px] md:h-[64px] cut-crystal-satin rounded-[28px] pl-3 pr-4 md:pl-4 md:pr-5 flex items-center justify-between group active:scale-[0.99] transition-all duration-200"
+                      className="w-full h-[60px] md:h-[64px] rounded-full px-5 md:px-6 flex items-center justify-between group active:scale-[0.99] transition-all duration-200 cursor-pointer relative overflow-hidden cut-crystal-panel hover:bg-[#f5ebd6]/30 shadow-sm"
                     >
                       {/* Right Side: Ornament & Calligraphy Name */}
-                      <div className="flex items-center gap-2 md:gap-2.5 min-w-0 flex-shrink">
+                      <div className="flex items-center gap-2 md:gap-2.5 min-w-0 relative z-10 flex-1">
                         {/* Rub el Hizb 8-pointed Star Ornament */}
                         <div className="relative w-[34px] h-[34px] flex items-center justify-center shrink-0">
                           <svg viewBox="0 0 24 24" className="w-full h-full fill-none stroke-[#b88a4f] transition-transform duration-500 group-hover:rotate-[45deg]" strokeWidth="1.2">
@@ -262,15 +262,15 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
                         </div>
 
                         {/* Vocalized Surah Calligraphy Name */}
-                        <span className="font-quran text-[19px] md:text-[21px] text-[#2b1a10] group-hover:text-[#b88a4f] transition-colors leading-none pt-1 select-none whitespace-nowrap truncate font-normal">
+                        <span className="font-display font-bold text-[18px] md:text-[20px] text-[#2b1a10] group-hover:text-[#b88a4f] transition-colors leading-none pt-1 select-none whitespace-nowrap truncate">
                           {vocalizedSurahNames[surah.id] || `سُورَةُ ${surah.name}`}
                         </span>
                       </div>
 
                       {/* Left Side: Metadata, Verses Badge, and Arrow */}
-                      <div className="flex items-center shrink-0 gap-1 md:gap-1.5 ml-0.5 md:ml-1">
+                      <div className="flex items-center gap-1.5 md:gap-2 relative z-10 shrink-0 ml-2">
                         {/* Metadata: Type | Page */}
-                        <span className="text-[7.5px] md:text-[8px] text-[#8a7662] font-black whitespace-nowrap select-none font-sans pt-[1.5px] mr-1 md:mr-2">
+                        <span className="text-[8px] md:text-[8.5px] text-[#7f6a55] font-bold whitespace-nowrap select-none font-sans mr-1">
                           {surah.type === "مكية" ? "مكية" : "مدنية"}
                           <span className="mx-0.5 md:mx-1 opacity-30 font-normal">|</span>
                           صفحة {SURAH_START_PAGES[surah.id] || 1}
@@ -282,7 +282,7 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
                         </div>
 
                         {/* Chevron Arrow */}
-                        <ChevronLeft size={14} className="text-[#7f6a55]/60 group-hover:text-[#b88a4f] group-hover:-translate-x-0.5 transition-all duration-200 shrink-0 ml-[-2px] md:ml-[-4px]" />
+                        <ChevronLeft size={18} className="text-[#b88a4f] opacity-80 group-hover:opacity-100 group-hover:translate-x-[-2px] transition-all shrink-0" />
                       </div>
                     </button>
                   );
@@ -352,10 +352,10 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
           <motion.div
             animate={{
               width: isSearchActive ? "100%" : 56,
-              borderRadius: 28,
+              borderRadius: isSearchActive ? 24 : 28,
             }}
             transition={{ type: "spring", damping: 25, stiffness: 250 }}
-            className="h-14 cut-crystal-input flex items-center overflow-hidden pointer-events-auto relative"
+            className="h-14 cut-crystal-capsule shadow-lg flex items-center overflow-hidden pointer-events-auto relative"
           >
             {/* Left Side (in LTR): Toggle Button (Search -> Close) */}
             <button
