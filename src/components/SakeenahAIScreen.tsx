@@ -913,6 +913,9 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
               const isEditingThisMessage = isUser && editingMessageId === m.id;
               const canEditThisMessage = isUser && m.id === lastUserMessageId && !isLoading && !hasStreamingAssistantMessage;
               const hasEditedContent = isEditingThisMessage && editingContent !== m.content;
+              const isEditingLongMessage = isEditingThisMessage && (
+                longMsgs.has(m.id) || editingContent.length > 110 || editingContent.split("\n").length > 3
+              );
               const isLastAI = !isUser && idx === lastAssistantMessageIndex && m.isNew !== true && m.isStreaming !== true;
               return (
                 <div
@@ -934,10 +937,15 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                           {isEditingThisMessage ? (
                             <textarea
                               autoFocus
+                              rows={isEditingLongMessage ? 7 : 3}
                               value={editingContent}
                               onChange={(event) => setEditingContent(event.target.value)}
                               aria-label="تعديل رسالة المستخدم"
-                              className="min-h-[92px] w-full resize-none bg-transparent p-4 text-right text-[14px] font-sans font-bold leading-relaxed text-[#fff9f1] outline-none placeholder:text-white/50"
+                              className={`w-full resize-none bg-transparent p-4 text-right text-[14px] font-sans font-bold leading-relaxed text-[#fff9f1] outline-none placeholder:text-white/50 ${
+                                isEditingLongMessage
+                                  ? "min-h-[156px] max-h-[180px] overflow-y-auto overscroll-contain scroll-smooth"
+                                  : "min-h-[92px] max-h-[130px] overflow-y-auto"
+                              }`}
                             />
                           ) : (
                             <>
@@ -971,26 +979,26 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                           <div dir="ltr" className="mt-2 flex items-center justify-start gap-3 px-1 text-[12px] font-bold">
                             <button
                               type="button"
+                              disabled={!hasEditedContent || !editingContent.trim()}
+                              onClick={confirmEditingUserMessage}
+                              className={`inline-flex h-7 items-center justify-center rounded-full px-3 text-[12px] font-bold transition-all ${
+                                hasEditedContent && editingContent.trim()
+                                  ? "bg-[#b88a4f] text-[#fff9f1] shadow-sm hover:bg-[#a0753e] active:scale-95 cursor-pointer"
+                                  : "bg-[#e6dccf]/60 text-[#7f6a55]/40 cursor-not-allowed"
+                              }`}
+                            >
+                              تعديل
+                            </button>
+                            <button
+                              type="button"
                               onClick={cancelEditingUserMessage}
                               className="text-[#7f6a55] transition-colors hover:text-[#2b1a10] cursor-pointer"
                             >
                               إلغاء
                             </button>
-                            <button
-                              type="button"
-                              disabled={!hasEditedContent || !editingContent.trim()}
-                              onClick={confirmEditingUserMessage}
-                              className={`transition-colors ${
-                                hasEditedContent && editingContent.trim()
-                                  ? "text-[#b88a4f] hover:text-[#deab65] cursor-pointer"
-                                  : "text-[#7f6a55]/40 cursor-not-allowed"
-                              }`}
-                            >
-                              تعديل
-                            </button>
                           </div>
                         ) : (
-                          <div dir="ltr" className="mt-2 flex items-center justify-start gap-1.5">
+                          <div dir="ltr" className="mt-2 flex items-center justify-start gap-1">
                             {canEditThisMessage && (
                               <button
                                 type="button"
