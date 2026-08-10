@@ -10,6 +10,20 @@ import type { MushafPage, MushafLine, MushafWord } from "@/services/MushafLayout
 
 const SURAH_START_PAGES: Record<number, number> = {"1":1,"2":2,"3":50,"4":77,"5":106,"6":128,"7":151,"8":177,"9":187,"10":208,"11":221,"12":235,"13":249,"14":255,"15":262,"16":267,"17":282,"18":293,"19":305,"20":312,"21":322,"22":332,"23":342,"24":350,"25":359,"26":367,"27":377,"28":385,"29":396,"30":404,"31":411,"32":415,"33":418,"34":428,"35":434,"36":440,"37":446,"38":453,"39":458,"40":467,"41":477,"42":483,"43":489,"44":496,"45":499,"46":502,"47":507,"48":511,"49":515,"50":518,"51":520,"52":523,"53":526,"54":528,"55":531,"56":534,"57":537,"58":542,"59":545,"60":549,"61":551,"62":553,"63":554,"64":556,"65":558,"66":560,"67":562,"68":564,"69":566,"70":568,"71":570,"72":572,"73":574,"74":575,"75":577,"76":578,"77":580,"78":582,"79":583,"80":585,"81":586,"82":587,"83":587,"84":589,"85":590,"86":591,"87":591,"88":592,"89":593,"90":594,"91":595,"92":595,"93":596,"94":596,"95":597,"96":597,"97":598,"98":598,"99":599,"100":599,"101":600,"102":600,"103":601,"104":601,"105":601,"106":602,"107":602,"108":602,"109":603,"110":603,"111":603,"112":604,"113":604,"114":604};
 
+// Official QCF Surah Header glyphs, ordered by chapter number (1–114).
+const SURAH_HEADER_GLYPH_CODEPOINTS = [
+  0xFB51, 0xFB52, 0xFB54, 0xFB55, 0xFB57, 0xFB58, 0xFB5A, 0xFB5B, 0xFB5D, 0xFB5E, 0xFB60, 0xFB61,
+  0xFB63, 0xFB64, 0xFB66, 0xFB67, 0xFB69, 0xFB6A, 0xFB6C, 0xFB6D, 0xFB6F, 0xFB70, 0xFB72, 0xFB73,
+  0xFB75, 0xFB76, 0xFB78, 0xFB79, 0xFB7B, 0xFB7C, 0xFB7E, 0xFB7F, 0xFB81, 0xFB82, 0xFB84, 0xFB85,
+  0xFB87, 0xFB88, 0xFB8A, 0xFB8B, 0xFB8D, 0xFB8E, 0xFB90, 0xFB91, 0xFB93, 0xFB94, 0xFB96, 0xFB97,
+  0xFB99, 0xFB9A, 0xFB9C, 0xFB9D, 0xFB9F, 0xFBA0, 0xFBA2, 0xFBA3, 0xFBA5, 0xFBA6, 0xFBA8, 0xFBA9,
+  0xFBAB, 0xFBAC, 0xFBAE, 0xFBAF, 0xFBB1, 0xFBB2, 0xFBB4, 0xFBB5, 0xFBB7, 0xFBB8, 0xFBBA, 0xFBBB,
+  0xFBBD, 0xFBBE, 0xFBC0, 0xFBC1, 0xFBD3, 0xFBD4, 0xFBD6, 0xFBD7, 0xFBD9, 0xFBDA, 0xFBDC, 0xFBDD,
+  0xFBDF, 0xFBE0, 0xFBE2, 0xFBE3, 0xFBE5, 0xFBE6, 0xFBE8, 0xFBE9, 0xFBEB, 0xFC45, 0xFC46, 0xFC47,
+  0xFC4A, 0xFC4B, 0xFC4E, 0xFC4F, 0xFC51, 0xFC52, 0xFC53, 0xFC55, 0xFC56, 0xFC58, 0xFC5A, 0xFC5B,
+  0xFC5C, 0xFC5D, 0xFC5E, 0xFC61, 0xFC62, 0xFC64,
+] as const;
+
 const toArabicDigits = (num: number | string) => {
   const id = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
   return num.toString().replace(/[0-9]/g, (w) => id[+w]);
@@ -583,15 +597,16 @@ export default function QuranReaderScreen({
 
                   if (lineObj.type === 'surah-header' && lineObj.surah) {
                     const surahChapterId = parseInt(lineObj.surah, 10);
-                    return (
+                    const headerGlyphCodePoint = SURAH_HEADER_GLYPH_CODEPOINTS[surahChapterId - 1];
+                    return headerGlyphCodePoint ? (
                       <div key={`line-${lineNum}`} className="surah-header-line">
                         <div className="surah-ornament">
                           <span className="surah-glyph">
-                            {String.fromCharCode(0xE903 + surahChapterId)}
+                            {String.fromCodePoint(headerGlyphCodePoint)}
                           </span>
                         </div>
                       </div>
-                    );
+                    ) : null;
                   }
 
                   if (lineObj.type === 'basmala' && lineObj.qpcV2) {

@@ -409,10 +409,18 @@
   .qcf-page { padding: 12px 24px; }
 }
 
-/* ===== Surah Name Ornament (SuraNames font) ===== */
+/* ===== Official QCF Surah Header ===== */
 @font-face {
   font-family: 'SuraNames';
   src: url('/fonts/sura_names.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'QCF Surah Header';
+  src: url('/fonts/QCF_SurahHeader_COLOR-Regular.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -423,32 +431,20 @@
   justify-content: center;
   align-items: center;
   margin: 18px 0 14px;
-  padding: 8px 48px;
-  border: 1.5px solid var(--qcf-accent, #b8935a);
-  border-radius: 6px;
-  position: relative;
-}
-
-.surah-ornament::before,
-.surah-ornament::after {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border: 0.5px solid var(--qcf-accent-light, #d9b877);
-  border-radius: 3px;
-  pointer-events: none;
+  line-height: 1;
 }
 
 .surah-glyph {
-  font-size: 32px;
-  color: var(--qcf-accent, #111);
+  display: block;
+  font-size: clamp(52px, 15vw, 66px);
+  color: var(--qcf-accent, #2b1a10);
   line-height: 1;
-  font-family: 'SuraNames', serif;
+  font-family: 'QCF Surah Header', serif;
 }
 
 @media (min-width: 700px) {
-  .surah-ornament { padding: 10px 64px; margin: 24px 0 18px; }
-  .surah-glyph { font-size: 38px; }
+  .surah-ornament { margin: 24px 0 18px; }
+  .surah-glyph { font-size: 66px; }
 }
 
 /* ===== Quran Title (for circles, headers, decorative titles) ===== */
