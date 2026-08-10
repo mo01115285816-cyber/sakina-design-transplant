@@ -371,7 +371,7 @@ export default function QuranRecitersScreen({
             className="cut-crystal-capsule px-4.5 h-10 rounded-full shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.97]"
           >
             <span className="text-[14px] font-bold text-[#2b1a10] whitespace-nowrap pt-0.5">
-              القرآن الكريم
+              الاستماع
             </span>
             <ChevronDown
               size={14}
