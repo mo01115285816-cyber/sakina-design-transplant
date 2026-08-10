@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { 
   Sparkles, ArrowUp, RefreshCw, ChevronRight, ChevronDown, ChevronUp, 
   BookOpen, ShieldCheck, Heart, AlertCircle, Bot,
-  Check, Copy, ThumbsUp, ThumbsDown, HelpCircle
+  Check, Copy, Pencil, ThumbsUp, ThumbsDown, HelpCircle
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -261,6 +261,8 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
   const [feedback, setFeedback] = useState<Record<string, "like" | "dislike">>({});
   const [speakingMsgId, setSpeakingMsgId] = useState<string | null>(null);
   const [copiedResponseId, setCopiedResponseId] = useState<string | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState("");
   const [showWelcomeCard, setShowWelcomeCard] = useState(() => {
     return !localStorage.getItem("sakeenah_welcome_dismissed");
   });
@@ -313,6 +315,18 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
     }
     return -1;
   }, [messages]);
+
+  const lastUserMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") return messages[i].id;
+    }
+    return null;
+  }, [messages]);
+
+  const hasStreamingAssistantMessage = useMemo(
+    () => messages.some((message) => message.role === "assistant" && message.isStreaming),
+    [messages]
+  );
 
   // Copy helper
   const handleCopyMsgContent = (msgId: string, text: string) => {
@@ -507,25 +521,40 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
     }
   }, [messages, isLoading]);
 
-  const handleSendMessage = async (text: string) => {
+  const handleSendMessage = async (text: string, replaceUserMessageId?: string) => {
     const trimmed = text.trim();
     if (!trimmed || isLoading) return;
 
+    const replaceIndex = replaceUserMessageId
+      ? messages.findIndex((message) => message.id === replaceUserMessageId && message.role === "user")
+      : -1;
+
+    if (replaceUserMessageId && replaceIndex === -1) return;
+
     const userMsg: Message = {
-      id: Math.random().toString(),
+      id: replaceUserMessageId || Math.random().toString(),
       role: "user",
       content: trimmed,
       timestamp: new Date()
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const historyMessages = replaceUserMessageId
+      ? [...messages.slice(0, replaceIndex), userMsg]
+      : [...messages, userMsg];
+
+    setMessages((prev) => {
+      if (!replaceUserMessageId) return [...prev, userMsg];
+
+      const currentIndex = prev.findIndex((message) => message.id === replaceUserMessageId && message.role === "user");
+      return currentIndex === -1 ? prev : [...prev.slice(0, currentIndex), userMsg];
+    });
     setInputValue("");
     setIsLoading(true);
 
     const aiMsgId = Math.random().toString();
 
     try {
-      const history = [...messages, userMsg].map((m) => ({
+      const history = historyMessages.map((m) => ({
         role: m.role,
         content: m.content
       }));
@@ -688,8 +717,31 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
     }
   };
 
+  const startEditingUserMessage = (message: Message) => {
+    if (isLoading || message.id !== lastUserMessageId) return;
+    setEditingMessageId(message.id);
+    setEditingContent(message.content);
+  };
+
+  const cancelEditingUserMessage = () => {
+    setEditingMessageId(null);
+    setEditingContent("");
+  };
+
+  const confirmEditingUserMessage = () => {
+    if (!editingMessageId) return;
+
+    const originalMessage = messages.find((message) => message.id === editingMessageId && message.role === "user");
+    if (!originalMessage || editingContent === originalMessage.content || !editingContent.trim()) return;
+
+    const messageId = editingMessageId;
+    cancelEditingUserMessage();
+    void handleSendMessage(editingContent, messageId);
+  };
+
   const clearChat = () => {
     setMessages([]);
+    cancelEditingUserMessage();
   };
 
   return (
@@ -858,6 +910,9 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
           <div ref={chatContainerRef} className="flex-1 overflow-y-auto px-1 pt-24 pb-36 space-y-4 scrollbar-thin hide-scrollbar">
             {messages.map((m, idx) => {
               const isUser = m.role === "user";
+              const isEditingThisMessage = isUser && editingMessageId === m.id;
+              const canEditThisMessage = isUser && m.id === lastUserMessageId && !isLoading && !hasStreamingAssistantMessage;
+              const hasEditedContent = isEditingThisMessage && editingContent !== m.content;
               const isLastAI = !isUser && idx === lastAssistantMessageIndex && m.isNew !== true && m.isStreaming !== true;
               return (
                 <div
@@ -874,30 +929,91 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                     )}
                     
                     {isUser ? (
-                      <div className="relative text-right bg-gradient-to-br from-[#2b1a10] to-[#3f281a] text-[#fff9f1] border border-[#2b1a10]/20 rounded-[28px] shadow-md transition-all duration-300 overflow-hidden">
-                        <div className={`p-4 transition-all duration-300 ease-in-out ${
-                          longMsgs.has(m.id) && !expandedMsgs.has(m.id) ? "max-h-[105px] overflow-hidden relative" : "max-h-none"
-                        }`}>
-                          <p className="font-sans text-[14px] leading-relaxed font-bold whitespace-pre-wrap break-words">
-                            {m.content}
-                          </p>
-                          {longMsgs.has(m.id) && !expandedMsgs.has(m.id) && (
-                            <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#2b1a10] via-[#2b1a10]/85 to-transparent pointer-events-none rounded-b-[28px]" />
+                      <>
+                        <div className="relative text-right bg-gradient-to-br from-[#2b1a10] to-[#3f281a] text-[#fff9f1] border border-[#2b1a10]/20 rounded-[28px] shadow-md transition-all duration-300 overflow-hidden">
+                          {isEditingThisMessage ? (
+                            <textarea
+                              autoFocus
+                              value={editingContent}
+                              onChange={(event) => setEditingContent(event.target.value)}
+                              aria-label="تعديل رسالة المستخدم"
+                              className="min-h-[92px] w-full resize-none bg-transparent p-4 text-right text-[14px] font-sans font-bold leading-relaxed text-[#fff9f1] outline-none placeholder:text-white/50"
+                            />
+                          ) : (
+                            <>
+                              <div className={`p-4 transition-all duration-300 ease-in-out ${
+                                longMsgs.has(m.id) && !expandedMsgs.has(m.id) ? "max-h-[105px] overflow-hidden relative" : "max-h-none"
+                              }`}>
+                                <p className="font-sans text-[14px] leading-relaxed font-bold whitespace-pre-wrap break-words">
+                                  {m.content}
+                                </p>
+                                {longMsgs.has(m.id) && !expandedMsgs.has(m.id) && (
+                                  <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-[#2b1a10] via-[#2b1a10]/85 to-transparent pointer-events-none rounded-b-[28px]" />
+                                )}
+                              </div>
+                              {longMsgs.has(m.id) && (
+                                <div className={`flex items-center justify-start ${!expandedMsgs.has(m.id) ? "absolute bottom-2.5 left-2.5 z-10" : "px-4 pb-3 pt-0"}`}>
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleExpand(m.id)}
+                                    className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 border border-white/25 flex items-center justify-center text-white cursor-pointer transition-all active:scale-90 shadow-md backdrop-blur-xs"
+                                    title={expandedMsgs.has(m.id) ? "طي النص" : "توسيع النص"}
+                                  >
+                                    {expandedMsgs.has(m.id) ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                                  </button>
+                                </div>
+                              )}
+                            </>
                           )}
                         </div>
-                        {longMsgs.has(m.id) && (
-                          <div className={`flex items-center justify-start ${!expandedMsgs.has(m.id) ? "absolute bottom-2.5 left-2.5 z-10" : "px-4 pb-3 pt-0"}`}>
+
+                        {isEditingThisMessage ? (
+                          <div className="mt-2 flex items-center gap-3 px-1 text-[12px] font-bold">
                             <button
                               type="button"
-                              onClick={() => toggleExpand(m.id)}
-                              className="w-7 h-7 rounded-full bg-white/20 hover:bg-white/30 border border-white/25 flex items-center justify-center text-white cursor-pointer transition-all active:scale-90 shadow-md backdrop-blur-xs"
-                              title={expandedMsgs.has(m.id) ? "طي النص" : "توسيع النص"}
+                              onClick={cancelEditingUserMessage}
+                              className="text-[#7f6a55] transition-colors hover:text-[#2b1a10] cursor-pointer"
                             >
-                              {expandedMsgs.has(m.id) ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                              إلغاء
+                            </button>
+                            <button
+                              type="button"
+                              disabled={!hasEditedContent || !editingContent.trim()}
+                              onClick={confirmEditingUserMessage}
+                              className={`transition-colors ${
+                                hasEditedContent && editingContent.trim()
+                                  ? "text-[#b88a4f] hover:text-[#deab65] cursor-pointer"
+                                  : "text-[#7f6a55]/40 cursor-not-allowed"
+                              }`}
+                            >
+                              تعديل
                             </button>
                           </div>
+                        ) : (
+                          <div dir="ltr" className="mt-2 flex items-center justify-start gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleCopyMsgContent(m.id, m.content)}
+                              className={`inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#2b1a10]/10 text-[#7f6a55] transition-all hover:bg-[#2b1a10]/15 hover:text-[#b88a4f] active:scale-90 cursor-pointer ${
+                                copiedResponseId === m.id ? "text-emerald-600" : ""
+                              }`}
+                              title="نسخ الرسالة"
+                            >
+                              {copiedResponseId === m.id ? <Check size={14} /> : <Copy size={14} />}
+                            </button>
+                            {canEditThisMessage && (
+                              <button
+                                type="button"
+                                onClick={() => startEditingUserMessage(m)}
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#2b1a10]/10 text-[#7f6a55] transition-all hover:bg-[#2b1a10]/15 hover:text-[#b88a4f] active:scale-90 cursor-pointer"
+                                title="تعديل الرسالة"
+                              >
+                                <Pencil size={14} />
+                              </button>
+                            )}
+                          </div>
                         )}
-                      </div>
+                      </>
                     ) : (
                       <div className="w-full text-right bg-transparent border-none shadow-none px-0 py-2 text-[#2b1a10]">
                         <div className="whitespace-pre-wrap">
@@ -1018,7 +1134,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="اسأل عن أي أمر فقهي أو شرعي..."
-                disabled={isLoading}
+                disabled={isLoading || editingMessageId !== null}
                 rows={1}
                 className="flex-1 min-h-[38px] text-right bg-transparent border-none outline-none px-3 py-2 text-[13.5px] font-sans font-bold text-[#2b1a10] placeholder-[#7f6a55]/60 disabled:opacity-50 resize-none max-h-[130px] overflow-y-auto leading-relaxed break-words"
               />
@@ -1026,9 +1142,9 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 type="submit"
-                disabled={!inputValue.trim() || isLoading}
+                disabled={!inputValue.trim() || isLoading || editingMessageId !== null}
                 className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
-                  inputValue.trim() && !isLoading
+                  inputValue.trim() && !isLoading && editingMessageId === null
                     ? "bg-[#b88a4f] text-[#fff9f1] shadow-md hover:bg-[#a0753e] active:scale-90 cursor-pointer"
                     : "bg-[#e8dfd4]/60 text-[#7f6a55]/40 cursor-not-allowed"
                 }`}
