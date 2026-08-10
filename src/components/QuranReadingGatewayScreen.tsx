@@ -93,7 +93,7 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
   }, [filteredSurahs, selectedTypeFilter]);
 
   return (
-    <div className="min-h-screen bg-[#ece7de] text-[#2b1a10] flex flex-col font-[Cairo] relative overflow-hidden" dir="rtl">
+    <div className="min-h-screen bg-[#ece7de] text-[#2b1a10] flex flex-col font-sans relative overflow-hidden" dir="rtl">
       {/* Background soft ambient shapes */}
       <div className="absolute top-[-20%] left-[-10%] w-[300px] h-[300px] bg-[#b88a4f]/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[250px] h-[250px] bg-[#deab65]/5 rounded-full blur-[100px] pointer-events-none" />
@@ -104,7 +104,7 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
         <div className="relative pointer-events-auto">
           <button
             onClick={() => setIsModeDropdownOpen(!isModeDropdownOpen)}
-            className="bg-[#f7f2ea]/95 backdrop-blur-md px-4.5 h-10 rounded-full shadow-[0_8px_24px_rgba(43,26,16,0.08)] border border-[#e6dccf] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.97] hover:bg-[#fdfcfb]"
+            className="cut-crystal-capsule px-4.5 h-10 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.97]"
           >
             <span className="text-[14px] font-black text-[#2b1a10] whitespace-nowrap pt-0.5">القرآن الكريم</span>
             <ChevronDown size={14} className={`text-[#b88a4f] transition-transform duration-200 ${isModeDropdownOpen ? "rotate-180" : ""}`} />
@@ -123,7 +123,7 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.96 }}
                   transition={{ duration: 0.12, ease: "easeOut" }}
-                  className="absolute right-0 mt-2 w-44 bg-[#fdfcfb]/95 backdrop-blur-xl rounded-[20px] border border-[#e6dccf] shadow-[0_12px_28px_rgba(43,26,16,0.12)] z-40 overflow-hidden py-1"
+                  className="!absolute right-0 mt-2 w-44 cut-crystal-panel rounded-[20px] shadow-2xl z-40 overflow-hidden py-1"
                 >
                   <button
                     onClick={() => {
@@ -154,7 +154,7 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
         <div className="relative pointer-events-auto">
           <button
             onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-            className="bg-[#f7f2ea]/95 backdrop-blur-md px-4 h-10 rounded-full shadow-[0_8px_24px_rgba(43,26,16,0.08)] border border-[#e6dccf] flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.97] hover:bg-[#fdfcfb]"
+            className="cut-crystal-capsule px-4 h-10 flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-[0.97]"
           >
             <span className="text-[12.5px] text-[#7f6a55] font-bold whitespace-nowrap pt-0.5">{statsLabel}</span>
             <ChevronDown size={14} className={`text-[#b88a4f] transition-transform duration-200 ${isFilterDropdownOpen ? "rotate-180" : ""}`} />
@@ -173,7 +173,7 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.96 }}
                   transition={{ duration: 0.12, ease: "easeOut" }}
-                  className="absolute left-0 mt-2 w-36 bg-[#fdfcfb]/95 backdrop-blur-xl rounded-[20px] border border-[#e6dccf] shadow-[0_12px_28px_rgba(43,26,16,0.12)] z-40 overflow-hidden py-1"
+                  className="!absolute left-0 mt-2 w-36 cut-crystal-panel rounded-[20px] shadow-2xl z-40 overflow-hidden py-1"
                 >
                   {[
                     { id: "all", label: "الكل" },
@@ -205,7 +205,7 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
       <div className="flex-1 overflow-y-auto px-6 pb-36 pt-24 hide-scrollbar" dir="rtl">
         {/* Sliding Switcher / Tab (تويب متنقل) */}
         <div className="flex justify-center mb-8 relative z-10">
-          <div className="bg-[#f2ebd9]/90 backdrop-blur-md p-1 rounded-full flex gap-1 border border-[#e6dccf] w-full max-w-[280px] shadow-sm">
+          <div className="cut-crystal-panel rounded-full p-1 flex gap-1 w-full max-w-[280px] shadow-sm">
             <button
               onClick={() => setActiveTab("surahs")}
               className={`flex-1 py-1.5 text-[14px] font-bold rounded-full transition-all duration-300 relative ${
@@ -243,7 +243,7 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
                     <button
                       key={surah.id}
                       onClick={() => onReadSurah(surah.id)}
-                      className="w-full h-[60px] md:h-[64px] bg-[#fdfcfb]/90 backdrop-blur-md hover:bg-[#f5ebd6]/60 border border-[#e6dccf] hover:border-[#c49a62]/50 rounded-[28px] pl-3 pr-4 md:pl-4 md:pr-5 flex items-center justify-between group active:scale-[0.99] transition-all duration-200 shadow-[0_2px_10px_rgba(43,26,16,0.015)]"
+                      className="w-full h-[60px] md:h-[64px] cut-crystal-satin rounded-[28px] pl-3 pr-4 md:pl-4 md:pr-5 flex items-center justify-between group active:scale-[0.99] transition-all duration-200"
                     >
                       {/* Right Side: Ornament & Calligraphy Name */}
                       <div className="flex items-center gap-2 md:gap-2.5 min-w-0 flex-shrink">
@@ -270,14 +270,14 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
                       {/* Left Side: Metadata, Verses Badge, and Arrow */}
                       <div className="flex items-center shrink-0 gap-1 md:gap-1.5 ml-0.5 md:ml-1">
                         {/* Metadata: Type | Page */}
-                        <span className="text-[7.5px] md:text-[8px] text-[#8a7662] font-black whitespace-nowrap select-none font-[Cairo] pt-[1.5px] mr-1 md:mr-2">
+                        <span className="text-[7.5px] md:text-[8px] text-[#8a7662] font-black whitespace-nowrap select-none font-sans pt-[1.5px] mr-1 md:mr-2">
                           {surah.type === "مكية" ? "مكية" : "مدنية"}
                           <span className="mx-0.5 md:mx-1 opacity-30 font-normal">|</span>
                           صفحة {SURAH_START_PAGES[surah.id] || 1}
                         </span>
 
                         {/* Verses Count Pill Badge */}
-                        <div className="bg-[#b88a4f]/10 text-[#b88a4f] rounded-full px-2 h-[20px] flex items-center justify-center text-[7.5px] md:text-[8px] font-black whitespace-nowrap select-none font-[Cairo] shadow-sm -mt-[1px]">
+                        <div className="bg-[#b88a4f]/10 text-[#b88a4f] rounded-full px-2 h-[20px] flex items-center justify-center text-[7.5px] md:text-[8px] font-black whitespace-nowrap select-none font-sans shadow-sm -mt-[1px]">
                           {surah.versesCount} آية
                         </div>
 
@@ -305,7 +305,7 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
               bookmarks.map((b) => (
                 <div
                   key={b.id}
-                  className="w-full h-[64px] bg-[#fdfcfb]/90 backdrop-blur-md hover:bg-[#f5ebd6]/60 border border-[#e6dccf] hover:border-[#c49a62]/50 rounded-[28px] pl-3 pr-4 md:pl-4 md:pr-5 flex items-center justify-between group active:scale-[0.99] transition-all duration-200 shadow-sm"
+                  className="w-full h-[64px] cut-crystal-satin rounded-[28px] pl-3 pr-4 md:pl-4 md:pr-5 flex items-center justify-between group active:scale-[0.99] transition-all duration-200"
                 >
                   <button
                     onClick={() => onReadSurah(b.surahId, b.page)}
@@ -353,11 +353,9 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
             animate={{
               width: isSearchActive ? "100%" : 56,
               borderRadius: 28,
-              backgroundColor: isSearchActive ? "rgba(253, 252, 251, 0.95)" : "rgba(247, 242, 234, 0.9)",
-              borderColor: isSearchActive ? "rgba(230, 220, 207, 0.6)" : "rgba(230, 220, 207, 1)",
             }}
             transition={{ type: "spring", damping: 25, stiffness: 250 }}
-            className="h-14 shadow-[0_8px_32px_rgba(43,26,16,0.12)] backdrop-blur-xl border flex items-center overflow-hidden pointer-events-auto relative"
+            className="h-14 cut-crystal-input flex items-center overflow-hidden pointer-events-auto relative"
           >
             {/* Left Side (in LTR): Toggle Button (Search -> Close) */}
             <button
@@ -408,7 +406,7 @@ export default function QuranReadingGatewayScreen({ onReadSurah, onModeChange }:
                 placeholder="البحث عن سورة..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full h-full bg-transparent border-none outline-none text-[15px] font-[Cairo] font-bold text-[#2b1a10] placeholder:text-[#7f6a55] px-2 pt-0.5"
+                className="w-full h-full bg-transparent border-none outline-none text-[15px] font-sans font-bold text-[#2b1a10] placeholder:text-[#7f6a55] px-2 pt-0.5"
                 tabIndex={isSearchActive ? 0 : -1}
               />
             </div>

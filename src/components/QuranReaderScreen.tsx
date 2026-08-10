@@ -484,7 +484,7 @@ export default function QuranReaderScreen({
       animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
       exit={{ opacity: 0, scale: 0.95, filter: 'blur(5px)' }}
       transition={{ duration: 0.4 }}
-      className={`fixed inset-0 w-full h-[100vh] overflow-hidden flex flex-col justify-center px-4 sm:px-8 transition-colors duration-500 ${activeTheme.bg} ${activeTheme.text}`}
+      className={`fixed inset-0 w-full h-[100vh] overflow-hidden flex flex-col justify-center px-4 sm:px-8 font-sans transition-colors duration-500 ${activeTheme.bg} ${activeTheme.text}`}
       dir="rtl"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
@@ -508,7 +508,7 @@ export default function QuranReaderScreen({
       {/* Content Area */}
       <div className={`flex-1 w-full max-w-5xl mx-auto flex flex-col justify-center overflow-hidden relative`}>
         {/* Integrated Header Info - Fixed Position */}
-        <div className="absolute top-6 left-0 right-0 flex justify-between items-center px-8 font-bold text-[10px] sm:text-xs opacity-50 pointer-events-none font-cairo">
+        <div className="absolute top-6 left-0 right-0 flex justify-between items-center px-8 font-bold text-[10px] sm:text-xs opacity-50 pointer-events-none font-sans">
           <span>الجُزْءُ {pageData && pageData.page ? '' : ''}</span>
           <span>
               {pageData ? `سُورَةُ ${surahNames[currentSurahId] || ''}` : ''}
@@ -518,8 +518,8 @@ export default function QuranReaderScreen({
         {/* Progress Indicator Capsule */}
         {!isLoading && pageData && (
           <div className="absolute top-12 left-1/2 -translate-x-1/2 z-30 pointer-events-none select-none">
-            <div className={`px-4 py-1.5 rounded-full border flex items-center gap-3 backdrop-blur-md shadow-sm ${activeTheme.cardBg}/40 ${activeTheme.border}`}>
-              <span className="text-[10px] font-bold tracking-wide whitespace-nowrap opacity-80 font-cairo">
+            <div className="cut-crystal-capsule px-4 py-1.5 flex items-center gap-3 !text-[#2b1a10]">
+              <span className="text-[10px] font-bold tracking-wide whitespace-nowrap opacity-80 font-sans">
                 المتبقي من سورة {surahNames[currentSurahId]}: {toArabicDigits(remainingPercent)}٪
               </span>
               <div className="w-16 h-1 rounded-full bg-current/10 overflow-hidden relative">
@@ -535,7 +535,7 @@ export default function QuranReaderScreen({
         )}
 
         {/* Integrated Page Number - Fixed Position */}
-        <div className="absolute bottom-6 left-8 flex justify-center items-center font-bold text-xs sm:text-sm opacity-80 pointer-events-none font-cairo">
+        <div className="absolute bottom-6 left-8 flex justify-center items-center font-bold text-xs sm:text-sm opacity-80 pointer-events-none font-sans">
           {toArabicDigits(currentPage)}
         </div>
 
@@ -550,7 +550,7 @@ export default function QuranReaderScreen({
               className="flex flex-col items-center justify-center h-full gap-3"
             >
               <Loader2 className={`animate-spin ${activeTheme.accent}`} size={40} />
-              <span className={`text-xs font-cairo opacity-60 ${activeTheme.accent}`}>
+              <span className={`text-xs font-sans opacity-60 ${activeTheme.accent}`}>
                 {isLoading ? "جاري تحميل الصفحة..." : "جاري تحميل خط المصحف..."}
               </span>
             </motion.div>
@@ -654,7 +654,7 @@ export default function QuranReaderScreen({
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 10 }}
-            className={`fixed z-[60] flex items-center gap-1.5 px-3 py-1.5 rounded-full shadow-2xl backdrop-blur-xl border ${activeTheme.cardBg} ${activeTheme.border}`}
+            className="!fixed z-[60] cut-crystal-capsule flex items-center gap-1.5 px-3 py-1.5 !text-[#2b1a10] shadow-2xl"
             style={{
               bottom: '5.5rem',
               left: '50%',
@@ -665,39 +665,39 @@ export default function QuranReaderScreen({
           >
             <button
               onClick={handlePlaySelectedVerse}
-              className={`p-2 rounded-full transition-colors hover:opacity-70 ${activeTheme.accent}`}
+              className="p-2 rounded-full text-[#b88a4f] transition-colors hover:text-[#deab65]"
               title="تلاوة"
             >
               <Play size={18} fill="currentColor" />
             </button>
-            <div className={`w-px h-5 ${activeTheme.border} border-l`}></div>
+            <div className="h-5 w-px border-l border-[#e6dccf]"></div>
             <button
               onClick={handleShowTafsirForSelected}
-              className={`p-2 rounded-full transition-colors hover:opacity-70 ${activeTheme.text}`}
+              className="p-2 rounded-full text-[#2b1a10] transition-colors hover:text-[#b88a4f]"
               title="تفسير"
             >
               <BookOpen size={18} />
             </button>
-            <div className={`w-px h-5 ${activeTheme.border} border-l`}></div>
+            <div className="h-5 w-px border-l border-[#e6dccf]"></div>
             <button
               onClick={handleShowReflectionCard}
-              className={`p-2 rounded-full transition-colors hover:opacity-70 ${activeTheme.text}`}
+              className="p-2 rounded-full text-[#2b1a10] transition-colors hover:text-[#b88a4f]"
               title="بطاقة تدبر"
             >
               <ImageIcon size={18} />
             </button>
-            <div className={`w-px h-5 ${activeTheme.border} border-l`}></div>
+            <div className="h-5 w-px border-l border-[#e6dccf]"></div>
             <button
               onClick={() => handleCopyVerse(selectedVerseForAction.text_uthmani)}
-              className={`p-2 rounded-full transition-colors hover:opacity-70 ${activeTheme.text}`}
+              className="p-2 rounded-full text-[#2b1a10] transition-colors hover:text-[#b88a4f]"
               title="نسخ"
             >
               <Copy size={18} />
             </button>
-            <div className={`w-px h-5 ${activeTheme.border} border-l`}></div>
+            <div className="h-5 w-px border-l border-[#e6dccf]"></div>
             <button
               onClick={() => toggleVerseBookmark(selectedVerseForAction)}
-              className={`p-2 rounded-full transition-colors hover:opacity-70 ${bookmarkedVerses.includes(selectedVerseForAction.verse_key) ? activeTheme.accent : activeTheme.text}`}
+              className={`p-2 rounded-full transition-colors hover:text-[#b88a4f] ${bookmarkedVerses.includes(selectedVerseForAction.verse_key) ? "text-[#b88a4f]" : "text-[#2b1a10]"}`}
               title="حفظ العلامة المرجعية"
             >
               <Bookmark size={18} fill={bookmarkedVerses.includes(selectedVerseForAction.verse_key) ? "currentColor" : "none"} />
@@ -714,14 +714,14 @@ export default function QuranReaderScreen({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: '100%', opacity: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className={`fixed bottom-8 left-1/2 -translate-x-1/2 z-[70] rounded-full shadow-2xl border backdrop-blur-xl px-6 py-3 flex items-center gap-6 ${activeTheme.cardBg} ${activeTheme.border}`}
+            className="!fixed bottom-8 left-1/2 -translate-x-1/2 z-[70] cut-crystal-capsule px-4 py-2 flex items-center gap-4 !text-[#2b1a10] shadow-lg"
             onClick={(e) => e.stopPropagation()}
             dir="ltr"
           >
             {/* Reciter Button */}
             <button
               onClick={() => setShowReciterModal(true)}
-              className={`flex items-center gap-1.5 transition-colors hover:opacity-70 ${activeTheme.text}`}
+              className="flex items-center gap-1.5 text-[#2b1a10] transition-colors hover:text-[#b88a4f]"
               title="القارئ"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
@@ -769,7 +769,7 @@ export default function QuranReaderScreen({
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-[80] w-72 p-5 rounded-2xl shadow-2xl border backdrop-blur-xl ${activeTheme.cardBg} ${activeTheme.border} ${activeTheme.text} font-cairo`}
+            className="!fixed bottom-24 left-1/2 -translate-x-1/2 z-[80] w-72 cut-crystal-panel rounded-[28px] p-5 text-[#2b1a10] font-sans"
             onClick={(e) => e.stopPropagation()}
             dir="rtl"
           >
@@ -787,19 +787,19 @@ export default function QuranReaderScreen({
                 <div className={`flex rounded-xl p-1 gap-1 border ${activeTheme.border} bg-black/5`}>
                   <button
                     onClick={() => setPlayMode('single')}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${playMode === 'single' ? `${activeTheme.accent.replace('text-', 'bg-')} text-white shadow-md` : 'hover:opacity-70 opacity-70'}`}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${playMode === 'single' ? `bg-[#b88a4f] text-[#fff9f1] shadow-md` : 'hover:opacity-70 opacity-70'}`}
                   >
                     آية واحدة
                   </button>
                   <button
                     onClick={() => setPlayMode('page')}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${playMode === 'page' ? `${activeTheme.accent.replace('text-', 'bg-')} text-white shadow-md` : 'hover:opacity-70 opacity-70'}`}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${playMode === 'page' ? `bg-[#b88a4f] text-[#fff9f1] shadow-md` : 'hover:opacity-70 opacity-70'}`}
                   >
                     صفحة كاملة
                   </button>
                   <button
                     onClick={() => setPlayMode('continuous')}
-                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${playMode === 'continuous' ? `${activeTheme.accent.replace('text-', 'bg-')} text-white shadow-md` : 'hover:opacity-70 opacity-70'}`}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${playMode === 'continuous' ? `bg-[#b88a4f] text-[#fff9f1] shadow-md` : 'hover:opacity-70 opacity-70'}`}
                   >
                     مستمر
                   </button>
@@ -829,7 +829,7 @@ export default function QuranReaderScreen({
                       }}
                       className={`w-full ${activeTheme.accent.replace('text-', 'accent-')} h-1.5 bg-black/10 rounded-lg appearance-none cursor-pointer`}
                   />
-                  <div className="flex justify-between text-[10px] opacity-40 mt-2 font-mono">
+                  <div className="flex justify-between text-[10px] opacity-40 mt-2 font-sans">
                       <span>1</span>
                       <span>3</span>
                       <span>5</span>
@@ -853,7 +853,7 @@ export default function QuranReaderScreen({
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
               onClick={(e) => { e.stopPropagation(); onClose(); }}
-              className={`absolute top-6 right-6 z-50 w-10 h-10 rounded-2xl flex items-center justify-center backdrop-blur-md border shadow-lg transition-all duration-300 ${activeTheme.cardBg} ${activeTheme.border} hover:opacity-80`}
+              className="!absolute top-6 right-6 z-50 w-10 h-10 cut-crystal-capsule flex items-center justify-center text-[#2b1a10] shadow-md transition-all duration-300 hover:opacity-80"
             >
               <LogOut size={20} className="rotate-180" />
             </motion.button>
@@ -865,7 +865,7 @@ export default function QuranReaderScreen({
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3, ease: "easeOut", delay: 0.05 }}
               onClick={(e) => { e.stopPropagation(); togglePageBookmark(); }}
-              className={`absolute top-6 left-6 z-50 w-10 h-10 rounded-2xl flex items-center justify-center backdrop-blur-md border shadow-lg transition-all duration-300 ${activeTheme.cardBg} ${activeTheme.border} ${isBookmarked ? activeTheme.accent : ''} hover:opacity-80`}
+              className={`!absolute top-6 left-6 z-50 w-10 h-10 cut-crystal-capsule flex items-center justify-center shadow-md transition-all duration-300 ${isBookmarked ? "text-[#b88a4f]" : "text-[#2b1a10]"} hover:opacity-80`}
               title="حفظ الصفحة الحالية"
             >
               <Bookmark size={18} fill={isBookmarked ? "currentColor" : "none"} />
@@ -877,31 +877,31 @@ export default function QuranReaderScreen({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 40 }}
               transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-              className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-5 px-6 py-3 rounded-full backdrop-blur-xl border shadow-2xl ${activeTheme.cardBg} ${activeTheme.border}`}
+              className="!absolute bottom-8 left-1/2 -translate-x-1/2 z-50 cut-crystal-capsule flex items-center gap-2 px-3 py-2 shadow-lg !text-[#2b1a10]"
               onClick={(e) => e.stopPropagation()}
               dir="ltr"
             >
               <button
                 onClick={() => setShowSettings(!showSettings)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:opacity-70 ${activeTheme.text}`}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[#2b1a10] transition-all duration-300 hover:text-[#b88a4f]"
                 title="السمات والألوان"
               >
-                <Palette size={20} />
+                <Palette size={17} />
               </button>
 
               <button
-                className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg transition-all duration-300 hover:scale-105 active:scale-95 ${activeTheme.accent.replace('text-', 'bg-')}`}
+                className="w-9 h-9 rounded-full flex items-center justify-center bg-[#b88a4f] text-[#fff9f1] shadow-md transition-all duration-300 hover:bg-[#a0753e] active:scale-95"
                 onClick={(e) => { e.stopPropagation(); togglePlayPause(); }}
               >
-                {isPlaying && playMode === 'continuous' ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" className="ml-1" />}
+                {isPlaying && playMode === 'continuous' ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
               </button>
 
               <button
                 onClick={() => setShowReciterModal(true)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 hover:opacity-70 ${activeTheme.text}`}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[#2b1a10] transition-all duration-300 hover:text-[#b88a4f]"
                 title="القارئ"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
               </button>
             </motion.div>
           </>
@@ -923,10 +923,10 @@ export default function QuranReaderScreen({
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className={`w-full max-w-sm rounded-3xl overflow-hidden border shadow-2xl flex flex-col max-h-[70vh] ${activeTheme.cardBg} ${activeTheme.border} ${activeTheme.text}`}
+              className="w-full max-w-sm cut-crystal-panel rounded-[28px] overflow-hidden shadow-2xl flex flex-col max-h-[70vh] text-[#2b1a10]"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className={`p-5 border-b text-center font-bold text-lg ${activeTheme.border}`} style={{ fontFamily: "'Noto Naskh Arabic', serif" }}>
+              <div className={`p-5 border-b text-center font-sans font-bold text-lg ${activeTheme.border}`}>
                 اختر القارئ
               </div>
               <div className="overflow-y-auto custom-scrollbar p-2 flex-1">
@@ -937,7 +937,7 @@ export default function QuranReaderScreen({
                       setSelectedReciter(r.id);
                       setShowReciterModal(false);
                     }}
-                    className={`w-full text-right px-4 py-3 rounded-xl mb-1 transition-colors flex items-center justify-between font-cairo ${selectedReciter === r.id ? `${activeTheme.accent.replace('text-', 'bg-')}/10 ${activeTheme.accent}` : `hover:opacity-80`}`}
+                    className={`w-full text-right px-4 py-3 rounded-xl mb-1 transition-colors flex items-center justify-between font-sans ${selectedReciter === r.id ? `bg-[#b88a4f]/10 text-[#b88a4f]` : `hover:opacity-80`}`}
                   >
                     <span>{r.name}</span>
                     {selectedReciter === r.id && <div className={`w-2 h-2 rounded-full ${activeTheme.accent.replace('text-', 'bg-')}`}></div>}
@@ -956,7 +956,7 @@ export default function QuranReaderScreen({
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.9 }}
-            className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-[80] w-72 p-5 rounded-2xl shadow-2xl border ${activeTheme.cardBg} ${activeTheme.border} font-cairo`}
+            className="!fixed bottom-24 left-1/2 -translate-x-1/2 z-[80] w-72 cut-crystal-panel rounded-[28px] p-5 text-[#2b1a10] font-sans"
             onClick={(e) => e.stopPropagation()}
             dir="rtl"
           >
@@ -997,7 +997,7 @@ export default function QuranReaderScreen({
                   exit={{ opacity: 0, y: 100 }}
                   className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 pointer-events-none"
               >
-                  <div className={`w-full max-w-lg h-[60vh] sm:h-auto sm:max-h-[80vh] rounded-t-2xl sm:rounded-2xl shadow-2xl flex flex-col pointer-events-auto border ${activeTheme.cardBg} ${activeTheme.border} font-cairo`}>
+                  <div className="w-full max-w-lg h-[60vh] sm:h-auto sm:max-h-[80vh] cut-crystal-panel rounded-t-[28px] sm:rounded-[28px] shadow-2xl flex flex-col pointer-events-auto text-[#2b1a10] font-sans">
                       <div className={`flex justify-between items-center p-4 border-b ${activeTheme.border}`}>
                           <h3 className={`font-bold flex items-center gap-2 ${activeTheme.accent}`}>
                               <BookOpen size={18} />
