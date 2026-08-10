@@ -968,7 +968,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                         </div>
 
                         {isEditingThisMessage ? (
-                          <div className="mt-2 flex items-center gap-3 px-1 text-[12px] font-bold">
+                          <div dir="ltr" className="mt-2 flex items-center justify-start gap-3 px-1 text-[12px] font-bold">
                             <button
                               type="button"
                               onClick={cancelEditingUserMessage}
@@ -991,26 +991,26 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                           </div>
                         ) : (
                           <div dir="ltr" className="mt-2 flex items-center justify-start gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleCopyMsgContent(m.id, m.content)}
-                              className={`inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#2b1a10]/10 text-[#7f6a55] transition-all hover:bg-[#2b1a10]/15 hover:text-[#b88a4f] active:scale-90 cursor-pointer ${
-                                copiedResponseId === m.id ? "text-emerald-600" : ""
-                              }`}
-                              title="نسخ الرسالة"
-                            >
-                              {copiedResponseId === m.id ? <Check size={14} /> : <Copy size={14} />}
-                            </button>
                             {canEditThisMessage && (
                               <button
                                 type="button"
                                 onClick={() => startEditingUserMessage(m)}
-                                className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[#2b1a10]/10 text-[#7f6a55] transition-all hover:bg-[#2b1a10]/15 hover:text-[#b88a4f] active:scale-90 cursor-pointer"
+                                className="inline-flex h-7 w-7 items-center justify-center text-[#7f6a55] transition-colors hover:text-[#b88a4f] active:scale-90 cursor-pointer"
                                 title="تعديل الرسالة"
                               >
-                                <Pencil size={14} />
+                                <Pencil size={13} />
                               </button>
                             )}
+                            <button
+                              type="button"
+                              onClick={() => handleCopyMsgContent(m.id, m.content)}
+                              className={`inline-flex h-7 w-7 items-center justify-center text-[#7f6a55] transition-colors hover:text-[#b88a4f] active:scale-90 cursor-pointer ${
+                                copiedResponseId === m.id ? "text-emerald-600" : ""
+                              }`}
+                              title="نسخ الرسالة"
+                            >
+                              {copiedResponseId === m.id ? <Check size={13} /> : <Copy size={13} />}
+                            </button>
                           </div>
                         )}
                       </>
