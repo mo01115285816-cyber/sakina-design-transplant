@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { 
   Sparkles, ArrowUp, RefreshCw, ChevronRight, ChevronDown, ChevronUp, 
   BookOpen, ShieldCheck, Heart, AlertCircle, Bot,
-  Check, Copy, Volume2, ThumbsUp, ThumbsDown, Play, Pause, HelpCircle
+  Check, Copy, ThumbsUp, ThumbsDown, HelpCircle
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -920,74 +920,49 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
                           )}
                         </div>
                         {isLastAI && (
-                      <div className="flex items-center gap-4 mt-4 text-[#7f6a55] select-none justify-center border-t border-[#e6dccf]/40 pt-3 max-w-[280px] mx-auto">
-                        {/* Copy Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleCopyMsgContent(m.id, m.content)}
-                          className={`w-8 h-8 cut-crystal-capsule rounded-full text-[#7f6a55] hover:text-[#b88a4f] hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm ${
-                            copiedResponseId === m.id ? "border-emerald-500/40 text-emerald-600 bg-emerald-500/5" : ""
-                          }`}
-                          title="نسخ الإجابة"
-                        >
-                          {copiedResponseId === m.id ? (
-                            <Check size={14} className="text-emerald-600" />
-                          ) : (
-                            <Copy size={14} />
-                          )}
-                        </button>
+                          <div
+                            dir="ltr"
+                            className="mt-4 flex w-full items-center justify-end gap-2 border-t border-[#e6dccf]/40 pt-3 text-[#7f6a55] select-none"
+                          >
+                            {/* Explicit LTR flex direction keeps this group on the physical right side. */}
+                            <button
+                              type="button"
+                              onClick={() => setFeedback(prev => ({ ...prev, [m.id]: prev[m.id] === 'dislike' ? undefined : 'dislike' }))}
+                              className={`inline-flex h-7 w-7 items-center justify-center text-[#7f6a55] transition-all hover:text-red-500 active:scale-90 cursor-pointer ${
+                                feedback[m.id] === 'dislike' ? 'text-red-600' : ''
+                              }`}
+                              title="لم يعجبني"
+                            >
+                              <ThumbsDown size={14} fill={feedback[m.id] === 'dislike' ? "currentColor" : "none"} />
+                            </button>
 
-                        {/* Listen Button (Speech Synthesis) */}
-                        <button
-                          type="button"
-                          onClick={() => handleSpeech(m.id, m.content)}
-                          className={`w-8 h-8 cut-crystal-capsule rounded-full text-[#7f6a55] hover:text-[#b88a4f] hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm ${
-                            speakingMsgId === m.id ? "border-[#b88a4f] text-[#b88a4f] bg-white" : ""
-                          }`}
-                          title={speakingMsgId === m.id ? "إيقاف الاستماع" : "استماع للإجابة"}
-                        >
-                          {speakingMsgId === m.id ? (
-                            <Pause size={14} className="animate-pulse" />
-                          ) : (
-                            <Play size={14} className="ml-0.5" />
-                          )}
-                        </button>
+                            <button
+                              type="button"
+                              onClick={() => setFeedback(prev => ({ ...prev, [m.id]: prev[m.id] === 'like' ? undefined : 'like' }))}
+                              className={`inline-flex h-7 w-7 items-center justify-center text-[#7f6a55] transition-all hover:text-[#b88a4f] active:scale-90 cursor-pointer ${
+                                feedback[m.id] === 'like' ? 'text-[#b88a4f]' : ''
+                              }`}
+                              title="أعجبني"
+                            >
+                              <ThumbsUp size={14} fill={feedback[m.id] === 'like' ? "currentColor" : "none"} />
+                            </button>
 
-                        {/* Thumbs Up Button */}
-                        <button
-                          type="button"
-                          onClick={() => setFeedback(prev => ({ ...prev, [m.id]: prev[m.id] === 'like' ? undefined : 'like' }))}
-                          className={`w-8 h-8 cut-crystal-capsule rounded-full text-[#7f6a55] hover:text-[#b88a4f] hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm ${
-                            feedback[m.id] === 'like' ? 'border-[#b88a4f] text-[#b88a4f] bg-[#b88a4f]/10' : ''
-                          }`}
-                          title="أعجبني"
-                        >
-                          <ThumbsUp size={14} fill={feedback[m.id] === 'like' ? "currentColor" : "none"} />
-                        </button>
-
-                        {/* Thumbs Down Button */}
-                        <button
-                          type="button"
-                          onClick={() => setFeedback(prev => ({ ...prev, [m.id]: prev[m.id] === 'dislike' ? undefined : 'dislike' }))}
-                          className={`w-8 h-8 cut-crystal-capsule rounded-full text-[#7f6a55] hover:text-red-500 hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm ${
-                            feedback[m.id] === 'dislike' ? 'border-red-500/40 text-red-600 bg-red-500/5' : ''
-                          }`}
-                          title="لم يعجبني"
-                        >
-                          <ThumbsDown size={14} fill={feedback[m.id] === 'dislike' ? "currentColor" : "none"} />
-                        </button>
-
-                        {/* Retry / Regenerate Button */}
-                        <button
-                          type="button"
-                          onClick={handleRetry}
-                          className="w-8 h-8 cut-crystal-capsule rounded-full text-[#7f6a55] hover:text-[#b88a4f] hover:bg-white flex items-center justify-center active:scale-90 transition-all cursor-pointer shadow-sm"
-                          title="إعادة المحاولة"
-                        >
-                          <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
-                        </button>
-                      </div>
-                    )}
+                            <button
+                              type="button"
+                              onClick={() => handleCopyMsgContent(m.id, m.content)}
+                              className={`inline-flex h-7 w-7 items-center justify-center text-[#7f6a55] transition-all hover:text-[#b88a4f] active:scale-90 cursor-pointer ${
+                                copiedResponseId === m.id ? "text-emerald-600" : ""
+                              }`}
+                              title="نسخ الإجابة"
+                            >
+                              {copiedResponseId === m.id ? (
+                                <Check size={14} className="text-emerald-600" />
+                              ) : (
+                                <Copy size={14} />
+                              )}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
