@@ -2,6 +2,12 @@
   "page": 591,
   "lines": [
     {
+      "line": 0,
+      "type": "surah-header",
+      "text": "سورة الطارق",
+      "surah": "086"
+    },
+    {
       "line": 1,
       "type": "basmala",
       "qpcV2": "ﱁﱂﱃﱄﱅ",

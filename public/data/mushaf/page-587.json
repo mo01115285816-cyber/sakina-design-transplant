@@ -2,6 +2,12 @@
   "page": 587,
   "lines": [
     {
+      "line": 0,
+      "type": "surah-header",
+      "text": "سورة الانفطار",
+      "surah": "082"
+    },
+    {
       "line": 1,
       "type": "basmala",
       "qpcV2": "ﱁﱂﱃﱄﱅ",
