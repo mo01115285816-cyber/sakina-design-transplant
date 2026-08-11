@@ -5,7 +5,8 @@ import localforage from 'localforage';
 const FONTS_DIR_NAME = 'qcf-fonts';
 const EXTRACTION_FLAG_KEY = 'qcf_fonts_extracted_v1';
 const REMOTE_ZIP_URL = 'https://github.com/mo01115285816-cyber/sakina/releases/download/v1.0.0-mushaf-fonts/qcf-fonts.zip';
-const RAW_FONT_BASE_URL = 'https://raw.githubusercontent.com/mo01115285816-cyber/sakina/main/public/fonts/qcf';
+const WEB_QCF_FONT_BASE_URL = 'https://verses.quran.foundation/fonts/quran/hafs/v2/woff2';
+const LOCAL_WEB_QCF_SAMPLE_PAGES = new Set([1, 2]);
 
 type Platform = 'web' | 'native';
 
@@ -262,8 +263,8 @@ export const QcfFontStorage = {
 
       // If not cached, fetch from server and store in IndexedDB for permanent offline use
       const fetchUrls = [
-        `/fonts/qcf/${fileName}`, // Local dev build check
-        `${RAW_FONT_BASE_URL}/${fileName}` // Cloud fetch from GitHub CDN
+        ...(LOCAL_WEB_QCF_SAMPLE_PAGES.has(pageNumber) ? [`/fonts/qcf/${fileName}`] : []),
+        `${WEB_QCF_FONT_BASE_URL}/p${pageNumber}.woff2`,
       ];
 
       for (const url of fetchUrls) {
