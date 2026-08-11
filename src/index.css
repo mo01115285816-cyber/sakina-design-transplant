@@ -422,9 +422,9 @@
   isolation: isolate;
   display: grid;
   place-items: center;
-  width: min(88%, 460px);
+  width: min(66%, 360px);
   aspect-ratio: 2400 / 775;
-  margin: 8px auto 6px;
+  margin: 6px auto 4px;
   line-height: 1;
   flex: 0 0 auto;
   contain: layout paint;
@@ -454,7 +454,7 @@
   overflow: visible;
   color: #2b1a10;
   font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif;
-  font-size: clamp(12px, 4.4vw, 20px);
+  font-size: clamp(10px, 3.35vw, 15px);
   font-weight: 900;
   font-style: normal;
   line-height: 1.08;
@@ -467,7 +467,7 @@
 }
 
 .surah-frame__title--long {
-  font-size: clamp(11px, 3.95vw, 18px);
+  font-size: clamp(9px, 3.05vw, 13.5px);
 }
 
 /* Pages 596–604 may contain two or three Surah starts. These are explicit
@@ -475,42 +475,42 @@
    centered title field and never collides with the next header. */
 .surah-frame--compact .surah-frame,
 .surah-frame.surah-frame--compact {
-  width: min(76%, 400px);
-  margin-block: 5px 3px;
+  width: min(57%, 300px);
+  margin-block: 4px 2px;
 }
 
 .surah-frame--compact .surah-frame__title,
 .surah-frame.surah-frame--compact .surah-frame__title {
-  font-size: clamp(11px, 3.85vw, 17px);
+  font-size: clamp(9.5px, 2.9vw, 13px);
 }
 
 .surah-frame--compact .surah-frame__title--long,
 .surah-frame.surah-frame--compact .surah-frame__title--long {
-  font-size: clamp(10px, 3.45vw, 15px);
+  font-size: clamp(8.8px, 2.6vw, 11.5px);
 }
 
 .surah-frame--dense .surah-frame,
 .surah-frame.surah-frame--dense {
-  width: min(64%, 340px);
-  margin-block: 3px 1px;
+  width: min(49%, 260px);
+  margin-block: 2px 1px;
 }
 
 .surah-frame--dense .surah-frame__title,
 .surah-frame.surah-frame--dense .surah-frame__title {
-  font-size: clamp(10px, 3.3vw, 15px);
+  font-size: clamp(9px, 2.75vw, 12px);
 }
 
 .surah-frame--dense .surah-frame__title--long,
 .surah-frame.surah-frame--dense .surah-frame__title--long {
-  font-size: clamp(9.5px, 3vw, 13px);
+  font-size: clamp(8px, 2.45vw, 10.5px);
 }
 
 @media (min-width: 700px) {
-  .surah-frame { width: min(70%, 460px); }
+  .surah-frame { width: min(58%, 360px); }
   .surah-frame--compact .surah-frame,
-  .surah-frame.surah-frame--compact { width: min(60%, 400px); }
+  .surah-frame.surah-frame--compact { width: min(48%, 300px); }
   .surah-frame--dense .surah-frame,
-  .surah-frame.surah-frame--dense { width: min(50%, 340px); }
+  .surah-frame.surah-frame--dense { width: min(40%, 260px); }
 }
 
 /* ===== Quran Title (for circles, headers, decorative titles) ===== */
