@@ -444,7 +444,7 @@
 .surah-frame__title {
   position: absolute;
   inset-block: 31%;
-  inset-inline: 24%;
+  inset-inline: 22%;
   z-index: 1;
   display: grid;
   place-items: center;
@@ -454,7 +454,7 @@
   overflow: visible;
   color: #2b1a10;
   font-family: 'Thmanyah Serif Display', 'Thmanyah Serif Text', serif;
-  font-size: clamp(10px, 3.35vw, 15px);
+  font-size: clamp(10.5px, 3.65vw, 16px);
   font-weight: 900;
   font-style: normal;
   line-height: 1.08;
@@ -467,7 +467,7 @@
 }
 
 .surah-frame__title--long {
-  font-size: clamp(9px, 3.05vw, 13.5px);
+  font-size: clamp(9.4px, 3.25vw, 14.2px);
 }
 
 /* Pages 596–604 may contain two or three Surah starts. These are explicit
@@ -481,12 +481,12 @@
 
 .surah-frame--compact .surah-frame__title,
 .surah-frame.surah-frame--compact .surah-frame__title {
-  font-size: clamp(9.5px, 2.9vw, 13px);
+  font-size: clamp(10px, 3.15vw, 14px);
 }
 
 .surah-frame--compact .surah-frame__title--long,
 .surah-frame.surah-frame--compact .surah-frame__title--long {
-  font-size: clamp(8.8px, 2.6vw, 11.5px);
+  font-size: clamp(9px, 2.75vw, 12px);
 }
 
 .surah-frame--dense .surah-frame,
@@ -497,12 +497,12 @@
 
 .surah-frame--dense .surah-frame__title,
 .surah-frame.surah-frame--dense .surah-frame__title {
-  font-size: clamp(9px, 2.75vw, 12px);
+  font-size: clamp(9.3px, 2.95vw, 12.7px);
 }
 
 .surah-frame--dense .surah-frame__title--long,
 .surah-frame.surah-frame--dense .surah-frame__title--long {
-  font-size: clamp(8px, 2.45vw, 10.5px);
+  font-size: clamp(8.5px, 2.6vw, 11px);
 }
 
 @media (min-width: 700px) {
