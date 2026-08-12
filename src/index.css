@@ -341,34 +341,54 @@
 
 /* --- Preserved QCF reader styles from Sakina a4b380c for protected Quran reader screens --- */
 .qcf-page {
-  width: 100%;
+  --qcf-font-size: 18px;
+  box-sizing: border-box;
+  width: 17em;
   max-width: 100%;
+  height: 27.75em;
   margin: 0 auto;
-  padding: 4px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
+  padding: 0;
+  display: grid;
+  grid-template-rows: repeat(15, minmax(0, 1fr));
+  font-size: var(--qcf-font-size);
   user-select: none;
 }
 
-.qcf-line {
-  font-size: clamp(18px, 4.2vw, 30px);
-  line-height: 1.85;
-  text-align: center;
-  direction: rtl;
-  white-space: nowrap;
-  letter-spacing: 0;
-  word-spacing: 0;
+.qcf-line,
+.qcf-empty,
+.qcf-page .surah-header-line {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
 }
 
-.qcf-line.qcf-justify {
-  text-align: justify;
-  text-align-last: center;
+.qcf-line {
+  display: flex;
+  align-items: center;
+  direction: rtl;
+  font-size: 1em;
+  line-height: 1;
   white-space: nowrap;
+}
+
+.qcf-line.qcf-justified {
+  justify-content: space-between;
+}
+
+.qcf-line.qcf-centered {
+  justify-content: center;
+}
+
+.qcf-empty {
+  pointer-events: none;
 }
 
 .qcf-word {
-  display: inline;
+  display: inline-block;
+  flex: 0 0 auto;
+  white-space: pre;
   cursor: pointer;
   transition: background-color 0.15s, color 0.15s;
   border-radius: 3px;
@@ -394,24 +414,13 @@
 }
 
 .qcf-basmala {
-  text-align: center !important;
-  white-space: nowrap;
-  margin: 6px 0 3px;
   opacity: 1;
-}
-
-/* Responsive */
-@media (min-width: 700px) {
-  .qcf-page { padding: 8px 16px; }
-}
-
-@media (min-width: 1024px) {
-  .qcf-page { padding: 12px 24px; }
 }
 
 /* ===== Sakinah Surah Header Frame ===== */
 .surah-header-line {
   display: flex;
+  align-items: center;
   justify-content: center;
   width: 100%;
   direction: rtl;
@@ -430,6 +439,24 @@
   contain: layout paint;
   pointer-events: none;
   user-select: none;
+}
+
+/* A Surah title occupies its authoritative page row; it never adds an extra
+   free-flowing block above or below the fifteen-row Mushaf grid. */
+.qcf-page .surah-frame {
+  width: auto;
+  height: 1.42em;
+  margin: 0;
+  aspect-ratio: 2400 / 775;
+  contain: layout;
+}
+
+.qcf-page .surah-frame__title {
+  font-size: 0.48em;
+}
+
+.qcf-page .surah-frame__title--long {
+  font-size: 0.42em;
 }
 
 .surah-frame__art {

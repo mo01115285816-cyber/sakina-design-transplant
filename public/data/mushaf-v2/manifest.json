@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "qcf-v2-fixed-layout-1",
+  "mushaf": "Madinah QCF V2",
+  "pages": 604,
+  "linesPerPage": 15,
+  "headers": 114,
+  "basmalas": 112,
+  "centeredTextLines": 30,
+  "layoutSource": "https://qul.tarteel.ai/exports/mushaf_page?mushaf_id=1&page_number={page}&script=code_v2",
+  "generatedAt": "2026-08-11",
+  "note": "Derived fixed page layout. Existing project data remains untouched and is used only to retain Uthmani word text for glyph locations."
+}
