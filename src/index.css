@@ -417,6 +417,53 @@
   opacity: 1;
 }
 
+/* Fixed-page spread shell. Slot coordinates are calculated in TypeScript from
+   the measured reader container; CSS only paints those already-safe slots. */
+.mushaf-spread-measure {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  width: 100%;
+}
+
+.mushaf-spread-surface,
+.mushaf-spread-pages {
+  position: absolute;
+  inset: 0;
+}
+
+.mushaf-page-slot {
+  position: absolute;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+}
+
+.mushaf-page-slot .qcf-page {
+  margin: 0;
+}
+
+.mushaf-spread-pages--pending {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.mushaf-spread-pages--ready {
+  visibility: visible;
+}
+
+.mushaf-spread-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
 /* ===== Sakinah Surah Header Frame ===== */
 .surah-header-line {
   display: flex;

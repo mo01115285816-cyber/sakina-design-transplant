@@ -1,35 +1,19 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   LogOut, X, Play, Pause, BookOpen, Loader2, Moon, Sun, Settings, Image as ImageIcon, ChevronRight, Copy, Check, Bookmark, Palette, AlertCircle
 } from "lucide-react";
 import { surahNames } from "@/data/surahNames";
-import { vocalizedSurahNames } from "@/data/vocalizedSurahNames";
 import { QuranOfflineService } from "@/services/QuranOfflineService";
 import { MushafQcfV2LayoutService } from "@/services/MushafQcfV2LayoutService";
+import { getMushafNavigationTarget } from "@/services/MushafSpreadPlanner";
 import { useQcfFont, prefetchQcfFont } from "@/hooks/useQcfFont";
-import type { MushafQcfV2Line, MushafQcfV2Page, MushafQcfV2Word } from "@/services/MushafQcfV2LayoutService";
+import { useMushafSpreadLayout } from "@/hooks/useMushafSpreadLayout";
+import MushafSpreadSurface from "@/components/MushafSpreadSurface";
+import type { MushafQcfV2Page, MushafQcfV2Word } from "@/services/MushafQcfV2LayoutService";
 
 const SURAH_START_PAGES: Record<number, number> = {"1":1,"2":2,"3":50,"4":77,"5":106,"6":128,"7":151,"8":177,"9":187,"10":208,"11":221,"12":235,"13":249,"14":255,"15":262,"16":267,"17":282,"18":293,"19":305,"20":312,"21":322,"22":332,"23":342,"24":350,"25":359,"26":367,"27":377,"28":385,"29":396,"30":404,"31":411,"32":415,"33":418,"34":428,"35":434,"36":440,"37":446,"38":453,"39":458,"40":467,"41":477,"42":483,"43":489,"44":496,"45":499,"46":502,"47":507,"48":511,"49":515,"50":518,"51":520,"52":523,"53":526,"54":528,"55":531,"56":534,"57":537,"58":542,"59":545,"60":549,"61":551,"62":553,"63":554,"64":556,"65":558,"66":560,"67":562,"68":564,"69":566,"70":568,"71":570,"72":572,"73":574,"74":575,"75":577,"76":578,"77":580,"78":582,"79":583,"80":585,"81":586,"82":587,"83":587,"84":589,"85":590,"86":591,"87":591,"88":592,"89":593,"90":594,"91":595,"92":595,"93":596,"94":596,"95":597,"96":597,"97":598,"98":598,"99":599,"100":599,"101":600,"102":600,"103":601,"104":601,"105":601,"106":602,"107":602,"108":602,"109":603,"110":603,"111":603,"112":604,"113":604,"114":604};
 
-
-const SURAH_HEADER_FRAME_SRC = "/images/quran/surah-header-frame.webp";
-const SURAH_HEADER_FRAME_WIDTH = 2400;
-const SURAH_HEADER_FRAME_HEIGHT = 775;
-// Raw V2 advances peak at 16.0684 em. Browser font hinting rounds each interactive
-// word independently on compact screens; 17 em preserves every glyph at those boundaries
-// without changing a glyph's shape or applying horizontal scaling.
-const QCF_V2_FULL_LINE_EM = 17;
-const QCF_V2_PAGE_HEIGHT_EM = 27.75;
-
-// The HTML preload starts this request before React mounts. Keeping this module-level
-// image alive also asks the WebView to decode it before the reader route is opened.
-const surahHeaderFramePreload = typeof Image !== "undefined" ? new Image() : null;
-if (surahHeaderFramePreload) {
-  surahHeaderFramePreload.decoding = "sync";
-  surahHeaderFramePreload.src = SURAH_HEADER_FRAME_SRC;
-  void surahHeaderFramePreload.decode?.().catch(() => undefined);
-}
 
 const toArabicDigits = (num: number | string) => {
   const id = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
@@ -136,6 +120,7 @@ type SelectedVerseInfo = {
   text_uthmani: string;
   chapter_id: number;
   verse_number: number;
+  page: number;
 };
 
 export default function QuranReaderScreen({
@@ -149,22 +134,12 @@ export default function QuranReaderScreen({
   const [currentPage, setCurrentPage] = useState<number>(initialPage || SURAH_START_PAGES[surahId] || 1);
   const [animationDirection, setAnimationDirection] = useState<"next" | "prev">("next");
 
+  // A fade preserves the existing page-change feedback without translating or
+  // scaling a fixed Mushaf page across another page or a hardware hinge.
   const pageVariants = {
-    initial: (dir: "next" | "prev") => ({
-      opacity: 0,
-      x: dir === "next" ? -60 : 60,
-      scale: 0.98,
-    }),
-    animate: {
-      opacity: 1,
-      x: 0,
-      scale: 1,
-    },
-    exit: (dir: "next" | "prev") => ({
-      opacity: 0,
-      x: dir === "next" ? 60 : -60,
-      scale: 0.98,
-    }),
+    initial: () => ({ opacity: 0 }),
+    animate: { opacity: 1 },
+    exit: () => ({ opacity: 0 }),
   };
 
   const pageTransition = {
@@ -286,7 +261,7 @@ export default function QuranReaderScreen({
           surahName: surahNames[verse.chapter_id] || `سورة ${verse.chapter_id}`,
           verseNumber: verse.verse_number,
           verseKey: verse.verse_key,
-          page: currentPage,
+          page: verse.page,
           timestamp: Date.now()
         };
         updated = [newBookmark, ...bookmarks];
@@ -351,62 +326,9 @@ export default function QuranReaderScreen({
     prefetchQcfFont(1);
   }, [currentPage]);
 
-  // V2 layout records carry the authoritative line type and centering decision for each page slot.
-  const lines = useMemo<MushafQcfV2Line[]>(() => {
-    if (!pageData || !pageData.lines) return [];
-    return pageData.lines;
-  }, [pageData]);
-
-  const qcfViewportRef = useRef<HTMLDivElement | null>(null);
-  const qcfPageRef = useRef<HTMLDivElement | null>(null);
-  const [qcfLayoutVersion, setQcfLayoutVersion] = useState(0);
-  const [qcfFontSize, setQcfFontSize] = useState(18);
-
-  const setQcfViewportRef = useCallback((element: HTMLDivElement | null) => {
-    if (qcfViewportRef.current === element) return;
-    qcfViewportRef.current = element;
-    if (element) setQcfLayoutVersion((version) => version + 1);
-  }, []);
-
-  const setQcfPageRef = useCallback((element: HTMLDivElement | null) => {
-    if (qcfPageRef.current === element) return;
-    qcfPageRef.current = element;
-    if (element) setQcfLayoutVersion((version) => version + 1);
-  }, []);
-
-  useEffect(() => {
-    const pageElement = qcfPageRef.current;
-    const viewportElement = qcfViewportRef.current;
-    if (!pageElement || !viewportElement || !pageData || !isFontLoaded) return;
-
-    const updatePageScale = () => {
-      const viewportStyle = window.getComputedStyle(viewportElement);
-      const availableWidth = viewportElement.clientWidth
-        - parseFloat(viewportStyle.paddingInlineStart)
-        - parseFloat(viewportStyle.paddingInlineEnd);
-      const availableHeight = viewportElement.clientHeight
-        - parseFloat(viewportStyle.paddingBlockStart)
-        - parseFloat(viewportStyle.paddingBlockEnd);
-      const nextFontSize = Math.min(
-        availableWidth / QCF_V2_FULL_LINE_EM,
-        availableHeight / QCF_V2_PAGE_HEIGHT_EM,
-      );
-
-      if (!Number.isFinite(nextFontSize) || nextFontSize <= 0) return;
-      setQcfFontSize((current) => Math.abs(current - nextFontSize) < 0.01 ? current : nextFontSize);
-    };
-
-    updatePageScale();
-
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', updatePageScale);
-      return () => window.removeEventListener('resize', updatePageScale);
-    }
-
-    const observer = new ResizeObserver(updatePageScale);
-    observer.observe(viewportElement);
-    return () => observer.disconnect();
-  }, [pageData, isFontLoaded, qcfLayoutVersion]);
+  // The layout hook measures the real safe reader rectangle and returns either
+  // a one-page plan or a fully-contained fixed-page spread plan.
+  const { setViewportRef, plan: mushafPlan } = useMushafSpreadLayout(currentPage);
 
   // Swipe logic
   const touchStartX = useRef<number>(0);
@@ -423,12 +345,18 @@ export default function QuranReaderScreen({
 
   const onTouchEnd = () => {
     const diff = touchEndX.current - touchStartX.current;
-    if (diff > 80 && currentPage < 604) {
-      setAnimationDirection("next");
-      setCurrentPage(currentPage + 1);
-    } else if (diff < -80 && currentPage > 1) {
-      setAnimationDirection("prev");
-      setCurrentPage(currentPage - 1);
+    if (diff > 80) {
+      const nextPage = getMushafNavigationTarget(mushafPlan, 'next', currentPage);
+      if (nextPage !== currentPage) {
+        setAnimationDirection("next");
+        setCurrentPage(nextPage);
+      }
+    } else if (diff < -80) {
+      const previousPage = getMushafNavigationTarget(mushafPlan, 'previous', currentPage);
+      if (previousPage !== currentPage) {
+        setAnimationDirection("prev");
+        setCurrentPage(previousPage);
+      }
     }
     touchStartX.current = 0;
     touchEndX.current = 0;
@@ -446,31 +374,24 @@ export default function QuranReaderScreen({
     return null;
   };
 
-  const findVerseInfo = (verseKey: string): SelectedVerseInfo | null => {
-    if (!pageData) return null;
-    for (const line of pageData.lines) {
-      if (line.type === 'text' && line.words) {
-        for (const word of line.words) {
-          const vk = extractVerseKeyFromWord(word);
-          if (vk === verseKey) {
-            const parts = word.location.split(':');
-            return {
-              verse_key: verseKey,
-              text_uthmani: line.text || word.word,
-              chapter_id: parseInt(parts[0], 10),
-              verse_number: parseInt(parts[1], 10),
-            };
-          }
-        }
-      }
-    }
-    return null;
-  };
-
-  const handleWordLongPressStart = (verseKey: string, e: React.TouchEvent | React.MouseEvent) => {
+  const handleWordLongPressStart = (
+    pageNumber: number,
+    word: MushafQcfV2Word,
+    lineText: string,
+    e: React.TouchEvent | React.MouseEvent,
+  ) => {
     e.stopPropagation();
-    const verse = findVerseInfo(verseKey);
-    if (!verse) return;
+    const verseKey = extractVerseKeyFromWord(word);
+    if (!verseKey) return;
+    const parts = word.location.split(':');
+    const verse: SelectedVerseInfo = {
+      verse_key: verseKey,
+      text_uthmani: lineText || word.word,
+      chapter_id: parseInt(parts[0], 10),
+      verse_number: parseInt(parts[1], 10),
+      page: pageNumber,
+    };
+
     touchTimer.current = setTimeout(() => {
       setSelectedVerseForAction(verse);
       setShowActionCard(true);
@@ -506,7 +427,7 @@ export default function QuranReaderScreen({
     setShowTafsir(true);
     setTafsirLoading(true);
     try {
-      const tafsirPage = await QuranOfflineService.getTafsirPage(currentPage);
+      const tafsirPage = await QuranOfflineService.getTafsirPage(selectedVerseForAction.page);
       if (tafsirPage && tafsirPage.length > 0) {
         const verseTafsir = tafsirPage.find((t: any) => t.verse_key === selectedVerseForAction.verse_key);
         if (verseTafsir) {
@@ -550,15 +471,15 @@ export default function QuranReaderScreen({
     setIsPlaying(false);
   };
 
-  const qcfFontFamily = `QCF_P${String(currentPage).padStart(3, '0')}`;
-  const showLoading = isLoading || (!isLoading && pageData !== null && !isFontLoaded);
+  const isPrimaryPageReady = !isLoading && pageData !== null && isFontLoaded;
+  const readerMotionKey = mushafPlan?.key ?? `mushaf-measuring-${currentPage}`;
 
   return (
     <motion.div
       key="quran-reader-screen"
-      initial={{ opacity: 0, scale: 0.95, filter: 'blur(5px)' }}
-      animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-      exit={{ opacity: 0, scale: 0.95, filter: 'blur(5px)' }}
+      initial={{ opacity: 0, filter: 'blur(5px)' }}
+      animate={{ opacity: 1, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, filter: 'blur(5px)' }}
       transition={{ duration: 0.4 }}
       className={`fixed inset-0 w-full h-[100vh] overflow-hidden flex flex-col justify-center px-4 sm:px-8 font-sans transition-colors duration-500 ${activeTheme.bg} ${activeTheme.text}`}
       dir="rtl"
@@ -616,130 +537,51 @@ export default function QuranReaderScreen({
         </div>
 
         <AnimatePresence mode="wait" initial={false}>
-          {showLoading ? (
-            <motion.div
-              key="loading"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="flex flex-col items-center justify-center h-full gap-3"
-            >
-              <Loader2 className={`animate-spin ${activeTheme.accent}`} size={40} />
-              <span className={`text-xs font-sans opacity-60 ${activeTheme.accent}`}>
-                {isLoading ? "جاري تحميل الصفحة..." : "جاري تحميل خط المصحف..."}
-              </span>
-            </motion.div>
-          ) : (
-            <motion.div
-              key={currentPage}
-              custom={animationDirection}
-              variants={pageVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              transition={pageTransition}
-              ref={setQcfViewportRef}
-              className="qcf-page-viewport w-full h-full flex flex-col justify-center overflow-y-auto overflow-x-visible pt-24 pb-24 sm:pt-28 sm:pb-24"
-            >
-              <div
-                ref={setQcfPageRef}
-                className="qcf-page select-none"
-                onContextMenu={(e) => e.preventDefault()}
-                style={{
-                  fontFamily: qcfFontFamily,
-                  ['--qcf-font-size' as any]: `${qcfFontSize}px`,
-                  ['--qcf-accent' as any]: activeTheme.accentHex,
-                  ['--qcf-highlight' as any]: activeTheme.highlightBgHex,
-                  ['--qcf-playing' as any]: activeTheme.playingBgHex,
-                  ['--qcf-hover' as any]: activeTheme.hoverBgHex,
-                  ['--qcf-accent-light' as any]: activeTheme.accentLightHex,
-                }}
-              >
-                {lines.map((lineObj) => {
-                  const lineNum = lineObj.line;
-
-                  if (lineObj.type === 'surah-header' && lineObj.surah) {
-                    const surahChapterId = parseInt(lineObj.surah, 10);
-                    const headerLabel = vocalizedSurahNames[surahChapterId] || lineObj.text?.trim() || `سُورَةُ ${surahNames[surahChapterId] || ''}`;
-                    const isLongHeaderName = (surahNames[surahChapterId] || '').length >= 10;
-
-                    return (
-                      <div key={`line-${lineNum}`} className="surah-header-line">
-                        <div className="surah-frame" aria-label={headerLabel}>
-                          <img
-                            className="surah-frame__art"
-                            src={SURAH_HEADER_FRAME_SRC}
-                            width={SURAH_HEADER_FRAME_WIDTH}
-                            height={SURAH_HEADER_FRAME_HEIGHT}
-                            alt=""
-                            aria-hidden="true"
-                            loading="eager"
-                            decoding="sync"
-                            fetchPriority="high"
-                            draggable={false}
-                          />
-                          <span
-                            className={`surah-frame__title ${isLongHeaderName ? 'surah-frame__title--long' : ''}`}
-                            dir="rtl"
-                          >
-                            {headerLabel}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  if (lineObj.type === 'basmala' && lineObj.qpcV2) {
-                    return (
-                      <div key={`line-${lineNum}`} className="qcf-line qcf-basmala qcf-centered" style={{ fontFamily: 'QCF_P001' }}>
-                        {lineObj.qpcV2}
-                      </div>
-                    );
-                  }
-
-                  if (lineObj.type === 'text' && lineObj.words) {
-                    return (
-                      <div key={`line-${lineNum}`} className={`qcf-line ${lineObj.isCentered ? 'qcf-centered' : 'qcf-justified'}`}>
-                        {lineObj.words.map((word, wIdx) => {
-                          const verseKey = extractVerseKeyFromWord(word) || '';
-                          const isSelected = selectedVerseForAction?.verse_key === verseKey;
-                          const isHighlighted = highlightedVerseKey === verseKey;
-                          const isPlayingVerse = playingVerseKey === verseKey;
-                          const isEnd = word.charType === 'end' || /\d+$/.test(word.word) || /[\u0660-\u0669]$/.test(word.word);
-
-                          const cls = [
-                            'qcf-word',
-                            isEnd ? 'qcf-end-mark' : '',
-                            (isHighlighted || isSelected) ? 'qcf-highlighted' : '',
-                            isPlayingVerse ? 'qcf-playing' : '',
-                          ].filter(Boolean).join(' ');
-
-                          return (
-                            <span
-                              key={`${lineNum}-${wIdx}`}
-                              className={cls}
-                              onClick={(e) => handleWordClick(word, e)}
-                              onTouchStart={(e) => handleWordLongPressStart(verseKey, e)}
-                              onTouchEnd={handleWordLongPressEnd}
-                              onTouchMove={handleWordLongPressEnd}
-                              onMouseDown={(e) => handleWordLongPressStart(verseKey, e)}
-                              onMouseUp={handleWordLongPressEnd}
-                              onMouseLeave={handleWordLongPressEnd}
-                            >
-                              {word.qpcV2}
-                            </span>
-                          );
-                        })}
-                      </div>
-                    );
-                  }
-
-                  return <div key={`line-${lineNum}`} className="qcf-empty" aria-hidden="true" />;
-                })}
-              </div>
-            </motion.div>
-          )}
+          <motion.div
+            key={readerMotionKey}
+            custom={animationDirection}
+            variants={pageVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            transition={pageTransition}
+            className="qcf-page-viewport w-full h-full flex flex-col overflow-visible pt-24 pb-24 sm:pt-28 sm:pb-24"
+          >
+            <div ref={setViewportRef} className="mushaf-spread-measure">
+              {!isPrimaryPageReady || !mushafPlan ? (
+                <div className="mushaf-spread-loader" role="status" aria-live="polite">
+                  <Loader2 className={`animate-spin ${activeTheme.accent}`} size={40} />
+                  <span className={`text-xs font-sans opacity-60 ${activeTheme.accent}`}>
+                    {isLoading || !pageData
+                      ? "جاري تحميل الصفحة..."
+                      : !isFontLoaded
+                        ? "جاري تحميل خط المصحف..."
+                        : "جاري قياس مساحة العرض..."}
+                  </span>
+                </div>
+              ) : (
+                <MushafSpreadSurface
+                  key={mushafPlan.key}
+                  plan={mushafPlan}
+                  activePageData={pageData}
+                  theme={{
+                    accent: activeTheme.accentHex,
+                    highlight: activeTheme.highlightBgHex,
+                    playing: activeTheme.playingBgHex,
+                    hover: activeTheme.hoverBgHex,
+                    accentLight: activeTheme.accentLightHex,
+                  }}
+                  loadingAccentClassName={activeTheme.accent}
+                  highlightedVerseKey={highlightedVerseKey}
+                  selectedVerseKey={selectedVerseForAction?.verse_key ?? null}
+                  playingVerseKey={playingVerseKey}
+                  onWordClick={handleWordClick}
+                  onWordLongPressStart={handleWordLongPressStart}
+                  onWordLongPressEnd={handleWordLongPressEnd}
+                />
+              )}
+            </div>
+          </motion.div>
         </AnimatePresence>
       </div>
 
