@@ -420,11 +420,62 @@
 /* Fixed-page spread shell. Slot coordinates are calculated in TypeScript from
    the measured reader container; CSS only paints those already-safe slots. */
 .mushaf-spread-measure {
-  position: relative;
-  flex: 1 1 auto;
+  position: absolute;
   min-width: 0;
   min-height: 0;
-  width: 100%;
+}
+
+.mushaf-spread-side-rail {
+  position: absolute;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.mushaf-spread-side-rail__card {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.375rem;
+  width: 52px;
+  padding: 5px;
+  pointer-events: auto;
+}
+
+.mushaf-spread-rail-button {
+  display: inline-flex;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: inherit;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.mushaf-spread-rail-button:hover {
+  background: var(--qcf-hover, rgba(184, 147, 90, 0.1));
+}
+
+.mushaf-spread-rail-button:active {
+  transform: scale(0.95);
+}
+
+.mushaf-spread-rail-button--active {
+  background: #b88a4f;
+  color: #fff9f1;
+  box-shadow: 0 4px 12px rgba(184, 138, 79, 0.35);
+}
+
+.mushaf-spread-rail-stop {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  background: currentColor;
 }
 
 .mushaf-spread-surface,

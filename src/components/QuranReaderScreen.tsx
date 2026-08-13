@@ -10,6 +10,7 @@ import { getMushafNavigationTarget } from "@/services/MushafSpreadPlanner";
 import { useQcfFont, prefetchQcfFont } from "@/hooks/useQcfFont";
 import { useMushafSpreadLayout } from "@/hooks/useMushafSpreadLayout";
 import MushafSpreadSurface from "@/components/MushafSpreadSurface";
+import MushafSpreadControlRail from "@/components/MushafSpreadControlRail";
 import type { MushafQcfV2Page, MushafQcfV2Word } from "@/services/MushafQcfV2LayoutService";
 
 const SURAH_START_PAGES: Record<number, number> = {"1":1,"2":2,"3":50,"4":77,"5":106,"6":128,"7":151,"8":177,"9":187,"10":208,"11":221,"12":235,"13":249,"14":255,"15":262,"16":267,"17":282,"18":293,"19":305,"20":312,"21":322,"22":332,"23":342,"24":350,"25":359,"26":367,"27":377,"28":385,"29":396,"30":404,"31":411,"32":415,"33":418,"34":428,"35":434,"36":440,"37":446,"38":453,"39":458,"40":467,"41":477,"42":483,"43":489,"44":496,"45":499,"46":502,"47":507,"48":511,"49":515,"50":518,"51":520,"52":523,"53":526,"54":528,"55":531,"56":534,"57":537,"58":542,"59":545,"60":549,"61":551,"62":553,"63":554,"64":556,"65":558,"66":560,"67":562,"68":564,"69":566,"70":568,"71":570,"72":572,"73":574,"74":575,"75":577,"76":578,"77":580,"78":582,"79":583,"80":585,"81":586,"82":587,"83":587,"84":589,"85":590,"86":591,"87":591,"88":592,"89":593,"90":594,"91":595,"92":595,"93":596,"94":596,"95":597,"96":597,"97":598,"98":598,"99":599,"100":599,"101":600,"102":600,"103":601,"104":601,"105":601,"106":602,"107":602,"108":602,"109":603,"110":603,"111":603,"112":604,"113":604,"114":604};
@@ -328,7 +329,9 @@ export default function QuranReaderScreen({
 
   // The layout hook measures the real safe reader rectangle and returns either
   // a one-page plan or a fully-contained fixed-page spread plan.
-  const { setViewportRef, plan: mushafPlan } = useMushafSpreadLayout(currentPage);
+  const { setViewportRef, plan: mushafPlan, controlLayout } = useMushafSpreadLayout(currentPage, {
+    layoutVersion: `${showControls}:${isPlaying}:${playMode}:${showActionCard}:${showReciterModal}`,
+  });
 
   // Swipe logic
   const touchStartX = useRef<number>(0);
@@ -472,6 +475,15 @@ export default function QuranReaderScreen({
   };
 
   const isPrimaryPageReady = !isLoading && pageData !== null && isFontLoaded;
+  const isSideRailLayout = controlLayout?.mode === 'side-rail' && mushafPlan?.mode === 'spread';
+  const stageStyle = controlLayout
+    ? {
+        left: `${controlLayout.stage.left}px`,
+        top: `${controlLayout.stage.top}px`,
+        width: `${controlLayout.stage.width}px`,
+        height: `${controlLayout.stage.height}px`,
+      }
+    : { inset: 0 };
   const readerMotionKey = mushafPlan?.key ?? `mushaf-measuring-${currentPage}`;
 
   return (
@@ -545,10 +557,12 @@ export default function QuranReaderScreen({
             animate="animate"
             exit="exit"
             transition={pageTransition}
-            className="qcf-page-viewport w-full h-full flex flex-col overflow-visible pt-24 pb-24 sm:pt-28 sm:pb-24"
+            ref={setViewportRef}
+            data-mushaf-control-layout={controlLayout?.mode ?? 'measuring'}
+            className="qcf-page-viewport relative w-full h-full overflow-visible"
           >
-            <div ref={setViewportRef} className="mushaf-spread-measure">
-              {!isPrimaryPageReady || !mushafPlan ? (
+            <div className="mushaf-spread-measure" style={stageStyle}>
+              {!isPrimaryPageReady || !mushafPlan || !controlLayout ? (
                 <div className="mushaf-spread-loader" role="status" aria-live="polite">
                   <Loader2 className={`animate-spin ${activeTheme.accent}`} size={40} />
                   <span className={`text-xs font-sans opacity-60 ${activeTheme.accent}`}>
@@ -581,13 +595,45 @@ export default function QuranReaderScreen({
                 />
               )}
             </div>
+            {isSideRailLayout && (
+              <MushafSpreadControlRail
+                layout={controlLayout}
+                showControls={showControls}
+                showActionCard={showActionCard}
+                selectedVerse={selectedVerseForAction ? {
+                  verseKey: selectedVerseForAction.verse_key,
+                  text: selectedVerseForAction.text_uthmani,
+                } : null}
+                isPlaying={isPlaying}
+                playMode={playMode}
+                showReciterModal={showReciterModal}
+                isVerseBookmarked={Boolean(selectedVerseForAction && bookmarkedVerses.includes(selectedVerseForAction.verse_key))}
+                primaryTextClassName={activeTheme.text}
+                onToggleSettings={() => setShowSettings(!showSettings)}
+                onTogglePlay={togglePlayPause}
+                onShowReciter={() => setShowReciterModal(true)}
+                onToggleAudioSettings={() => setShowAudioSettings(!showAudioSettings)}
+                onStopPlayer={() => {
+                  audioRef.current?.pause();
+                  setIsPlaying(false);
+                  setPlayingVerseKey(null);
+                }}
+                onPlaySelected={handlePlaySelectedVerse}
+                onShowTafsir={handleShowTafsirForSelected}
+                onShowReflection={handleShowReflectionCard}
+                onCopySelected={handleCopyVerse}
+                onToggleVerseBookmark={() => {
+                  if (selectedVerseForAction) toggleVerseBookmark(selectedVerseForAction);
+                }}
+              />
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
 
       {/* Action Card for Selected Verse */}
       <AnimatePresence>
-        {showActionCard && selectedVerseForAction && (
+        {!isSideRailLayout && showActionCard && selectedVerseForAction && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -646,7 +692,7 @@ export default function QuranReaderScreen({
 
       {/* Bottom Player Sheet */}
       <AnimatePresence>
-        {isPlaying && playMode === 'single' && !showReciterModal && (
+        {!isSideRailLayout && isPlaying && playMode === 'single' && !showReciterModal && (
           <motion.div
             initial={{ y: '100%', opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -810,6 +856,7 @@ export default function QuranReaderScreen({
             </motion.button>
 
             {/* Floating Control Card */}
+            {!isSideRailLayout && (
             <motion.div
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
@@ -842,6 +889,7 @@ export default function QuranReaderScreen({
                 <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
               </button>
             </motion.div>
+            )}
           </>
         )}
       </AnimatePresence>

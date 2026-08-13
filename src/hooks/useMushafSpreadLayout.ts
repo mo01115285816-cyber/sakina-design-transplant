@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   MIN_DUAL_PAGE_FONT_SIZE_PX,
   MUSHAF_SPREAD_GUTTER_EM,
-  planMushafSpread,
+  planAdaptiveMushafSpread,
 } from '@/services/MushafSpreadPlanner';
-import type { MushafRect, MushafSpreadPlan } from '@/services/MushafSpreadPlanner';
+import type { MushafControlLayout, MushafRect, MushafSpreadPlan } from '@/services/MushafSpreadPlanner';
 
 type SegmentCapableViewport = VisualViewport & {
   segments?: ReadonlyArray<DOMRectReadOnly>;
@@ -31,6 +31,9 @@ interface SegmentMeasurement {
 export interface UseMushafSpreadLayoutOptions {
   minDualFontSize?: number;
   gutterEm?: number;
+  // UI state does not directly resize a page; it is an explicit recomputation
+  // trigger when a control changes visibility or behavior.
+  layoutVersion?: string;
 }
 
 function sameNumber(left: number, right: number): boolean {
@@ -143,6 +146,7 @@ export function useMushafSpreadLayout(
 ): {
   setViewportRef: (element: HTMLDivElement | null) => void;
   plan: MushafSpreadPlan | null;
+  controlLayout: MushafControlLayout | null;
 } {
   const [viewportElement, setViewportElement] = useState<HTMLDivElement | null>(null);
   const [geometry, setGeometry] = useState<MushafSpreadGeometry | null>(null);
@@ -207,9 +211,9 @@ export function useMushafSpreadLayout(
     };
   }, [viewportElement]);
 
-  const plan = useMemo(() => {
+  const adaptivePlan = useMemo(() => {
     if (!geometry) return null;
-    return planMushafSpread({
+    return planAdaptiveMushafSpread({
       activePage,
       viewport: geometry.viewport,
       segments: geometry.segments,
@@ -217,7 +221,11 @@ export function useMushafSpreadLayout(
       minDualFontSize: options.minDualFontSize ?? MIN_DUAL_PAGE_FONT_SIZE_PX,
       gutterEm: options.gutterEm ?? MUSHAF_SPREAD_GUTTER_EM,
     });
-  }, [activePage, geometry, options.gutterEm, options.minDualFontSize]);
+  }, [activePage, geometry, options.gutterEm, options.layoutVersion, options.minDualFontSize]);
 
-  return { setViewportRef, plan };
+  return {
+    setViewportRef,
+    plan: adaptivePlan?.spreadPlan ?? null,
+    controlLayout: adaptivePlan?.controlLayout ?? null,
+  };
 }

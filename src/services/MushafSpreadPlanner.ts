@@ -3,7 +3,21 @@ export const MUSHAF_PAGE_HEIGHT_EM = 27.75;
 export const MUSHAF_SPREAD_GUTTER_EM = 0.8;
 export const MIN_DUAL_PAGE_FONT_SIZE_PX = 18;
 
+// Current single-page control reservations, preserved exactly when the
+// traditional reader layout remains the best available option.
+export const STANDARD_READER_TOP_RESERVE_PX = 112;
+export const STANDARD_READER_BOTTOM_RESERVE_PX = 96;
+
+// A spread-specific composition recovers vertical area by moving persistent
+// controls into a physical side rail. These values are geometry budgets, not
+// device breakpoints.
+export const SPREAD_READER_TOP_RESERVE_PX = 88;
+export const SPREAD_READER_BOTTOM_RESERVE_PX = 24;
+export const SPREAD_SIDE_RAIL_WIDTH_PX = 52;
+export const SPREAD_SIDE_RAIL_GAP_PX = 12;
+
 export type MushafDisplayMode = 'single' | 'spread';
+export type MushafControlLayoutMode = 'standard' | 'side-rail';
 export type MushafPageSlotSide = 'single' | 'right' | 'left';
 
 export interface MushafRect {
@@ -43,6 +57,19 @@ export interface MushafSpreadPlannerInput {
   hasSeparatingFeature?: boolean;
   minDualFontSize?: number;
   gutterEm?: number;
+}
+
+export interface MushafControlLayout {
+  mode: MushafControlLayoutMode;
+  stage: MushafRect;
+  topReserve: number;
+  bottomReserve: number;
+  sideRail?: MushafRect;
+}
+
+export interface MushafAdaptiveSpreadPlan {
+  controlLayout: MushafControlLayout;
+  spreadPlan: MushafSpreadPlan;
 }
 
 function clampPageNumber(pageNumber: number): number {
@@ -266,4 +293,103 @@ export function planMushafSpread(input: MushafSpreadPlannerInput): MushafSpreadP
   }
 
   return planContinuousSpread(activePage, viewport, minimumFontSize, gutterEm);
+}
+
+function intersectRects(first: MushafRect, second: MushafRect): MushafRect | null {
+  const left = Math.max(first.left, second.left);
+  const top = Math.max(first.top, second.top);
+  const right = Math.min(first.left + first.width, second.left + second.width);
+  const bottom = Math.min(first.top + first.height, second.top + second.height);
+  if (right <= left || bottom <= top) return null;
+  return { left, top, width: right - left, height: bottom - top };
+}
+
+function segmentsWithinStage(segments: MushafRect[] | undefined, stage: MushafRect): MushafRect[] | undefined {
+  if (!segments) return undefined;
+  const clipped = segments
+    .map((segment) => intersectRects(segment, stage))
+    .filter((segment): segment is MushafRect => segment !== null)
+    // MushafSpreadSurface is positioned inside the stage, so planner slots and
+    // segment geometry must be stage-local rather than reader-root coordinates.
+    .map((segment) => ({
+      left: segment.left - stage.left,
+      top: segment.top - stage.top,
+      width: segment.width,
+      height: segment.height,
+    }));
+  return clipped.length > 0 ? clipped : undefined;
+}
+
+function makeStandardControlLayout(viewport: MushafRect): MushafControlLayout {
+  return {
+    mode: 'standard',
+    topReserve: STANDARD_READER_TOP_RESERVE_PX,
+    bottomReserve: STANDARD_READER_BOTTOM_RESERVE_PX,
+    stage: {
+      left: viewport.left,
+      top: viewport.top + STANDARD_READER_TOP_RESERVE_PX,
+      width: viewport.width,
+      height: Math.max(0, viewport.height - STANDARD_READER_TOP_RESERVE_PX - STANDARD_READER_BOTTOM_RESERVE_PX),
+    },
+  };
+}
+
+function makeSideRailControlLayout(viewport: MushafRect): MushafControlLayout {
+  const railFootprint = SPREAD_SIDE_RAIL_WIDTH_PX + SPREAD_SIDE_RAIL_GAP_PX;
+  const railHeight = Math.max(0, viewport.height - SPREAD_READER_TOP_RESERVE_PX - SPREAD_READER_BOTTOM_RESERVE_PX);
+
+  return {
+    mode: 'side-rail',
+    topReserve: SPREAD_READER_TOP_RESERVE_PX,
+    bottomReserve: SPREAD_READER_BOTTOM_RESERVE_PX,
+    sideRail: {
+      left: viewport.left,
+      top: viewport.top + SPREAD_READER_TOP_RESERVE_PX,
+      width: SPREAD_SIDE_RAIL_WIDTH_PX,
+      height: railHeight,
+    },
+    stage: {
+      left: viewport.left + railFootprint,
+      top: viewport.top + SPREAD_READER_TOP_RESERVE_PX,
+      width: Math.max(0, viewport.width - railFootprint),
+      height: railHeight,
+    },
+  };
+}
+
+/**
+ * Chooses a control composition before choosing the visual page mode. The
+ * standard composition remains authoritative whenever it already supports a
+ * readable spread; the side rail is used only when it recovers enough real
+ * stage area to meet the existing safe Mushaf scale.
+ */
+export function planAdaptiveMushafSpread(input: MushafSpreadPlannerInput): MushafAdaptiveSpreadPlan | null {
+  const viewport = normalizeViewport(input.viewport);
+  if (!finitePositive(viewport.width) || !finitePositive(viewport.height)) return null;
+
+  const buildPlan = (controlLayout: MushafControlLayout): MushafSpreadPlan | null => planMushafSpread({
+    ...input,
+    viewport: {
+      left: 0,
+      top: 0,
+      width: controlLayout.stage.width,
+      height: controlLayout.stage.height,
+    },
+    segments: segmentsWithinStage(input.segments, controlLayout.stage),
+  });
+
+  const standardLayout = makeStandardControlLayout(viewport);
+  const standardPlan = buildPlan(standardLayout);
+  if (!standardPlan) return null;
+  if (standardPlan.mode === 'spread') {
+    return { controlLayout: standardLayout, spreadPlan: standardPlan };
+  }
+
+  const sideRailLayout = makeSideRailControlLayout(viewport);
+  const sideRailPlan = buildPlan(sideRailLayout);
+  if (sideRailPlan?.mode === 'spread') {
+    return { controlLayout: sideRailLayout, spreadPlan: sideRailPlan };
+  }
+
+  return { controlLayout: standardLayout, spreadPlan: standardPlan };
 }
