@@ -475,6 +475,7 @@ export default function QuranReaderScreen({
   };
 
   const isPrimaryPageReady = !isLoading && pageData !== null && isFontLoaded;
+  const isOpeningPage = currentPage === 1 || currentPage === 2;
   const isSideRailLayout = controlLayout?.mode === 'side-rail' && mushafPlan?.mode === 'spread';
   const stageStyle = controlLayout
     ? {
@@ -543,10 +544,13 @@ export default function QuranReaderScreen({
           </div>
         )}
 
-        {/* Integrated Page Number - Fixed Position */}
-        <div className="absolute bottom-6 left-8 flex justify-center items-center font-bold text-xs sm:text-sm opacity-80 pointer-events-none font-sans">
-          {toArabicDigits(currentPage)}
-        </div>
+        {/* Opening pages render their folios inside the fixed page canvas. The
+            external reader number remains unchanged for every other page. */}
+        {!isOpeningPage && (
+          <div className="absolute bottom-6 left-8 flex justify-center items-center font-bold text-xs sm:text-sm opacity-80 pointer-events-none font-sans">
+            {toArabicDigits(currentPage)}
+          </div>
+        )}
 
         <AnimatePresence mode="wait" initial={false}>
           <motion.div

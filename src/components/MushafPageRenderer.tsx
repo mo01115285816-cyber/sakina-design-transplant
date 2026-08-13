@@ -54,6 +54,11 @@ function getVerseKey(word: MushafQcfV2Word): string | null {
   return parts && parts.length >= 2 ? `${parts[0]}:${parts[1]}` : null;
 }
 
+function toArabicPageDigits(pageNumber: number): string {
+  const digits = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  return String(pageNumber).replace(/\d/g, (digit) => digits[Number(digit)]);
+}
+
 /**
  * A page-only renderer. It owns one QCF page's data and page font, but has no
  * knowledge of whether its parent is displaying a single page or a spread.
@@ -122,10 +127,95 @@ export default function MushafPageRenderer({
   if (!pageData || !isReady) return null;
 
   const qcfFontFamily = `QCF_P${String(pageNumber).padStart(3, '0')}`;
+  const isOpeningPage = pageNumber === 1 || pageNumber === 2;
+  const renderedLines = isOpeningPage ? lines.filter((line) => line.type !== 'empty') : lines;
+
+  const renderLine = (lineObj: MushafQcfV2Page['lines'][number]) => {
+    const lineNum = lineObj.line;
+
+    if (lineObj.type === 'surah-header' && lineObj.surah) {
+      const surahChapterId = parseInt(lineObj.surah, 10);
+      const headerLabel = vocalizedSurahNames[surahChapterId]
+        || lineObj.text?.trim()
+        || `سُورَةُ ${surahNames[surahChapterId] || ''}`;
+      const isLongHeaderName = (surahNames[surahChapterId] || '').length >= 10;
+
+      return (
+        <div key={`line-${lineNum}`} className="surah-header-line">
+          <div className="surah-frame" aria-label={headerLabel}>
+            <img
+              className="surah-frame__art"
+              src={SURAH_HEADER_FRAME_SRC}
+              width={SURAH_HEADER_FRAME_WIDTH}
+              height={SURAH_HEADER_FRAME_HEIGHT}
+              alt=""
+              aria-hidden="true"
+              loading="eager"
+              decoding="sync"
+              fetchPriority="high"
+              draggable={false}
+            />
+            <span
+              className={`surah-frame__title ${isLongHeaderName ? 'surah-frame__title--long' : ''}`}
+              dir="rtl"
+            >
+              {headerLabel}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    if (lineObj.type === 'basmala' && lineObj.qpcV2) {
+      return (
+        <div key={`line-${lineNum}`} className="qcf-line qcf-basmala qcf-centered" style={{ fontFamily: 'QCF_P001' }}>
+          {lineObj.qpcV2}
+        </div>
+      );
+    }
+
+    if (lineObj.type === 'text' && lineObj.words) {
+      return (
+        <div key={`line-${lineNum}`} className={`qcf-line ${lineObj.isCentered ? 'qcf-centered' : 'qcf-justified'}`}>
+          {lineObj.words.map((word, wordIndex) => {
+            const verseKey = getVerseKey(word) || '';
+            const isSelected = selectedVerseKey === verseKey;
+            const isHighlighted = highlightedVerseKey === verseKey;
+            const isPlayingVerse = playingVerseKey === verseKey;
+            const isEnd = word.charType === 'end' || /\d+$/.test(word.word) || /[\u0660-\u0669]$/.test(word.word);
+            const className = [
+              'qcf-word',
+              isEnd ? 'qcf-end-mark' : '',
+              (isHighlighted || isSelected) ? 'qcf-highlighted' : '',
+              isPlayingVerse ? 'qcf-playing' : '',
+            ].filter(Boolean).join(' ');
+
+            return (
+              <span
+                key={`${lineNum}-${wordIndex}`}
+                className={className}
+                onClick={(event) => onWordClick(word, event)}
+                onTouchStart={(event) => onWordLongPressStart(pageNumber, word, lineObj.text || word.word, event)}
+                onTouchEnd={onWordLongPressEnd}
+                onTouchMove={onWordLongPressEnd}
+                onMouseDown={(event) => onWordLongPressStart(pageNumber, word, lineObj.text || word.word, event)}
+                onMouseUp={onWordLongPressEnd}
+                onMouseLeave={onWordLongPressEnd}
+              >
+                {word.qpcV2}
+              </span>
+            );
+          })}
+        </div>
+      );
+    }
+
+    return <div key={`line-${lineNum}`} className="qcf-empty" aria-hidden="true" />;
+  };
 
   return (
     <div
-      className="qcf-page select-none"
+      className={`qcf-page select-none ${isOpeningPage ? 'qcf-opening-page' : ''}`}
       data-mushaf-page={pageNumber}
       aria-label={`صفحة المصحف ${pageNumber}`}
       onContextMenu={(event) => event.preventDefault()}
@@ -139,88 +229,18 @@ export default function MushafPageRenderer({
         ['--qcf-accent-light' as any]: theme.accentLight,
       }}
     >
-      {lines.map((lineObj) => {
-        const lineNum = lineObj.line;
-
-        if (lineObj.type === 'surah-header' && lineObj.surah) {
-          const surahChapterId = parseInt(lineObj.surah, 10);
-          const headerLabel = vocalizedSurahNames[surahChapterId]
-            || lineObj.text?.trim()
-            || `سُورَةُ ${surahNames[surahChapterId] || ''}`;
-          const isLongHeaderName = (surahNames[surahChapterId] || '').length >= 10;
-
-          return (
-            <div key={`line-${lineNum}`} className="surah-header-line">
-              <div className="surah-frame" aria-label={headerLabel}>
-                <img
-                  className="surah-frame__art"
-                  src={SURAH_HEADER_FRAME_SRC}
-                  width={SURAH_HEADER_FRAME_WIDTH}
-                  height={SURAH_HEADER_FRAME_HEIGHT}
-                  alt=""
-                  aria-hidden="true"
-                  loading="eager"
-                  decoding="sync"
-                  fetchPriority="high"
-                  draggable={false}
-                />
-                <span
-                  className={`surah-frame__title ${isLongHeaderName ? 'surah-frame__title--long' : ''}`}
-                  dir="rtl"
-                >
-                  {headerLabel}
-                </span>
-              </div>
-            </div>
-          );
-        }
-
-        if (lineObj.type === 'basmala' && lineObj.qpcV2) {
-          return (
-            <div key={`line-${lineNum}`} className="qcf-line qcf-basmala qcf-centered" style={{ fontFamily: 'QCF_P001' }}>
-              {lineObj.qpcV2}
-            </div>
-          );
-        }
-
-        if (lineObj.type === 'text' && lineObj.words) {
-          return (
-            <div key={`line-${lineNum}`} className={`qcf-line ${lineObj.isCentered ? 'qcf-centered' : 'qcf-justified'}`}>
-              {lineObj.words.map((word, wordIndex) => {
-                const verseKey = getVerseKey(word) || '';
-                const isSelected = selectedVerseKey === verseKey;
-                const isHighlighted = highlightedVerseKey === verseKey;
-                const isPlayingVerse = playingVerseKey === verseKey;
-                const isEnd = word.charType === 'end' || /\d+$/.test(word.word) || /[\u0660-\u0669]$/.test(word.word);
-                const className = [
-                  'qcf-word',
-                  isEnd ? 'qcf-end-mark' : '',
-                  (isHighlighted || isSelected) ? 'qcf-highlighted' : '',
-                  isPlayingVerse ? 'qcf-playing' : '',
-                ].filter(Boolean).join(' ');
-
-                return (
-                  <span
-                    key={`${lineNum}-${wordIndex}`}
-                    className={className}
-                    onClick={(event) => onWordClick(word, event)}
-                    onTouchStart={(event) => onWordLongPressStart(pageNumber, word, lineObj.text || word.word, event)}
-                    onTouchEnd={onWordLongPressEnd}
-                    onTouchMove={onWordLongPressEnd}
-                    onMouseDown={(event) => onWordLongPressStart(pageNumber, word, lineObj.text || word.word, event)}
-                    onMouseUp={onWordLongPressEnd}
-                    onMouseLeave={onWordLongPressEnd}
-                  >
-                    {word.qpcV2}
-                  </span>
-                );
-              })}
-            </div>
-          );
-        }
-
-        return <div key={`line-${lineNum}`} className="qcf-empty" aria-hidden="true" />;
-      })}
+      {isOpeningPage ? (
+        <div className="qcf-opening-content">
+          {renderedLines.map(renderLine)}
+        </div>
+      ) : (
+        renderedLines.map(renderLine)
+      )}
+      {isOpeningPage && (
+        <div className="qcf-opening-folio" aria-label={`رقم الصفحة ${toArabicPageDigits(pageNumber)}`}>
+          {toArabicPageDigits(pageNumber)}
+        </div>
+      )}
     </div>
   );
 }
