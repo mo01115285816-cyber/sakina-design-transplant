@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { generateReflection } from "../services/reflection-service";
 import type { ReflectionRequest, ReflectionResponse, ApiError } from "../types";
+import { requireSupabaseAuth } from "../middleware/require-supabase-auth";
 
 const router = Router();
 
 // AI-powered Quran verse Tadabbur (reflection) endpoint
 // AI-powered Quran verse Tadabbur (reflection) endpoint
-router.post("/reflection", async (req, res) => {
+router.post("/reflection", requireSupabaseAuth, async (req, res) => {
   try {
     const { verseText, surahName, verseNumber, tafsirText } = req.body as ReflectionRequest;
 

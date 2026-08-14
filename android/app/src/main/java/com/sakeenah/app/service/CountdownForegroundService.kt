@@ -13,6 +13,7 @@ import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.os.PowerManager
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.sakeenah.app.MainActivity
 import com.sakeenah.app.R
@@ -151,10 +152,7 @@ class CountdownForegroundService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Calculate remaining time
-        val remainingMs = (prayerTimeMs - System.currentTimeMillis()).coerceAtLeast(0L)
-
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("أوشك الميقات • صلاة $prayerName")
             .setContentText("تهيأ بوضوئك، متبقي على الأذان:")
             .setStyle(
@@ -167,24 +165,16 @@ class CountdownForegroundService : Service() {
             .setContentIntent(pendingIntent)
             .setOngoing(true) // Cannot be dismissed
             .setAutoCancel(false)
-
-            // CHRONOMETER — live countdown
             .setWhen(prayerTimeMs)
             .setUsesChronometer(true)
             .setChronometerCountDown(true)
-
-            // Vibration pattern
             .setVibrate(longArrayOf(0, 300, 200, 300))
 
-            )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            builder.setTimeoutAfter(10 * 60 * 1000) // 10 minutes
+        }
 
-            // Auto-cancel after 10 minutes (safety net)
-            .apply {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    setTimeoutAfter(10 * 60 * 1000) // 10 minutes
-                }
-            }
-            .build()
+        return builder.build()
     }
 
     private fun updateNotification() {

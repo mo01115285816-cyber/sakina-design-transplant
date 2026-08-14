@@ -2,6 +2,7 @@ import { Router } from "express";
 import { generateSakeenahChatResponse, streamSakeenahChatResponse } from "../services/sakeenah-ai-service";
 import type { ChatMessage } from "../services/sakeenah-ai-service";
 import type { ApiError } from "../types";
+import { requireSupabaseAuth } from "../middleware/require-supabase-auth";
 
 const router = Router();
 
@@ -10,7 +11,7 @@ interface ChatRequestBody {
 }
 
 // Sakeenah AI chatbot endpoint (non-streaming)
-router.post("/chat", async (req, res) => {
+router.post("/chat", requireSupabaseAuth, async (req, res) => {
   try {
     const { messages } = req.body as ChatRequestBody;
 
@@ -30,7 +31,7 @@ router.post("/chat", async (req, res) => {
 });
 
 // Sakeenah AI chatbot streaming endpoint (SSE)
-router.post("/chat/stream", async (req, res) => {
+router.post("/chat/stream", requireSupabaseAuth, async (req, res) => {
   try {
     const { messages } = req.body as ChatRequestBody;
 

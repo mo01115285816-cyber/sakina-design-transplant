@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, startTransition, useMemo } from "react";
 import { Capacitor } from "@capacitor/core";
-import { GoogleGenAI } from "@google/genai";
+import { getCurrentSession } from "@/services/auth-service";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Sparkles, ArrowUp, RefreshCw, ChevronRight, ChevronDown, ChevronUp, 
@@ -10,39 +10,6 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-// Gemini API key — embedded for native APK (no Express server in Capacitor)
-const NATIVE_GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
-
-// System prompt for Sakeenah AI — Islamic scholarly assistant
-const SAKEENAH_SYSTEM_PROMPT = `أنت "سَكِينَة AI" — مساعد ذكي إسلامي متخصص. تجيب بدقة ومسؤولية من القرآن الكريم والكتب الستة في الحديث الشريف (البخاري، مسلم، الترمذي، النسائي، أبو داود، ابن ماجه). 
-
-قواعد صارمة:
-1. أجب دائماً باللغة العربية الفصحى
-2. استشهد بالآيات القرآنية والأحاديث النبوية مع ذكر المصدر
-3. إذا لم تكن متأكداً من إجابة، قل ذلك بوضوح ولا تخمن
-4. لا تُفتِ في مسائل خلافية بين المذاهب بل اعرض الآراء باختصار
-5. كن محترماً ورحيماً في الرد
-6. لا تناقش أي مواضيع سياسية أو مثيرة للجدل
-7. ركز على تيسير العبادة وتقريب العبد من ربه`;
-
-// Lazy-initialized Gemini client for native platform
-let nativeGeminiClient: GoogleGenAI | null = null;
-function getNativeGeminiClient(): GoogleGenAI | null {
-  if (!NATIVE_GEMINI_API_KEY) return null;
-  if (!nativeGeminiClient) {
-    nativeGeminiClient = new GoogleGenAI({ apiKey: NATIVE_GEMINI_API_KEY });
-  }
-  return nativeGeminiClient;
-}
-
-// Check if running on native platform (Capacitor APK)
-function isNativePlatform(): boolean {
-  try {
-    return Capacitor.isNativePlatform();
-  } catch {
-    return false;
-  }
-}
 
 type Message = {
   id: string;
@@ -559,60 +526,23 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
         content: m.content
       }));
 
-      // Native platform (APK): Call Gemini API directly — no Express server
-      if (isNativePlatform() && getNativeGeminiClient()) {
-        const client = getNativeGeminiClient()!;
-        const aiMsg: Message = {
-          id: aiMsgId,
-          role: "assistant",
-          content: "",
-          timestamp: new Date(),
-          isNew: false,
-          isStreaming: true
-        };
-        setMessages((prev) => [...prev, aiMsg]);
-        setIsLoading(false);
+      const apiBaseUrl = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "").replace(/\/$/, "");
+      if (Capacitor.isNativePlatform() && !apiBaseUrl) {
+        throw new Error("لم يتم إعداد رابط خادم سَكِينَة لتطبيق Android.");
+      }
 
-        const geminiContents = [
-          { role: "user" as const, parts: [{ text: SAKEENAH_SYSTEM_PROMPT }] },
-          { role: "model" as const, parts: [{ text: "فهمت. أنا سكينة AI، مساعدك الإسلامي المتخصص. كيف يمكنني مساعدتك؟" }] },
-          ...history.map((m) => ({
-            role: (m.role === "user" ? "user" : "model") as "user" | "model",
-            parts: [{ text: m.content }]
-          }))
-        ];
+      const session = await getCurrentSession();
+      if (!session?.access_token) {
+        throw new Error("يجب تسجيل الدخول أولًا لاستخدام سكينة AI.");
+      }
 
-        const response = await client.models.generateContentStream({
-          model: "gemini-2.0-flash",
-          contents: geminiContents,
-        });
-
-        let accumulatedContent = "";
-        for await (const chunk of response) {
-          const text = chunk.text || "";
-          if (text) {
-            accumulatedContent += text;
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg.id === aiMsgId ? { ...msg, content: accumulatedContent } : msg
-              )
-            );
-          }
-        }
-
-        setMessages((prev) =>
-          prev.map((msg) =>
-            msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg
-          )
-        );
-      } else {
-        // Web platform: Use Express server SSE endpoint
-        const res = await fetch("/api/sakeenah-ai/chat/stream", {
+      const res = await fetch(`${apiBaseUrl}/api/sakeenah-ai/chat/stream`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ messages: history })
+        body: JSON.stringify({ messages: history }),
       });
 
       if (!res.ok) {
@@ -681,7 +611,6 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
           msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg
         )
       );
-      } // end of else (web platform SSE)
 
     } catch (error) {
       console.error("Sakeenah AI error:", error);

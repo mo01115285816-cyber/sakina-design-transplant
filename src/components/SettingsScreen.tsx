@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import type { User } from "@supabase/supabase-js";
+import { LogOut } from "lucide-react";
 import type { CalculationMethod, AsrSchool } from "@/utils/locationDetection";
 import { calcMethodLabels, asrSchoolLabels } from "@/constants/prayerContent";
 import {
@@ -34,6 +36,8 @@ type SettingsScreenProps = {
   onTogglePrePrayerReminder: (val: boolean) => void;
   onChangeLocation: () => void;
   onBack: () => void;
+  currentUser: User | null;
+  onSignOut: () => Promise<void>;
 
   // Sunnah reminders props
   isMulkReminderEnabled: boolean;
@@ -104,6 +108,8 @@ export const SettingsScreen = React.memo(function SettingsScreen({
   onTogglePrePrayerReminder,
   onChangeLocation,
   onBack,
+  currentUser,
+  onSignOut,
 
   // New props
   isMulkReminderEnabled,
@@ -148,6 +154,40 @@ export const SettingsScreen = React.memo(function SettingsScreen({
       </div>
 
       <div className="space-y-4 relative z-10">
+        {currentUser && (
+          <div className="cut-crystal-panel rounded-[26px] p-5 space-y-4 shadow-md">
+            <div className="flex items-center gap-3">
+              {currentUser.user_metadata?.avatar_url ? (
+                <img
+                  src={String(currentUser.user_metadata.avatar_url)}
+                  alt="صورة الحساب"
+                  className="h-14 w-14 rounded-full border-2 border-[#deab65]/50 object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="grid h-14 w-14 place-items-center rounded-full bg-gradient-to-b from-[#deab65] to-[#b88a4f] text-xl font-black text-white">
+                  {String(currentUser.user_metadata?.full_name ?? currentUser.user_metadata?.name ?? currentUser.email ?? "س").charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0 flex-1 text-right">
+                <p className="text-[12px] font-bold text-[#b88a4f]">بيانات الحساب</p>
+                <p className="mt-1 truncate text-[15px] font-black text-[#2b1a10]">
+                  {String(currentUser.user_metadata?.full_name ?? currentUser.user_metadata?.name ?? "مستخدم سَكِينَة")}
+                </p>
+                <p className="mt-1 truncate text-[11px] font-bold text-[#7f6a55]">{currentUser.email}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => void onSignOut()}
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-[#b88a4f]/25 bg-[#b88a4f]/10 text-sm font-black text-[#7f6a55] transition hover:bg-[#b88a4f]/15 active:scale-[0.98]"
+            >
+              <LogOut size={16} />
+              تسجيل الخروج
+            </button>
+          </div>
+        )}
+
         {/* ── SECTION 1: LOCATION SETTINGS ── */}
         <div className="cut-crystal-panel rounded-[26px] p-5 space-y-4 shadow-md">
           <div className="flex items-center justify-between border-b border-[#e6dccf]/40 pb-3">

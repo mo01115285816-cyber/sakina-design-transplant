@@ -151,8 +151,9 @@ class AdhanPlayerService : Service() {
                         .build()
                 )
 
-                // Try to get selected muezzin from MuezzinHelper
-                val selectedMuezzinUri = MuezzinHelper.getSelectedMuezzinUri(this)
+                // Prefer an explicitly supplied URI, then the selected local muezzin, then the bundled default.
+                val selectedMuezzinUri = muezzinUri?.let(Uri::parse)
+                    ?: MuezzinHelper.getSelectedMuezzinUri(this@AdhanPlayerService)
 
                 val uri = selectedMuezzinUri ?: Uri.parse("android.resource://${packageName}/${R.raw.azan}")
 

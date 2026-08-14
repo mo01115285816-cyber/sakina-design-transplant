@@ -22,8 +22,6 @@
     <!-- 🏝️ Dynamic Island Overlay (Floating Notch above all apps) -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
-    <!--  Keep CPU awake during countdown -->
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- 📍 Geolocation for Qibla & Prayer Times Calculation -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
@@ -49,6 +47,17 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Supabase OAuth callback for the Android application -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="com.sakeenah.app"
+                    android:host="auth"
+                    android:path="/callback" />
             </intent-filter>
 
         </activity>

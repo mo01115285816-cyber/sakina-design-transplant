@@ -1,4 +1,6 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
+const NativePrayerAlarm = registerPlugin<Record<string, (args: Record<string, unknown>) => Promise<unknown>>>("PrayerAlarm");
 
 /**
  * PrayerAlarmService — React bridge to the native PrayerAlarmPlugin.
@@ -63,7 +65,9 @@ class PrayerAlarmServiceImpl {
         if (this.plugin && typeof this.plugin[method] === 'function') {
           this.plugin[method](args).then(resolve).catch(reject);
         } else {
-          Capacitor.nativePromise('PrayerAlarm', method, args).then(resolve).catch(reject);
+          const nativeMethod = NativePrayerAlarm[method];
+          if (!nativeMethod) throw new Error(`PrayerAlarm method not found: ${method}`);
+          nativeMethod(args).then(resolve).catch(reject);
         }
       } catch (e) {
         reject(e);

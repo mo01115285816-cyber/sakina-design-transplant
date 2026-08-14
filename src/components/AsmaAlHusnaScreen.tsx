@@ -185,7 +185,7 @@ export default function AsmaAlHusnaScreen({ onClose }: Props) {
                   {nameOfTheDay.name}
                 </span>
                 <p className="text-[13.5px] font-medium text-white/90 leading-relaxed max-w-[90%] mb-5 text-center">
-                  {nameOfTheDay.meaning}
+                  {nameOfTheDay.meaningDetail}
                 </p>
 
                 <div className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-white/15 border border-white/20 text-[12px] font-bold text-white group-hover:bg-white/25 transition-all shadow-sm">

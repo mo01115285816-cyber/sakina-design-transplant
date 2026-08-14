@@ -110,7 +110,7 @@ class PrePrayerReminderPlugin : Plugin() {
     fun cancel(call: PluginCall) {
         try {
             val prayerKey = call.getString("prayerKey") ?: ""
-            val dayOfYear = call.getInt("dayOfYear", getDayOfYear())
+            val dayOfYear = call.getInt("dayOfYear", getDayOfYear()) ?: getDayOfYear()
 
             if (prayerKey.isEmpty()) {
                 call.reject("Missing required parameter: prayerKey")

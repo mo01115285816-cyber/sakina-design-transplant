@@ -39,7 +39,7 @@ const cardVariants = {
     scale: 1,
     filter: "blur(0px)",
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 220,
       damping: 24,
       mass: 0.8,
@@ -51,7 +51,7 @@ const cardVariants = {
     scale: 0.94,
     filter: "blur(2px)",
     transition: {
-      type: "spring",
+      type: "spring" as const,
       stiffness: 220,
       damping: 24,
       mass: 0.8,

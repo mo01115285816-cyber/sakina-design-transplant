@@ -1,4 +1,6 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
+const NativeAdhanPlayer = registerPlugin<Record<string, (args: Record<string, unknown>) => Promise<unknown>>>("AdhanPlayer");
 
 /**
  * AdhanPlayerService — React bridge to the native AdhanPlayerService.
@@ -59,7 +61,9 @@ class AdhanPlayerServiceImpl {
         if (this.plugin && typeof this.plugin[method] === 'function') {
           this.plugin[method](args).then(resolve).catch(reject);
         } else {
-          Capacitor.nativePromise('AdhanPlayer', method, args).then(resolve).catch(reject);
+          const nativeMethod = NativeAdhanPlayer[method];
+          if (!nativeMethod) throw new Error(`AdhanPlayer method not found: ${method}`);
+          nativeMethod(args).then(resolve).catch(reject);
         }
       } catch (e) {
         reject(e);

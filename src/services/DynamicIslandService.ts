@@ -1,4 +1,6 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
+const NativeDynamicIsland = registerPlugin<Record<string, (args: Record<string, unknown>) => Promise<unknown>>>("DynamicIsland");
 
 type ContentType = 'quran' | 'radio';
 
@@ -44,7 +46,11 @@ class DynamicIslandServiceImpl {
     return new Promise((resolve, reject) => {
       try {
         if (this.plugin && typeof this.plugin[method] === 'function') this.plugin[method](args).then(resolve).catch(reject);
-        else Capacitor.nativePromise('DynamicIsland', method, args).then(resolve).catch(reject);
+        else {
+          const nativeMethod = NativeDynamicIsland[method];
+          if (!nativeMethod) throw new Error(`DynamicIsland method not found: ${method}`);
+          nativeMethod(args).then(resolve).catch(reject);
+        }
       } catch (e) { reject(e); }
     });
   }

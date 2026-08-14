@@ -1,4 +1,6 @@
-import { Capacitor } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
+
+const NativePrePrayerReminder = registerPlugin<Record<string, (args: Record<string, unknown>) => Promise<unknown>>>("PrePrayerReminder");
 
 /**
  * PrePrayerReminderService — React bridge to the native Android
@@ -48,7 +50,9 @@ class PrePrayerReminderServiceImpl {
         if (this.plugin && typeof this.plugin[method] === 'function') {
           this.plugin[method](args).then(resolve).catch(reject);
         } else {
-          Capacitor.nativePromise('PrePrayerReminder', method, args).then(resolve).catch(reject);
+          const nativeMethod = NativePrePrayerReminder[method];
+          if (!nativeMethod) throw new Error(`PrePrayerReminder method not found: ${method}`);
+          nativeMethod(args).then(resolve).catch(reject);
         }
       } catch (e) {
         reject(e);

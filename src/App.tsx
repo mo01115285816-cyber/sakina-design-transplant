@@ -7,6 +7,15 @@ import React, {
   startTransition,
 } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import AuthScreen from "@/components/AuthScreen";
+import type { AuthUser } from "@/services/auth-service";
+import {
+  getCurrentSession,
+  handleAuthCallback,
+  listenForNativeAuthCallback,
+  subscribeToAuthState,
+  signOut,
+} from "@/services/auth-service";
 import { dailyHadithData } from "@/data/dailyHadithData";
 import {
   detectCalcMethodByLocation,
@@ -78,6 +87,18 @@ import {
   ArrowLeftIcon,
 } from "@/components/icons/AppIcons";
 
+function UserIdentityIcon({ user }: { user: AuthUser | null }) {
+  if (!user) return <SettingsIcon />;
+  const avatarUrl = user.user_metadata?.avatar_url;
+  const label = String(user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email ?? "س");
+
+  if (avatarUrl) {
+    return <img src={String(avatarUrl)} alt="" className="h-full w-full rounded-full object-cover" referrerPolicy="no-referrer" />;
+  }
+
+  return <span className="text-[15px] font-black text-[#b88a4f]">{label.charAt(0).toUpperCase()}</span>;
+}
+
 /* ════════════════════════════════════════════════════════════════════════
    STATIC DATA
    ════════════════════════════════════════════════════════════════════════ */
@@ -105,6 +126,8 @@ export default function App() {
   /* ── NEW state ── */
   const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("main");
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [showLocationDialog, setShowLocationDialog] = useState(false);
   const [showAzkarCounter, setShowAzkarCounter] = useState(false);
   const [showAsmaAlHusna, setShowAsmaAlHusna] = useState(false);
@@ -244,6 +267,38 @@ export default function App() {
   const [weather, setWeather] = useState<WeatherData | null>(null);
 
   /* ── Effects ── */
+
+  // Bootstrap Supabase auth before exposing protected features.
+  useEffect(() => {
+    let disposed = false;
+
+    const bootstrapAuth = async () => {
+      try {
+        await handleAuthCallback();
+        const session = await getCurrentSession();
+        if (!disposed) setCurrentUser(session?.user ?? null);
+      } catch (error) {
+        console.warn("Auth bootstrap failed:", error);
+        if (!disposed) setCurrentUser(null);
+      } finally {
+        if (!disposed) setIsAuthReady(true);
+      }
+    };
+
+    void bootstrapAuth();
+    const stopNativeCallback = listenForNativeAuthCallback((session) => {
+      if (!disposed) setCurrentUser(session?.user ?? null);
+    });
+    const stopAuthSubscription = subscribeToAuthState((_event, session) => {
+      if (!disposed) setCurrentUser(session?.user ?? null);
+    });
+
+    return () => {
+      disposed = true;
+      stopNativeCallback();
+      stopAuthSubscription();
+    };
+  }, []);
 
   // Check battery optimization on mount — show modal if needed
   useEffect(() => {
@@ -719,6 +774,15 @@ export default function App() {
     });
   }, []);
 
+  const handleSignOut = useCallback(async () => {
+    try {
+      await signOut();
+    } finally {
+      setCurrentUser(null);
+      setActiveTab("main");
+    }
+  }, []);
+
   const handleOpenAsmaAlHusna = useCallback(() => {
     setShowAsmaAlHusna(true);
   }, []);
@@ -808,7 +872,7 @@ export default function App() {
                       aria-label="فتح الإعدادات"
                       onClick={() => setActiveTab("settings")}
                     >
-                      <SettingsIcon />
+                      <UserIdentityIcon user={currentUser} />
                     </button>
 
                     {/* Sakinah text in glassmorphic capsule */}
@@ -836,7 +900,7 @@ export default function App() {
                   aria-label="فتح الإعدادات"
                   onClick={() => setActiveTab("settings")}
                 >
-                  <SettingsIcon />
+                  <UserIdentityIcon user={currentUser} />
                 </button>
                 <div className="text-left">
                   <p className="text-[10px] tracking-[0.24em] text-white/70">
@@ -1193,7 +1257,18 @@ export default function App() {
 
         {/* TAB: SAKEENAH AI */}
         <div className={activeTab === "sakeenah-ai" && !showAzkarCounter ? "block relative w-full h-screen overflow-hidden" : "hidden"}>
-          <SakeenahAIScreen onBack={handleBackToMain} />
+          {!isAuthReady ? (
+            <div className="flex h-screen items-center justify-center bg-[#ece7de] text-sm font-bold text-[#7f6a55]">
+              جارٍ التحقق من الجلسة...
+            </div>
+          ) : currentUser ? (
+            <SakeenahAIScreen onBack={handleBackToMain} />
+          ) : (
+            <AuthScreen
+              onBack={handleBackToMain}
+              onAuthenticated={(user) => setCurrentUser(user)}
+            />
+          )}
         </div>
 
         {/* TAB: SETTINGS */}
@@ -1222,6 +1297,8 @@ export default function App() {
             onTogglePrePrayerReminder={setIsPrePrayerReminderEnabled}
             onChangeLocation={handleChangeLocation}
             onBack={handleBackToMain}
+            currentUser={currentUser}
+            onSignOut={handleSignOut}
 
             // New props
             isMulkReminderEnabled={isMulkReminderEnabled}

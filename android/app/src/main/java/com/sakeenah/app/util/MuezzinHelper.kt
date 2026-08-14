@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
 import androidx.core.content.FileProvider
-import com.getcapacitor.plugin.Filesystem
 import java.io.File
 
 /**

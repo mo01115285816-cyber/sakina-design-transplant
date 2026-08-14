@@ -27,6 +27,31 @@ class NotificationStopReceiver : BroadcastReceiver() {
         const val ACTION_STOP_ADHAN = "com.sakeenah.app.action.STOP_ADHAN"
         const val EXTRA_NOTIFICATION_ID = "notification_id"
         const val EXTRA_PRAYER_KEY = "prayer_key"
+
+        /**
+         * Create a PendingIntent for the STOP action.
+         * Used by PrayerAlarmPlugin when building the notification.
+         */
+        fun createStopPendingIntent(
+            context: Context,
+            notificationId: Int,
+            prayerKey: String,
+            requestCode: Int
+        ): android.app.PendingIntent {
+            val intent = Intent(context, NotificationStopReceiver::class.java).apply {
+                action = ACTION_STOP_ADHAN
+                putExtra(EXTRA_NOTIFICATION_ID, notificationId)
+                putExtra(EXTRA_PRAYER_KEY, prayerKey)
+            }
+
+            val flags = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            } else {
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT
+            }
+
+            return android.app.PendingIntent.getBroadcast(context, requestCode, intent, flags)
+        }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -65,33 +90,6 @@ class NotificationStopReceiver : BroadcastReceiver() {
             CountdownForegroundService.stop(context, prayerKey)
         } catch (e: Exception) {
             Log.e(TAG, "Failed to stop countdown service", e)
-        }
-    }
-
-    companion object {
-        /**
-         * Create a PendingIntent for the STOP action.
-         * Used by PrayerAlarmPlugin when building the notification.
-         */
-        fun createStopPendingIntent(
-            context: Context,
-            notificationId: Int,
-            prayerKey: String,
-            requestCode: Int
-        ): android.app.PendingIntent {
-            val intent = Intent(context, NotificationStopReceiver::class.java).apply {
-                action = ACTION_STOP_ADHAN
-                putExtra(EXTRA_NOTIFICATION_ID, notificationId)
-                putExtra(EXTRA_PRAYER_KEY, prayerKey)
-            }
-
-            val flags = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.M) {
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-            } else {
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT
-            }
-
-            return android.app.PendingIntent.getBroadcast(context, requestCode, intent, flags)
         }
     }
 }

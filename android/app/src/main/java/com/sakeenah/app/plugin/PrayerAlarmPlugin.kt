@@ -268,7 +268,7 @@ class PrayerAlarmPlugin : Plugin() {
     fun savePrayerPreference(call: PluginCall) {
         try {
             val prayerKey = call.getString("prayerKey") ?: ""
-            val enabled = call.getBoolean("enabled", true)
+            val enabled = call.getBoolean("enabled", true) ?: true
             val mode = call.getString("mode", "beep") ?: "beep"
 
             if (prayerKey.isEmpty()) {

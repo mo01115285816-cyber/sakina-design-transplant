@@ -83,7 +83,7 @@ export default function MapLocationPicker({
   const [hasSearched, setHasSearched] = useState(false);
   const [locationName, setLocationName] = useState("جاري التحديد...");
 
-  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const reverseGeocode = useCallback(async (lat: number, lon: number) => {
     try {
