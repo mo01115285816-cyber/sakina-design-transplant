@@ -5,12 +5,12 @@ import { APP_VERSES } from "@/constants/appVerses";
 
 interface SplashScreenProps {
   onComplete: () => void;
+  canComplete: boolean;
 }
 
 const MIN_DISPLAY_MS = 2000;
-const MAX_READY_WAIT_MS = 5000;
 
-export default function SplashScreen({ onComplete }: SplashScreenProps) {
+export default function SplashScreen({ onComplete, canComplete }: SplashScreenProps) {
   const [isVisible, setIsVisible] = useState(true);
   const [isVerseReady, setIsVerseReady] = useState(false);
   const startedAtRef = useRef(typeof performance === "undefined" ? Date.now() : performance.now());
@@ -27,14 +27,9 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
   const handleVerseReady = useCallback(() => setIsVerseReady(true), []);
 
   useEffect(() => {
-    if (!isVerseReady) return;
+    if (!isVerseReady || !canComplete) return;
     return finishWhenStable();
-  }, [finishWhenStable, isVerseReady]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setIsVisible(false), MAX_READY_WAIT_MS);
-    return () => window.clearTimeout(timer);
-  }, []);
+  }, [canComplete, finishWhenStable, isVerseReady]);
 
   const fadeDuration = prefersReducedMotion ? 0.01 : 0.32;
   const revealDuration = prefersReducedMotion ? 0.01 : 0.42;

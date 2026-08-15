@@ -38,7 +38,6 @@ import type { PrayerItem } from "@/utils/prayerTimes";
 import ManualLocationDialog from "@/components/ManualLocationDialog";
 const AzkarTabScreen = lazy(() => import("@/components/AzkarTabScreen"));
 const AzkarCounterScreen = lazy(() => import("@/components/AzkarCounterScreen"));
-import SplashScreen from "@/components/SplashScreen";
 import QcfVerse from "@/components/QcfVerse";
 import { prefetchQcfFont } from "@/hooks/useQcfFont";
 import { PRELOAD_QCF_PAGES } from "@/constants/appVerses";
@@ -131,7 +130,6 @@ export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
 
   /* ── NEW state ── */
-  const [showSplash, setShowSplash] = useState(true);
   const [activeTab, setActiveTab] = useState<TabType>("main");
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -935,11 +933,6 @@ export default function App() {
   return (
     <Suspense fallback={<div dir="rtl" className="min-h-screen w-full bg-[#ece7de]" />}>
       <div dir="rtl" className="min-h-screen w-full overflow-x-hidden bg-[#ece7de] text-[#2b1a10]">
-      {/* ── Splash Screen ── */}
-      {showSplash && (
-        <SplashScreen onComplete={() => setShowSplash(false)} />
-      )}
-
       {/* ── Battery Optimization Modal ── */}
       {showBatteryModal && (
         <BatteryOptimizationModal onDismiss={() => setShowBatteryModal(false)} />
