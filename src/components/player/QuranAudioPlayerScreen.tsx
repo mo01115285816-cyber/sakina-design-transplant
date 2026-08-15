@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence, useDragControls } from 'motion/react';
+import { publicAssetUrl } from '@/utils/publicAssetUrl';
 import { SeamlessBgVideo } from './SeamlessBgVideo';
 import { 
   ChevronDown, 
@@ -272,7 +273,7 @@ export function QuranAudioPlayerScreen({
   const currentProgressPercent = isDragging && dragProgress !== null ? dragProgress : progressPercent;
 
   // Reciter Photo Resolution
-  const reciterPhoto = reciter.photoUrl || reciter.photo || "/images/quran_artwork.jpg";
+  const reciterPhoto = reciter.photoUrl || reciter.photo || publicAssetUrl('images/quran_artwork.jpg');
   const arabicName = surahNames[surahId] || `سورة ${surahId}`;
   const vocalizedName = vocalizedSurahNames[surahId] || `سُورَةُ ${arabicName}`;
 
@@ -666,7 +667,7 @@ export function QuranAudioPlayerScreen({
                 alt={reciter.name}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  (e.target as HTMLImageElement).src = "/images/quran_artwork.jpg";
+                  (e.target as HTMLImageElement).src = publicAssetUrl('images/quran_artwork.jpg');
                 }}
               />
             </div>

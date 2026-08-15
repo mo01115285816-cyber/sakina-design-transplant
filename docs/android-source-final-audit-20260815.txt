@@ -1,0 +1,19 @@
+=== ROOT-RELATIVE REFERENCES REMAINING ===
+=== ROOT-RELATIVE AUDIO DATA (STATIC JSON ONLY) ===
+5:		"audio": "/audio/ar_7esn_AlMoslem_by_Doors_028.mp3",
+12:				"audio": "/audio/75.mp3",
+19:				"audio": "/audio/76.mp3",
+26:				"audio": "/audio/77.mp3",
+33:				"audio": "/audio/78.mp3",
+40:				"audio": "/audio/79.mp3",
+47:				"audio": "/audio/80.mp3",
+54:				"audio": "/audio/81.mp3",
+=== ACTIVE HISN MODEL FIELDS ===
+src/components/AzkarCounterScreen.tsx:13:import { hisnAlMuslimData, type HisnCategory } from "@/data/hisnAlMuslimData";
+src/components/AzkarCounterScreen.tsx:86:        return hisnAlMuslimData.getAzkarByCategory(
+src/components/AzkarTabScreen.tsx:2:import { hisnAlMuslimData, type HisnCategory } from "@/data/hisnAlMuslimData";
+src/components/AzkarTabScreen.tsx:169:    setHisnCategories(hisnAlMuslimData.getCategoriesWithCount());
+src/data/hisnAlMuslimData.ts:5:export type HisnItem = {
+src/data/hisnAlMuslimData.ts:14:const hisnItems: HisnItem[] = [];
+src/data/hisnAlMuslimData.ts:28:export const hisnAlMuslimData = {
+src/data/hisnAlMuslimData.ts:29:  getAzkarByCategory(cat: HisnCategory): HisnItem[] {

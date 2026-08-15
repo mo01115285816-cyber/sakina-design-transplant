@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { X, Download } from "lucide-react";
 import { QuranOfflineService } from "@/services/QuranOfflineService";
 import { QcfFontStorage } from "@/services/QcfFontStorage";
+import { publicAssetUrl } from "@/utils/publicAssetUrl";
 
 interface Props {
   onClose: () => void;
@@ -108,7 +109,7 @@ export default function QuranDownloadScreen({ onClose, onDownloaded }: Props) {
 
           {/* Quran calligraphy image — the circle itself (transparent background, preloaded) */}
           <img
-            src="/images/quran-circle.png"
+            src={publicAssetUrl("images/quran-circle.png")}
             alt="القرآن الكريم"
             className="relative w-[260px] h-[260px] object-contain z-10 drop-shadow-[0_12px_28px_rgba(43,26,16,0.15)]"
             loading="eager"

@@ -1,4 +1,5 @@
 import { DynamicIslandService } from './DynamicIslandService';
+import { publicAssetUrl } from '@/utils/publicAssetUrl';
 
 export class RadioMediaService {
   private static currentStationName: string = '';
@@ -21,7 +22,9 @@ export class RadioMediaService {
     this.onPlay = onPlay;
     this.onPause = onPause;
 
-    const absoluteLogoUrl = logoUrl ? (window.location.origin + logoUrl) : '';
+    const absoluteLogoUrl = logoUrl
+      ? (logoUrl.startsWith('http://') || logoUrl.startsWith('https://') ? logoUrl : publicAssetUrl(logoUrl))
+      : '';
 
     await DynamicIslandService.updateState({
       title: stationName, reciter: subtitle, contentType: 'radio', artworkUrl: absoluteLogoUrl,

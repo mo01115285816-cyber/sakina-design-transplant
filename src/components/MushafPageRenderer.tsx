@@ -4,8 +4,9 @@ import { vocalizedSurahNames } from '@/data/vocalizedSurahNames';
 import { useQcfFont } from '@/hooks/useQcfFont';
 import { MushafQcfV2LayoutService } from '@/services/MushafQcfV2LayoutService';
 import type { MushafQcfV2Page, MushafQcfV2Word } from '@/services/MushafQcfV2LayoutService';
+import { publicAssetUrl } from '@/utils/publicAssetUrl';
 
-const SURAH_HEADER_FRAME_SRC = '/images/quran/surah-header-frame.webp';
+const SURAH_HEADER_FRAME_SRC = publicAssetUrl('images/quran/surah-header-frame.webp');
 const SURAH_HEADER_FRAME_WIDTH = 2400;
 const SURAH_HEADER_FRAME_HEIGHT = 775;
 

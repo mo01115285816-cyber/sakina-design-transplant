@@ -1,4 +1,5 @@
 import { DynamicIslandService } from './DynamicIslandService';
+import { publicAssetUrl } from '@/utils/publicAssetUrl';
 
 export class QuranMediaService {
   private static currentReciterName: string = '';
@@ -26,7 +27,7 @@ export class QuranMediaService {
     this.onNext = onNext;
     this.onPrev = onPrev;
 
-    const artworkUrl = window.location.origin + "/images/quran_artwork.jpg";
+    const artworkUrl = publicAssetUrl('images/quran_artwork.jpg');
 
     await DynamicIslandService.updateState({
       title: surahName, reciter: reciterName, contentType: 'quran', artworkUrl: artworkUrl,
@@ -60,7 +61,7 @@ export class QuranMediaService {
 
   static async updatePlaybackState(state: 'playing' | 'paused' | 'none') {
     this.currentIsPlaying = state === 'playing';
-    const artworkUrl = window.location.origin + "/images/quran_artwork.jpg";
+    const artworkUrl = publicAssetUrl('images/quran_artwork.jpg');
     await DynamicIslandService.updateState({
       title: this.currentSurahName, reciter: this.currentReciterName, contentType: 'quran', artworkUrl: artworkUrl,
       isPlaying: state === 'playing', currentPositionMs: 0, durationMs: 0,

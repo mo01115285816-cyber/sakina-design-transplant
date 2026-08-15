@@ -15,6 +15,7 @@ import QuranDownloadScreen from "./QuranDownloadScreen";
 import { QuranOfflineService } from "@/services/QuranOfflineService";
 import { RadioMediaService } from "@/services/RadioMediaService";
 import { QuranMediaService } from "@/services/QuranMediaService";
+import { publicAssetUrl } from "@/utils/publicAssetUrl";
 
 interface Props {
   onBack?: () => void;
@@ -387,8 +388,8 @@ const QuranTabScreen = React.memo(function QuranTabScreen({ onBack, onHideNavCha
       if (currentPlayingRadio !== null) {
         // Radio is playing
         const logoUrl = currentPlayingRadio.logoType === "sba" 
-          ? "/images/sba_radio_artwork.jpg" 
-          : "/images/cairo_radio_artwork.jpg";
+          ? publicAssetUrl("images/sba_radio_artwork.jpg")
+          : publicAssetUrl("images/cairo_radio_artwork.jpg");
 
         await RadioMediaService.init(
           audio,

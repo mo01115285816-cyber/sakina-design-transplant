@@ -1,3 +1,5 @@
+import { publicAssetUrl } from '@/utils/publicAssetUrl';
+
 export type MushafQcfV2LineType = 'surah-header' | 'basmala' | 'text' | 'empty';
 
 export interface MushafQcfV2Word {
@@ -26,7 +28,7 @@ export interface MushafQcfV2Page {
 const pageCache = new Map<number, Promise<MushafQcfV2Page>>();
 
 function pageUrl(pageNumber: number): string {
-  return `/data/mushaf-v2/page-${String(pageNumber).padStart(3, '0')}.json`;
+  return publicAssetUrl(`data/mushaf-v2/page-${String(pageNumber).padStart(3, '0')}.json`);
 }
 
 function validatePage(page: MushafQcfV2Page, pageNumber: number): void {

@@ -1,5 +1,7 @@
 import localforage from 'localforage';
 
+import { publicAssetUrl } from '@/utils/publicAssetUrl';
+
 export type LineType = 'surah-header' | 'basmala' | 'text';
 
 export interface MushafWord {
@@ -86,7 +88,7 @@ export const MushafLayoutService = {
     if (existing) return;
 
     const padded = String(pageNumber).padStart(3, '0');
-    const url = `/data/mushaf/page-${padded}.json`;
+    const url = publicAssetUrl(`data/mushaf/page-${padded}.json`);
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status} for page ${pageNumber}`);
