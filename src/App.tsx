@@ -123,6 +123,21 @@ function UserIdentityIcon({ user }: { user: AuthUser | null }) {
    MAIN APP
    ════════════════════════════════════════════════════════════════════════ */
 
+function ScreenLoader({ label }: { label: string }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex min-h-[100dvh] w-full items-center justify-center bg-[#ece7de] text-[#7f6a55]"
+    >
+      <div className="flex flex-col items-center gap-4 text-center">
+        <span className="h-7 w-7 animate-spin rounded-full border-2 border-[#b88a4f]/25 border-t-[#b88a4f]" aria-hidden="true" />
+        <span className="text-sm font-bold">{label}</span>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   /* ── Existing state ── */
   const [now, setNow] = useState(() => new Date());
@@ -931,7 +946,6 @@ export default function App() {
      RENDER
      ═══════════════════════════════════════════════════════════════════ */
   return (
-    <Suspense fallback={<div dir="rtl" className="min-h-screen w-full bg-[#ece7de]" />}>
       <div dir="rtl" className="min-h-screen w-full overflow-x-hidden bg-[#ece7de] text-[#2b1a10]">
       {/* ── Battery Optimization Modal ── */}
       {showBatteryModal && (
@@ -940,16 +954,20 @@ export default function App() {
 
       {/* ── Azkar Counter Overlay (full screen) ── */ }
       {showAzkarCounter && (
-        <AzkarCounterScreen
-          azkarType={azkarCounterType}
-          hisnCategory={hisnCategory}
-          onClose={() => setShowAzkarCounter(false)}
-        />
+        <Suspense fallback={<ScreenLoader label="جارٍ تحميل العداد..." />}>
+          <AzkarCounterScreen
+            azkarType={azkarCounterType}
+            hisnCategory={hisnCategory}
+            onClose={() => setShowAzkarCounter(false)}
+          />
+        </Suspense>
       )}
 
       {/* ── Asma Al-Husna Overlay (full screen) ── */}
       {showAsmaAlHusna && (
-        <AsmaAlHusnaScreen onClose={() => setShowAsmaAlHusna(false)} />
+        <Suspense fallback={<ScreenLoader label="جارٍ تحميل أسماء الله الحسنى..." />}>
+          <AsmaAlHusnaScreen onClose={() => setShowAsmaAlHusna(false)} />
+        </Suspense>
       )}
 
       {/* ── Location Dialog Overlay ── */}
@@ -1374,54 +1392,54 @@ export default function App() {
         </div>
 
         {/* TAB: AZKAR */}
-        <div
-          className={
-            activeTab === "azkar" && !showAzkarCounter ? "block w-full overflow-x-hidden" : "hidden"
-          }
-        >
-          <AzkarTabScreen
-            onOpenAzkarCounter={handleOpenAzkarCounter}
-            onOpenHisnCategory={handleOpenHisnCategory}
-            onOpenAsmaAlHusna={handleOpenAsmaAlHusna}
-          />
-        </div>
+        {activeTab === "azkar" && !showAzkarCounter && (
+          <Suspense fallback={<ScreenLoader label="جارٍ تحميل الأذكار..." />}>
+            <div className="block w-full overflow-x-hidden">
+              <AzkarTabScreen
+                onOpenAzkarCounter={handleOpenAzkarCounter}
+                onOpenHisnCategory={handleOpenHisnCategory}
+                onOpenAsmaAlHusna={handleOpenAsmaAlHusna}
+              />
+            </div>
+          </Suspense>
+        )}
 
         {/* TAB: QURAN */}
-        <div
-          className={
-            activeTab === "quran" && !showAzkarCounter
-              ? "block relative w-full h-full min-h-screen"
-              : "hidden"
-          }
-        >
-          <QuranTabScreen
-            onBack={handleBackToMain}
-            onHideNavChange={setQuranHideNav}
-          />
-        </div>
+        {activeTab === "quran" && !showAzkarCounter && (
+          <Suspense fallback={<ScreenLoader label="جارٍ تحميل القرآن..." />}>
+            <div className="block relative h-full min-h-screen w-full">
+              <QuranTabScreen
+                onBack={handleBackToMain}
+                onHideNavChange={setQuranHideNav}
+              />
+            </div>
+          </Suspense>
+        )}
 
         {/* TAB: SAKEENAH AI */}
-        <div className={activeTab === "sakeenah-ai" && !showAzkarCounter ? "block relative w-full h-screen overflow-hidden" : "hidden"}>
-          {!isAuthReady ? (
-            <div className="flex h-screen items-center justify-center bg-[#ece7de] text-sm font-bold text-[#7f6a55]">
-              جارٍ التحقق من الجلسة...
-            </div>
-          ) : currentUser ? (
-            <SakeenahAIScreen onBack={handleBackToMain} />
-          ) : (
-            <AuthScreen
-              onBack={handleBackToMain}
-              onAuthenticated={(user) => setCurrentUser(user)}
-            />
-          )}
-        </div>
+        {activeTab === "sakeenah-ai" && !showAzkarCounter && (
+          <div className="block relative h-screen w-full overflow-hidden">
+            {!isAuthReady ? (
+              <div className="flex h-screen items-center justify-center bg-[#ece7de] text-sm font-bold text-[#7f6a55]">
+                جارٍ التحقق من الجلسة...
+              </div>
+            ) : currentUser ? (
+              <Suspense fallback={<ScreenLoader label="جارٍ تحميل سكينة AI..." />}>
+                <SakeenahAIScreen onBack={handleBackToMain} />
+              </Suspense>
+            ) : (
+              <AuthScreen
+                onBack={handleBackToMain}
+                onAuthenticated={(user) => setCurrentUser(user)}
+              />
+            )}
+          </div>
+        )}
 
         {/* TAB: SETTINGS */}
-        <div
-          className={
-            activeTab === "settings" && !showAzkarCounter ? "block" : "hidden"
-          }
-        >
+        {activeTab === "settings" && !showAzkarCounter && (
+          <Suspense fallback={<ScreenLoader label="جارٍ تحميل الإعدادات..." />}>
+            <div className="block">
           <SettingsScreen
             cityName={cityName}
             cityLat={cityLat}
@@ -1455,7 +1473,9 @@ export default function App() {
             baqarahReminderTime={baqarahReminderTime}
             onChangeBaqarahReminderTime={setBaqarahReminderTime}
           />
-        </div>
+            </div>
+          </Suspense>
+        )}
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════
@@ -1566,6 +1586,5 @@ export default function App() {
         )}
       </AnimatePresence>
       </div>
-    </Suspense>
   );
 }
