@@ -15,8 +15,8 @@ export function getCurrentPrayerIndex(nowMinutes: number, schedule: PrayerItem[]
 
 export function getCountdownSeconds(localNow: Date, targetMinutes: number) {
   const target = new Date(localNow);
-  target.setHours(Math.floor(targetMinutes / 60), targetMinutes % 60, 0, 0);
-  if (target <= localNow) target.setDate(target.getDate() + 1);
+  target.setUTCHours(Math.floor(targetMinutes / 60), targetMinutes % 60, 0, 0);
+  if (target <= localNow) target.setUTCDate(target.getUTCDate() + 1);
   return Math.max(0, Math.floor((target.getTime() - localNow.getTime()) / 1000));
 }
 

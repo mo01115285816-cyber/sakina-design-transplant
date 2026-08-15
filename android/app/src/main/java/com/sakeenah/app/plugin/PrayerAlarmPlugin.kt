@@ -9,6 +9,7 @@ import com.sakeenah.app.util.AlarmScheduler
 import com.sakeenah.app.util.BatteryOptimizationHelper
 import com.sakeenah.app.util.MuezzinHelper
 import com.sakeenah.app.util.PrayerPreferencesReader
+import com.sakeenah.app.util.PrayerAlarmStore
 import android.util.Log
 
 /**
@@ -66,6 +67,10 @@ class PrayerAlarmPlugin : Plugin() {
             }
 
             scheduler.schedulePrayer(prayerKey, prayerName, prayerTimeMs)
+            PrayerAlarmStore.upsert(
+                context,
+                PrayerAlarmStore.Entry(prayerKey, prayerName, prayerTimeMs)
+            )
             Log.d(TAG, "Scheduled prayer: $prayerName at $prayerTimeMs")
 
             call.resolve(JSObject().apply {
@@ -112,6 +117,10 @@ class PrayerAlarmPlugin : Plugin() {
             }
 
             scheduler.scheduleAllPrayers(prayers)
+            PrayerAlarmStore.replace(
+                context,
+                prayers.map { (key, name, timeMs) -> PrayerAlarmStore.Entry(key, name, timeMs) }
+            )
             Log.d(TAG, "Scheduled ${prayers.size} prayers")
 
             call.resolve(JSObject().apply {
@@ -131,6 +140,7 @@ class PrayerAlarmPlugin : Plugin() {
     fun cancelAll(call: PluginCall) {
         try {
             scheduler.cancelAllPrayers()
+            PrayerAlarmStore.clear(context)
             Log.d(TAG, "Cancelled all prayers")
 
             call.resolve(JSObject().apply {

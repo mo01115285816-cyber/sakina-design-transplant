@@ -1,0 +1,9 @@
+=== BUILD WARNINGS ===
+=== BUILD SUCCESS ===
+58:✓ built in 6.51s
+483:BUILD SUCCESSFUL in 27s
+=== TSC ===
+TSC_PASS
+=== DST ===
+DST_TESTS_PASSED
+=== DIFF CHECK ===

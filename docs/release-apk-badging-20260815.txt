@@ -1,0 +1,5 @@
+package: name='com.sakeenah.app' versionCode='2' versionName='2.0' platformBuildVersionName='16' platformBuildVersionCode='36' compileSdkVersion='36' compileSdkVersionCodename='16'
+application-label:'سَكِينَة'
+application-label-af:'سَكِينَة'
+application-label-am:'سَكِينَة'
+application-label-ar:'سَكِينَة'

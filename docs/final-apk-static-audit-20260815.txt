@@ -1,0 +1,79 @@
+APK=/home/ubuntu/sakina-pro-full/releases/sakina-debug-hardening-no-assets-20260815.apk
+APK_ENTRIES=1755
+PUBLIC_ENTRIES=1266
+JS_CSS_FILES=21
+ROOT_RELATIVE_MARKERS_IN_JS_CSS=399
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/ar_7esn_AlMoslem_by_Doors_028.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/75.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/76.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/77.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/78.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/79.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/80.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/81.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/82.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/83.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/84.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/85.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/86.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/87.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/88.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/89.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/90.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/91.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/92.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/93.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/94.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/95.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/96.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/97.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/98.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/ar_7esn_AlMoslem_by_Doors_029.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/99.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/100.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/101.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/102.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/103.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/104.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/105.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/106.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/107.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/108.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/109.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/110.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/111.mp3
+MARKER assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js "/audio/ar_7esn_AlMoslem_by_Doors_002.mp3
+INDEX_HAS_ROOT_ASSET_SRC=False
+PUBLIC_IMAGES=12
+PUBLIC_DATA=1209
+PUBLIC_FONTS=12
+PUBLIC_AUDIO=0
+SAMPLE_PUBLIC_FILES
+assets/public/assets/AsmaAlHusnaScreen-g5B9j20Z.js
+assets/public/assets/AzkarCounterScreen-bA8UIR0b.js
+assets/public/assets/AzkarTabScreen-C328f0wd.js
+assets/public/assets/PrayerAlarmService-ByqPcjYX.js
+assets/public/assets/PrayerSettingsScreen-bbvXrKuq.js
+assets/public/assets/QuranTabScreen-DOpmM9si.js
+assets/public/assets/SakeenahAIScreen-5dB5xaEH.js
+assets/public/assets/SettingsScreen-C0N-bmLB.js
+assets/public/assets/adhan-vendor-B4Z5NC-F.js
+assets/public/assets/audioCache-Cxnkuu6j.js
+assets/public/assets/capacitor-vendor-COFAIp0C.js
+assets/public/assets/hisnAlMuslimData-B4Wdo4cD.js
+assets/public/assets/icons-vendor-BD129kjA.js
+assets/public/assets/index-CQJcEyQd.css
+assets/public/assets/index-lagNCGI1.js
+assets/public/assets/motion-vendor-CTyHX9u_.js
+assets/public/assets/react-vendor-C9c81mJT.js
+assets/public/assets/sakina-login-logo-CcLqKGsG.png
+assets/public/assets/vendor-BP-DuuI0.js
+assets/public/assets/vendor-Dgihpmma.css
+17:    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+21:    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+29:    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+54:        android:usesCleartextTraffic="false" >
+87:            android:foregroundServiceType="mediaPlayback" />
+94:            android:foregroundServiceType="specialUse" >
+96:                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+105:            android:foregroundServiceType="mediaPlayback" />

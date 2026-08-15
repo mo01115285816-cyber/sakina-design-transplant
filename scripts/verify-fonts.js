@@ -70,22 +70,27 @@ if (!fs.existsSync(FONTS_DIR)) {
   errors.push('missing: public/fonts/qcf/ directory');
 }
 
-// Optional: Verify CDN accessibility (non-blocking warning)
-console.log('Checking GitHub Releases CDN accessibility...');
-try {
-  // Just do a HEAD request to verify the release asset exists
-  const result = execSync(`curl -sI -o /dev/null -w "%{http_code}" "${CDN_RELEASE_URL}"`, {
-    timeout: 15000,
-    encoding: 'utf-8'
-  }).trim();
+// Optional: Verify CDN accessibility only when explicitly requested.
+// The build itself must remain deterministic and work offline because local
+// sample fonts are the required build inputs.
+if (process.env.VERIFY_QCF_CDN === '1') {
+  console.log('Checking GitHub Releases CDN accessibility...');
+  try {
+    const result = execSync(`curl -sI -o /dev/null -w "%{http_code}" "${CDN_RELEASE_URL}"`, {
+      timeout: 15000,
+      encoding: 'utf-8'
+    }).trim();
 
-  if (result === '200' || result === '302') {
-    console.log('  CDN: accessible (HTTP ' + result + ')');
-  } else {
-    warnings.push(`CDN returned HTTP ${result} — fonts may not be downloadable at runtime`);
+    if (result === '200' || result === '302') {
+      console.log('  CDN: accessible (HTTP ' + result + ')');
+    } else {
+      warnings.push(`CDN returned HTTP ${result} — fonts may not be downloadable at runtime`);
+    }
+  } catch {
+    warnings.push('Could not verify CDN accessibility (network issue or curl unavailable)');
   }
-} catch {
-  warnings.push('Could not verify CDN accessibility (network issue or curl unavailable)');
+} else {
+  console.log('CDN check skipped; set VERIFY_QCF_CDN=1 for an explicit network check.');
 }
 
 if (errors.length > 0) {

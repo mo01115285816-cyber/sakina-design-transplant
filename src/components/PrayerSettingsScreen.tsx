@@ -11,7 +11,6 @@ import type {
 } from "@/types/prayer-settings";
 import { UnsavedChangesModal } from "./UnsavedChangesModal";
 import { MuezzinSelectorSection } from "./MuezzinSelectorSection";
-import { PrayerAlarmService } from "@/services/PrayerAlarmService";
 
 interface PrayerSettingsScreenProps {
   prayerId: PrayerSettingsId;
@@ -100,6 +99,7 @@ export const PrayerSettingsScreen = React.memo(function PrayerSettingsScreen({
     const isNative = Capacitor.isNativePlatform();
     if (isNative) {
       try {
+        const { PrayerAlarmService } = await import("@/services/PrayerAlarmService");
         // Save all prayer preferences to native SharedPreferences
         for (const [key, pref] of Object.entries(localPrefs)) {
           await PrayerAlarmService.savePrayerPreference(

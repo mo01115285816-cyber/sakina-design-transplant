@@ -35,10 +35,6 @@ class DynamicIslandServiceImpl {
   private async initPlugin() {
     try {
       this.plugin = (window as any).DynamicIsland || null;
-      if (!this.plugin) {
-        const Plugins = await import('@capacitor/core').then(m => (window as any).Capacitor?.Plugins);
-        this.plugin = Plugins?.DynamicIsland || null;
-      }
     } catch (e) { console.warn('DynamicIsland plugin not available:', e); }
   }
 

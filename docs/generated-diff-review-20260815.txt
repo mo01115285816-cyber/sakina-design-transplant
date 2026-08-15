@@ -1,0 +1,118 @@
+[1mdiff --git a/android/app/capacitor.build.gradle b/android/app/capacitor.build.gradle[m
+[1mindex 1238ab1..22d96c4 100644[m
+[1m--- a/android/app/capacitor.build.gradle[m
+[1m+++ b/android/app/capacitor.build.gradle[m
+[36m@@ -12,6 +12,7 @@[m [mdependencies {[m
+     implementation project(':aparajita-capacitor-secure-storage')[m
+     implementation project(':capacitor-app')[m
+     implementation project(':capacitor-browser')[m
+[32m+[m[32m    implementation project(':capacitor-file-transfer')[m
+     implementation project(':capacitor-filesystem')[m
+     implementation project(':capacitor-local-notifications')[m
+     implementation project(':capgo-capacitor-zip')[m
+[1mdiff --git a/android/app/src/main/AndroidManifest.xml b/android/app/src/main/AndroidManifest.xml[m
+[1mindex be8e847..5ee250e 100644[m
+[1m--- a/android/app/src/main/AndroidManifest.xml[m
+[1m+++ b/android/app/src/main/AndroidManifest.xml[m
+[36m@@ -1,5 +1,6 @@[m
+ <?xml version="1.0" encoding="utf-8"?>[m
+[31m-<manifest xmlns:android="http://schemas.android.com/apk/res/android">[m
+[32m+[m[32m<manifest xmlns:android="http://schemas.android.com/apk/res/android"[m
+[32m+[m[32m    xmlns:tools="http://schemas.android.com/tools">[m
+ [m
+     <!-- 🌐 Network & Server Access -->[m
+     <uses-permission android:name="android.permission.INTERNET" />[m
+[36m@@ -8,7 +9,6 @@[m
+     <!-- 🕌 Prayer Notifications & Exact Alarms (Strictly Required for API 31-35) -->[m
+     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />[m
+     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />[m
+[31m-    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />[m
+     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />[m
+     <uses-permission android:name="android.permission.VIBRATE" />[m
+     <uses-permission android:name="android.permission.WAKE_LOCK" />[m
+[36m@@ -23,12 +23,10 @@[m
+     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />[m
+ [m
+ [m
+[31m-    <!-- 📍 Geolocation for Qibla & Prayer Times Calculation -->[m
+[31m-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />[m
+[31m-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />[m
+[31m-[m
+     <application[m
+         android:allowBackup="true"[m
+[32m+[m[32m        android:usesCleartextTraffic="false"[m
+[32m+[m[32m        tools:replace="android:usesCleartextTraffic"[m
+         android:icon="@mipmap/ic_launcher"[m
+         android:label="@string/app_name"[m
+         android:roundIcon="@mipmap/ic_launcher_round"[m
+[36m@@ -74,7 +72,11 @@[m
+             android:name=".service.CountdownForegroundService"[m
+             android:enabled="true"[m
+             android:exported="false"[m
+[31m-            android:foregroundServiceType="specialUse" />[m
+[32m+[m[32m            android:foregroundServiceType="specialUse">[m
+[32m+[m[32m            <property[m
+[32m+[m[32m                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"[m
+[32m+[m[32m                android:value="Live prayer countdown before an exact-time prayer alert" />[m
+[32m+[m[32m        </service>[m
+ [m
+         <!--  Adhan Player Service (plays audio at prayer time) -->[m
+         <service[m
+[1mdiff --git a/android/capacitor.settings.gradle b/android/capacitor.settings.gradle[m
+[1mindex 05c274b..e97d7db 100644[m
+[1m--- a/android/capacitor.settings.gradle[m
+[1m+++ b/android/capacitor.settings.gradle[m
+[36m@@ -11,6 +11,9 @@[m [mproject(':capacitor-app').projectDir = new File('../node_modules/@capacitor/app/[m
+ include ':capacitor-browser'[m
+ project(':capacitor-browser').projectDir = new File('../node_modules/@capacitor/browser/android')[m
+ [m
+[32m+[m[32minclude ':capacitor-file-transfer'[m
+[32m+[m[32mproject(':capacitor-file-transfer').projectDir = new File('../node_modules/@capacitor/file-transfer/android')[m
+[32m+[m
+ include ':capacitor-filesystem'[m
+ project(':capacitor-filesystem').projectDir = new File('../node_modules/@capacitor/filesystem/android')[m
+ [m
+[1mdiff --git a/capacitor.config.ts b/capacitor.config.ts[m
+[1mindex 4f43a03..5c88700 100644[m
+[1m--- a/capacitor.config.ts[m
+[1m+++ b/capacitor.config.ts[m
+[36m@@ -6,11 +6,11 @@[m [mconst config: CapacitorConfig = {[m
+   webDir: 'dist',[m
+   server: {[m
+     androidScheme: 'https',[m
+[31m-    cleartext: true,[m
+[32m+[m[32m    cleartext: false,[m
+   },[m
+   android: {[m
+[31m-    // القاعدة #7: السماح بـ mixed content (HTTPS→HTTP redirect للبث)[m
+[31m-    allowMixedContent: true,[m
+[32m+[m[32m    // Release policy: HTTPS-only WebView; mixed content is intentionally disabled.[m
+[32m+[m[32m    allowMixedContent: false,[m
+   },[m
+   plugins: {[m
+     LocalNotifications: {[m
+[1mdiff --git a/package.json b/package.json[m
+[1mindex b567eed..c28433a 100644[m
+[1m--- a/package.json[m
+[1m+++ b/package.json[m
+[36m@@ -18,7 +18,8 @@[m
+     "@aparajita/capacitor-secure-storage": "^8.0.0",[m
+     "@capacitor/app": "^8.1.1",[m
+     "@capacitor/browser": "^8.0.4",[m
+[31m-    "@capacitor/core": "^8.4.1",[m
+[32m+[m[32m    "@capacitor/core": "8.5.0",[m
+[32m+[m[32m    "@capacitor/file-transfer": "2.0.5",[m
+     "@capacitor/filesystem": "^8.1.2",[m
+     "@capacitor/local-notifications": "^8.2.0",[m
+     "@capgo/capacitor-zip": "^8.1.16",[m
+[36m@@ -45,8 +46,8 @@[m
+     "tailwind-merge": "3.4.0"[m
+   },[m
+   "devDependencies": {[m
+[31m-    "@capacitor/android": "^8.4.2",[m
+[31m-    "@capacitor/cli": "^8.4.2",[m
+[32m+[m[32m    "@capacitor/android": "8.5.0",[m
+[32m+[m[32m    "@capacitor/cli": "8.5.0",[m
+     "@tailwindcss/vite": "4.1.17",[m
+     "@types/cors": "^2.8.19",[m
+     "@types/express": "^5.0.6",[m

@@ -14,9 +14,4 @@
         <domain includeSubdomains="true">radiojar.com</domain>
     </domain-config>
 
-    <!-- السماح بـ cleartext للسيرفر المحلي (تطوير) -->
-    <domain-config cleartextTrafficPermitted="true">
-        <domain includeSubdomains="true">localhost</domain>
-        <domain includeSubdomains="true">10.0.2.2</domain>
-    </domain-config>
 </network-security-config>

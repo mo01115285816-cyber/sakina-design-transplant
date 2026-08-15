@@ -6,11 +6,11 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'https',
-    cleartext: true,
+    cleartext: false,
   },
   android: {
-    // القاعدة #7: السماح بـ mixed content (HTTPS→HTTP redirect للبث)
-    allowMixedContent: true,
+    // Release policy: HTTPS-only WebView; mixed content is intentionally disabled.
+    allowMixedContent: false,
   },
   plugins: {
     LocalNotifications: {

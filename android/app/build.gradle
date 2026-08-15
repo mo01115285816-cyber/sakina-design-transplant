@@ -2,6 +2,12 @@ apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.kotlin.android'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
+def releaseKeystorePath = System.getenv('SAKEENAH_RELEASE_KEYSTORE')
+def releaseStorePassword = System.getenv('SAKEENAH_RELEASE_STORE_PASSWORD')
+def releaseKeyAlias = System.getenv('SAKEENAH_RELEASE_KEY_ALIAS')
+def releaseKeyPassword = System.getenv('SAKEENAH_RELEASE_KEY_PASSWORD') ?: releaseStorePassword
+def hasReleaseSigning = [releaseKeystorePath, releaseStorePassword, releaseKeyAlias, releaseKeyPassword].every { it }
+
 android {
     namespace = "com.sakeenah.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -21,9 +27,22 @@ android {
     buildFeatures {
         compose true
     }
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }

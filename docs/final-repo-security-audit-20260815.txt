@@ -1,0 +1,86 @@
+=== STATUS ===
+ [31mM[m android/app/capacitor.build.gradle
+ [31mM[m android/app/src/main/AndroidManifest.xml
+ [31mM[m android/app/src/main/java/com/sakeenah/app/MainActivity.java
+ [31mM[m android/app/src/main/java/com/sakeenah/app/plugin/PrayerAlarmPlugin.kt
+ [31mM[m android/app/src/main/java/com/sakeenah/app/receiver/BootReceiver.kt
+ [31mM[m android/app/src/main/res/xml/network_security_config.xml
+ [31mM[m android/capacitor.settings.gradle
+ [31mM[m capacitor.config.ts
+ [31mM[m package-lock.json
+ [31mM[m package.json
+ [31mM[m scripts/pack-qcf-fonts.js
+ [31mM[m scripts/verify-fonts.js
+ [31mM[m src/App.tsx
+ [31mM[m src/components/MuezzinSelectorSection.tsx
+ [31mM[m src/components/PrayerSettingsScreen.tsx
+ [31mM[m src/components/QuranSurahsScreen.tsx
+ [31mM[m src/services/DynamicIslandService.ts
+ [31mM[m src/utils/prayerTimes.ts
+ [31mM[m src/utils/timeHelpers.ts
+ [31mM[m vite.config.ts
+[31m??[m android/app/src/main/java/com/sakeenah/app/util/PrayerAlarmStore.kt
+[31m??[m docs/audio-marker-runtime-trace-20260815.txt
+[31m??[m docs/cleartext-fix-verification-20260815.txt
+[31m??[m docs/cleartext-origin-trace-20260815.txt
+[31m??[m docs/dynamic-warning-trace-final-20260815.txt
+[31m??[m docs/external-android-dst-fgs-sources-20260815.md
+[31m??[m docs/file-transfer-audit-20260815.txt
+[31m??[m docs/final-apk-sha256-20260815.txt
+[31m??[m docs/final-apk-size-20260815.txt
+[31m??[m docs/final-apk-static-audit-20260815.txt
+[31m??[m docs/final-repo-security-audit-20260815.txt
+[31m??[m docs/js-import-trace-20260815.txt
+[31m??[m docs/keystore-exposure-audit-20260815.txt
+[31m??[m docs/keystore-exposure-proof-20260815.txt
+[31m??[m docs/main-chunk-analysis-20260815.txt
+[31m??[m docs/npm-audit-full-20260815.json
+[31m??[m docs/npm-audit-production-20260815.json
+[31m??[m docs/phase2-source-trace-clean-20260815.txt
+[31m??[m docs/phase2-usage-trace-20260815.txt
+[31m??[m docs/report-phase1-inventory-20260815.txt
+[31m??[m docs/signing-config-audit-20260815.txt
+[31m??[m scripts/audit-final-apk.py
+[31m??[m scripts/test-prayer-times-dst.ts
+=== DIFF CHECK ===
+=== CHANGED ASSET PATHS ===
+=== KEYSTORE TRACKED ===
+=== KEYSTORE IN LOCAL HISTORY ===
+=== CAPACITOR TREE ===
+sakineh@0.1.0 /home/ubuntu/sakina-pro-full
+├── @capacitor/android@8.5.0
+├── @capacitor/cli@8.5.0
+├── @capacitor/core@8.5.0
+└── @capacitor/file-transfer@2.0.5
+
+=== PROD AUDIT ===
+{
+  "info": 0,
+  "low": 0,
+  "moderate": 0,
+  "high": 0,
+  "critical": 0,
+  "total": 0
+}
+=== DIFF STAT ===
+ android/app/capacitor.build.gradle                 |   1 [32m+[m
+ android/app/src/main/AndroidManifest.xml           |  16 [32m++[m[31m--[m
+ .../main/java/com/sakeenah/app/MainActivity.java   |  32 [32m+++++[m[31m--[m
+ .../com/sakeenah/app/plugin/PrayerAlarmPlugin.kt   |  10 [32m++[m
+ .../java/com/sakeenah/app/receiver/BootReceiver.kt |  94 [32m+++++[m[31m--------------[m
+ .../src/main/res/xml/network_security_config.xml   |   5 [31m-[m
+ android/capacitor.settings.gradle                  |   3 [32m+[m
+ capacitor.config.ts                                |   6 [32m+[m[31m-[m
+ package-lock.json                                  | 104 [32m+++++++++++++++++++[m[31m--[m
+ package.json                                       |   7 [32m+[m[31m-[m
+ scripts/pack-qcf-fonts.js                          |  51 [32m+++++[m[31m-----[m
+ scripts/verify-fonts.js                            |  33 [32m++++[m[31m---[m
+ src/App.tsx                                        |  30 [32m+++[m[31m---[m
+ src/components/MuezzinSelectorSection.tsx          |  12 [32m++[m[31m-[m
+ src/components/PrayerSettingsScreen.tsx            |   2 [32m+[m[31m-[m
+ src/components/QuranSurahsScreen.tsx               |   8 [32m+[m[31m-[m
+ src/services/DynamicIslandService.ts               |   4 [31m-[m
+ src/utils/prayerTimes.ts                           |  61 [32m++++++[m[31m------[m
+ src/utils/timeHelpers.ts                           |   4 [32m+[m[31m-[m
+ vite.config.ts                                     |  15 [32m+++[m
+ 20 files changed, 291 insertions(+), 207 deletions(-)

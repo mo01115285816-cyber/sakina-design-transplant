@@ -53,23 +53,42 @@ function isEgyptDSTActive(date: Date): boolean {
   while (lastFridayApril.getUTCDay() !== 5) { // 5 = Friday
     lastFridayApril.setUTCDate(lastFridayApril.getUTCDate() - 1);
   }
-  const dstStart = Date.UTC(year, 3, lastFridayApril.getUTCDate(), 0, 0, 0);
+  // The legal transition is at 00:00 local standard time (UTC+2).
+  const dstStart = Date.UTC(year, 3, lastFridayApril.getUTCDate(), 0, 0, 0) - 2 * 60 * 60 * 1000;
 
   // Find last Thursday of October
   let lastThursdayOctober = new Date(Date.UTC(year, 9, 31));
   while (lastThursdayOctober.getUTCDay() !== 4) { // 4 = Thursday
     lastThursdayOctober.setUTCDate(lastThursdayOctober.getUTCDate() - 1);
   }
-  const dstEnd = Date.UTC(year, 9, lastThursdayOctober.getUTCDate(), 0, 0, 0);
+  // DST remains active through the last Thursday and ends at 00:00 local
+  // on the following day (UTC+3 while the transition is evaluated).
+  const dstEnd = Date.UTC(year, 9, lastThursdayOctober.getUTCDate() + 1, 0, 0, 0) - 3 * 60 * 60 * 1000;
 
   return date.getTime() >= dstStart && date.getTime() < dstEnd;
+}
+
+/**
+ * Resolve the app's supported timezone approximation from coordinates.
+ * The same mapping is used for prayer formatting and countdown state.
+ */
+export function getTimeZoneForCoordinates(lat: number, lon: number): string {
+  if (lon >= 24 && lon <= 37 && lat >= 22 && lat <= 32) return "Africa/Cairo";
+  if (lon >= 34 && lon <= 56 && lat >= 16 && lat <= 33) return "Asia/Riyadh";
+  if (lon >= 25 && lon <= 45 && lat >= 36 && lat <= 42) return "Europe/Istanbul";
+  if (lon >= 60 && lon <= 78 && lat >= 23 && lat <= 37) return "Asia/Karachi";
+  if (lon >= 68 && lon <= 90 && lat >= 6 && lat <= 36) return "Asia/Kolkata";
+  if (lon >= -8 && lon <= 2 && lat >= 49 && lat <= 61) return "Europe/London";
+  if (lon >= -5 && lon <= 15 && lat >= 42 && lat <= 55) return "Europe/Paris";
+  if (lon >= -125 && lon <= -65 && lat >= 25 && lat <= 50) return "America/New_York";
+  return "UTC";
 }
 
 /**
  * حساب offset يدوي لكل timezone (بالدقائق من UTC)
  * هذا يضمن دقة التوقيت على كل الأجهزة (Android 7.0+)
  */
-function getManualOffsetMinutes(date: Date, timeZone: string): number {
+export function getManualOffsetMinutes(date: Date, timeZone: string): number {
   switch (timeZone) {
     case "Africa/Cairo":
       return isEgyptDSTActive(date) ? 180 : 120; // +3h summer, +2h winter
@@ -128,8 +147,8 @@ function isEUDSTActive(date: Date): boolean {
 
 function isUSDSTActive(date: Date): boolean {
   const year = date.getUTCFullYear();
-  const dstStart = getSecondSundayOfMonth(year, 2, 2); // March, 07:00 UTC (02:00 local)
-  const dstEnd = getFirstSundayOfMonth(year, 10, 2);   // November, 06:00 UTC (02:00 local)
+  const dstStart = getSecondSundayOfMonth(year, 2, 7); // March, 07:00 UTC (02:00 local standard)
+  const dstEnd = getFirstSundayOfMonth(year, 10, 6);   // November, 06:00 UTC (02:00 local daylight)
   return date.getTime() >= dstStart && date.getTime() < dstEnd;
 }
 
@@ -188,13 +207,16 @@ function formatMinutesArabic(minutes: number): { time: string; meridiem: string 
 
 // Helper: Converts a Date to total local minutes from midnight, using local timezone
 export function getLocalTimeMinutes(date: Date, lat: number, lon: number): number {
-  // Always use standard browser time for consistent client experiences
-  return date.getHours() * 60 + date.getMinutes();
+  const locationNow = getLocalNowForCountdown(date, lat, lon);
+  return locationNow.getUTCHours() * 60 + locationNow.getUTCMinutes();
 }
 
-// Helper: Returns a copy of the Date but in the client's local timezone for matching
+// Returns a Date whose UTC clock fields represent the target location's wall clock.
+// This keeps countdown comparisons independent of the Android device timezone.
 export function getLocalNowForCountdown(date: Date, lat: number, lon: number): Date {
-  return new Date(date);
+  const timeZone = getTimeZoneForCoordinates(lat, lon);
+  const offsetMinutes = getManualOffsetMinutes(date, timeZone);
+  return new Date(date.getTime() + offsetMinutes * 60 * 1000);
 }
 
 // Core function to calculate prayer times for any coordinate/date
@@ -224,26 +246,7 @@ export function calculatePrayerTimes(
     // حساب الدقائق يدوياً باستخدام UTC + manual offset
     const utcMinutes = timeDate.getUTCHours() * 60 + timeDate.getUTCMinutes();
 
-    // نحدد الـ timezone بناءً على خط الطول (تقريبي)
-    let timeZone = "UTC";
-    if (lon >= 24 && lon <= 37 && lat >= 22 && lat <= 32) {
-      timeZone = "Africa/Cairo"; // مصر
-    } else if (lon >= 34 && lon <= 56 && lat >= 16 && lat <= 33) {
-      timeZone = "Asia/Riyadh"; // السعودية والخليج
-    } else if (lon >= 25 && lon <= 45 && lat >= 36 && lat <= 42) {
-      timeZone = "Europe/Istanbul"; // تركيا
-    } else if (lon >= 60 && lon <= 78 && lat >= 23 && lat <= 37) {
-      timeZone = "Asia/Karachi"; // باكستان
-    } else if (lon >= 68 && lon <= 90 && lat >= 6 && lat <= 36) {
-      timeZone = "Asia/Kolkata"; // الهند
-    } else if (lon >= -8 && lon <= 2 && lat >= 49 && lat <= 61) {
-      timeZone = "Europe/London"; // UK
-    } else if (lon >= -5 && lon <= 15 && lat >= 42 && lat <= 55) {
-      timeZone = "Europe/Paris"; // أوروبا الوسطى
-    } else if (lon >= -125 && lon <= -65 && lat >= 25 && lat <= 50) {
-      timeZone = "America/New_York"; // أمريكا (شرق)
-    }
-
+    const timeZone = getTimeZoneForCoordinates(lat, lon);
     const offsetMinutes = getManualOffsetMinutes(timeDate, timeZone);
     let localMinutes = utcMinutes + offsetMinutes;
     localMinutes = ((localMinutes % 1440) + 1440) % 1440; // handle day wrap

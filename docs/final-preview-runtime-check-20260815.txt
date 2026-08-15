@@ -1,0 +1,7 @@
+# Final preview runtime check — 2026-08-15
+
+The final Vite Android-mode preview opened at `http://localhost:4176/` and rendered the Sakeenah home screen, daily prayer card, hadith card, prayer schedule, and bottom navigation. Extracted text showed the Arabic UI and prayer times, confirming that the root HTML, CSS, main JavaScript chunk, local image references, and current app state loaded.
+
+The only console output was a non-fatal `GPS Error: GeolocationPositionError`, which is expected in the sandbox without a device location provider. No JavaScript exception or module/chunk loading error appeared.
+
+This is a sandbox preview, not a physical Android WebView/device test. Device-specific Immersive Mode, notifications, reboot recovery, overlay, and file transfer still require real-device validation.

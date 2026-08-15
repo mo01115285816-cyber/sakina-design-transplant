@@ -1,0 +1,1 @@
+size_bytes=112628790 path=releases/sakina-release-signed-hardening-no-assets-20260815.apk

@@ -15,11 +15,6 @@ import {
 import type { Reciter, Moshaf } from "@/types/quran";
 import { surahNames } from "@/data/surahNames";
 import { vocalizedSurahNames } from "@/data/vocalizedSurahNames";
-import {
-  isAudioDownloaded,
-  downloadAudioFile,
-  removeAudioFile,
-} from "@/utils/audioCache";
 
 interface Props {
   reciter: Reciter;
@@ -57,6 +52,7 @@ export default function QuranSurahsScreen({
   useEffect(() => {
     let mounted = true;
     const checkDownloads = async () => {
+      const { isAudioDownloaded } = await import("@/utils/audioCache");
       const downloaded: number[] = [];
       for (const id of surahIds) {
         const url = `${moshaf.server}${id.toString().padStart(3, "0")}.mp3`;
@@ -86,6 +82,7 @@ export default function QuranSurahsScreen({
 
       setDownloadingSurahs((prev) => [...prev, surahId]);
       try {
+        const { downloadAudioFile } = await import("@/utils/audioCache");
         await downloadAudioFile(url);
         setDownloadedSurahs((prev) => [...prev, surahId]);
       } catch (error) {
@@ -100,6 +97,7 @@ export default function QuranSurahsScreen({
     if (surahToDelete === null) return;
     const url = `${moshaf.server}${surahToDelete.toString().padStart(3, "0")}.mp3`;
     try {
+      const { removeAudioFile } = await import("@/utils/audioCache");
       await removeAudioFile(url);
       setDownloadedSurahs((prev) => prev.filter((id) => id !== surahToDelete));
     } catch (error) {

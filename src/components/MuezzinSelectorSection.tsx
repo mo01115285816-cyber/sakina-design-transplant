@@ -14,9 +14,9 @@ import {
 } from "lucide-react";
 import { Capacitor } from "@capacitor/core";
 import { Filesystem, Directory } from "@capacitor/filesystem";
+import { FileTransfer } from "@capacitor/file-transfer";
 import type { MuezzinTrack } from "@/types/prayer-settings";
 import { MUEZZIN_LIST } from "@/types/prayer-settings";
-import { PrayerAlarmService } from "@/services/PrayerAlarmService";
 
 interface MuezzinSelectorSectionProps {
   selectedMuezzinId?: string;
@@ -76,10 +76,13 @@ async function downloadMuezzinAudio(track: MuezzinTrack): Promise<void> {
       // Directory already exists.
     }
 
-    await Filesystem.downloadFile({
-      url: track.url,
+    const destination = await Filesystem.getUri({
       path: `muezzins/${track.fileName}`,
       directory: Directory.Data,
+    });
+    await FileTransfer.downloadFile({
+      url: track.url,
+      path: destination.uri,
     });
     return;
   }
@@ -178,6 +181,7 @@ export const MuezzinSelectorSection = React.memo(function MuezzinSelectorSection
         // Save the selection via PrayerAlarmService when playing
         const isNative = Capacitor.isNativePlatform();
         if (isNative) {
+          const { PrayerAlarmService } = await import("@/services/PrayerAlarmService");
           await PrayerAlarmService.saveSelectedMuezzin(track.id, track.fileName);
         }
       } catch (err) {
@@ -200,6 +204,7 @@ export const MuezzinSelectorSection = React.memo(function MuezzinSelectorSection
       // Save the selection via PrayerAlarmService
       const isNative = Capacitor.isNativePlatform();
       if (isNative) {
+        const { PrayerAlarmService } = await import("@/services/PrayerAlarmService");
         await PrayerAlarmService.saveSelectedMuezzin(track.id, track.fileName);
       }
 
@@ -220,6 +225,7 @@ export const MuezzinSelectorSection = React.memo(function MuezzinSelectorSection
       // Delete using native method
       const isNative = Capacitor.isNativePlatform();
       if (isNative) {
+        const { PrayerAlarmService } = await import("@/services/PrayerAlarmService");
         await PrayerAlarmService.deleteMuezzin(track.fileName);
       } else {
         await deleteMuezzinAudio(track);

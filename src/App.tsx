@@ -5,8 +5,11 @@ import React, {
   useState,
   useCallback,
   startTransition,
+  lazy,
+  Suspense,
 } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { Capacitor } from "@capacitor/core";
 import AuthScreen from "@/components/AuthScreen";
 import type { AuthUser } from "@/services/auth-service";
 import {
@@ -29,17 +32,17 @@ import {
 } from "@/utils/prayerTimes";
 import type { PrayerItem } from "@/utils/prayerTimes";
 import ManualLocationDialog from "@/components/ManualLocationDialog";
-import AzkarTabScreen from "@/components/AzkarTabScreen";
-import AzkarCounterScreen from "@/components/AzkarCounterScreen";
+const AzkarTabScreen = lazy(() => import("@/components/AzkarTabScreen"));
+const AzkarCounterScreen = lazy(() => import("@/components/AzkarCounterScreen"));
 import SplashScreen from "@/components/SplashScreen";
 import QcfVerse from "@/components/QcfVerse";
 import { prefetchQcfFont } from "@/hooks/useQcfFont";
 import { PRELOAD_QCF_PAGES } from "@/constants/appVerses";
-import QuranTabScreen from "@/components/QuranTabScreen";
-import SakeenahAIScreen from "@/components/SakeenahAIScreen";
-import AsmaAlHusnaScreen from "@/components/AsmaAlHusnaScreen";
-import { SettingsScreen } from "@/components/SettingsScreen";
-import { PrayerSettingsScreen } from "@/components/PrayerSettingsScreen";
+const QuranTabScreen = lazy(() => import("@/components/QuranTabScreen"));
+const SakeenahAIScreen = lazy(() => import("@/components/SakeenahAIScreen"));
+const AsmaAlHusnaScreen = lazy(() => import("@/components/AsmaAlHusnaScreen"));
+const SettingsScreen = lazy(() => import("@/components/SettingsScreen").then((module) => ({ default: module.SettingsScreen })));
+const PrayerSettingsScreen = lazy(() => import("@/components/PrayerSettingsScreen").then((module) => ({ default: module.PrayerSettingsScreen })));
 import { PrayerCardSpeakerIcon } from "@/components/PrayerCardSpeakerIcon";
 import { WeatherDisplay } from "@/components/WeatherDisplay";
 import { HadithCard } from "@/components/HadithCard";
@@ -304,7 +307,6 @@ export default function App() {
   useEffect(() => {
     async function checkBatteryOptimization() {
       try {
-        const { Capacitor } = await import('@capacitor/core');
         const { PrayerAlarmService } = await import('@/services/PrayerAlarmService');
         const isNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
         
@@ -795,7 +797,8 @@ export default function App() {
      RENDER
      ═══════════════════════════════════════════════════════════════════ */
   return (
-    <div dir="rtl" className="min-h-screen w-full overflow-x-hidden bg-[#ece7de] text-[#2b1a10]">
+    <Suspense fallback={<div dir="rtl" className="min-h-screen w-full bg-[#ece7de]" />}>
+      <div dir="rtl" className="min-h-screen w-full overflow-x-hidden bg-[#ece7de] text-[#2b1a10]">
       {/* ── Splash Screen ── */}
       {showSplash && (
         <SplashScreen onComplete={() => setShowSplash(false)} />
@@ -1152,10 +1155,10 @@ export default function App() {
                           {prayer.meridiem}
                         </span>
                       </p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
             </div>
 
             {/* Collapsible Separator with Line & Text Directly on the Background */}
@@ -1420,6 +1423,7 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+      </div>
+    </Suspense>
   );
 }
