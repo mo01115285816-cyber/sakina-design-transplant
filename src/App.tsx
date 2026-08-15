@@ -933,7 +933,7 @@ export default function App() {
      RENDER
      ═══════════════════════════════════════════════════════════════════ */
   return (
-    <Suspense fallback={<div dir="rtl" className="min-h-screen w-full bg-[#180d07]" />}>
+    <Suspense fallback={<div dir="rtl" className="min-h-screen w-full bg-[#ece7de]" />}>
       <div dir="rtl" className="min-h-screen w-full overflow-x-hidden bg-[#ece7de] text-[#2b1a10]">
       {/* ── Splash Screen ── */}
       {showSplash && (

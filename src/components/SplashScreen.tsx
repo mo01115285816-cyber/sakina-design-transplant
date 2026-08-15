@@ -7,8 +7,8 @@ interface SplashScreenProps {
   onComplete: () => void;
 }
 
-const MIN_SPLASH_MS = 920;
-const MAX_SPLASH_MS = 1750;
+const MIN_SPLASH_MS = 900;
+const MAX_SPLASH_MS = 1700;
 
 export default function SplashScreen({ onComplete }: SplashScreenProps) {
   const [isVisible, setIsVisible] = useState(true);
@@ -24,9 +24,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const handleVerseReady = useCallback(() => {
-    setIsVerseReady(true);
-  }, []);
+  const handleVerseReady = useCallback(() => setIsVerseReady(true), []);
 
   useEffect(() => {
     if (!isVerseReady) return;
@@ -38,8 +36,8 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const enterDuration = prefersReducedMotion ? 0.01 : 0.42;
-  const exitDuration = prefersReducedMotion ? 0.01 : 0.28;
+  const fadeDuration = prefersReducedMotion ? 0.01 : 0.32;
+  const revealDuration = prefersReducedMotion ? 0.01 : 0.42;
 
   return (
     <AnimatePresence onExitComplete={onComplete}>
@@ -53,56 +51,63 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") setIsVisible(false);
           }}
-          className="fixed inset-0 z-50 isolate flex min-h-[100dvh] w-full cursor-pointer select-none flex-col overflow-hidden bg-[#180d07] text-[#f7efe3]"
+          className="fixed inset-0 z-50 isolate flex min-h-[100dvh] w-full cursor-pointer select-none items-center justify-center overflow-hidden bg-[#ece7de] px-[clamp(20px,5vw,64px)] text-[#2b1a10]"
           initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: exitDuration, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: fadeDuration, ease: [0.22, 1, 0.36, 1] }}
         >
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_24%,rgba(222,171,101,0.18),transparent_25%),linear-gradient(180deg,#180d07_0%,#2a170f_48%,#8d6340_74%,#ece7de_100%)]" />
-          <div className="pointer-events-none absolute inset-x-[-25%] bottom-[-16vh] h-[44vh] rounded-[50%] bg-[#f4ecd8]/10 blur-3xl" />
-          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[30vh] bg-[linear-gradient(180deg,transparent,rgba(236,231,222,0.7))]" />
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.72),transparent_34%),linear-gradient(180deg,#f7f2ea_0%,#ece7de_68%,#e7dfd3_100%)]" />
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/80" />
 
           <motion.div
-            className="relative z-10 flex min-h-[100dvh] w-full flex-col px-[clamp(22px,6vw,72px)] py-[clamp(26px,5vh,54px)]"
-            initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 8 }}
+            className="relative z-10 flex w-full max-w-[430px] flex-col items-center"
+            initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 7 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: enterDuration, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: revealDuration, ease: [0.16, 1, 0.3, 1] }}
           >
-            <header className="flex items-start justify-between">
-              <div className="text-right leading-none">
-                <p className="text-[clamp(0.55rem,1.6vw,0.72rem)] tracking-[0.34em] text-white/60">SAKINAH</p>
-                <p className="mt-1 font-display text-[clamp(1.35rem,4.8vw,2rem)] font-black text-white">سَكِينَة</p>
-              </div>
-              <div className="mt-2 flex items-center gap-2 text-[clamp(0.62rem,1.7vw,0.76rem)] font-bold text-white/55">
-                <span className="h-px w-7 bg-[#deab65]/70" />
-                <span>طمأنينة في كل يوم</span>
-              </div>
+            <header className="flex flex-col items-center text-center">
+              <span className="text-[clamp(0.58rem,1.7vw,0.72rem)] font-medium tracking-[0.34em] text-[#7f6a55]/65">SAKINAH</span>
+              <h1 className="mt-2 font-display text-[clamp(2rem,8vw,3.1rem)] font-black leading-none tracking-tight text-[#2b1a10]">
+                سَكِينَة
+              </h1>
+              <p className="mt-3 text-[clamp(0.74rem,2vw,0.9rem)] font-medium text-[#7f6a55]">
+                طمأنينة في كل يوم
+              </p>
             </header>
 
-            <main className="flex flex-1 flex-col items-center justify-center text-center">
-              <motion.div
-                className="mb-[clamp(22px,5vh,44px)] flex items-center gap-3 text-[#deab65]"
-                initial={{ opacity: 0, scaleX: 0.65 }}
-                animate={{ opacity: 1, scaleX: 1 }}
-                transition={{ duration: enterDuration, delay: prefersReducedMotion ? 0 : 0.08, ease: [0.16, 1, 0.3, 1] }}
-              >
-                <span className="h-px w-[clamp(34px,10vw,78px)] bg-gradient-to-l from-transparent to-[#deab65]" />
-                <span className="h-1.5 w-1.5 rotate-45 border border-[#deab65]" />
-                <span className="h-px w-[clamp(34px,10vw,78px)] bg-gradient-to-r from-transparent to-[#deab65]" />
-              </motion.div>
+            <motion.div
+              className="mt-[clamp(28px,6vh,52px)] flex items-center gap-2 text-[#b88a4f]/70"
+              initial={{ opacity: 0, scaleX: 0.7 }}
+              animate={{ opacity: 1, scaleX: 1 }}
+              transition={{ duration: revealDuration, delay: prefersReducedMotion ? 0 : 0.06, ease: [0.16, 1, 0.3, 1] }}
+              aria-hidden="true"
+            >
+              <span className="h-px w-[clamp(42px,12vw,82px)] bg-gradient-to-l from-transparent to-[#b88a4f]/65" />
+              <span className="h-1.5 w-1.5 rotate-45 border border-[#b88a4f]/70" />
+              <span className="h-px w-[clamp(42px,12vw,82px)] bg-gradient-to-r from-transparent to-[#b88a4f]/65" />
+            </motion.div>
 
-              <div className="relative flex min-h-[clamp(150px,24vh,232px)] w-full max-w-[42rem] items-center justify-center">
+            <motion.section
+              className="cut-crystal-satin relative mt-[clamp(20px,4vh,34px)] flex min-h-[clamp(220px,30vh,286px)] w-full flex-col items-center justify-center overflow-hidden rounded-[32px] px-[clamp(20px,6vw,42px)] py-[clamp(24px,5vh,38px)] text-center"
+              initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 7 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: revealDuration, delay: prefersReducedMotion ? 0 : 0.08, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/95" />
+              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-[#f7f2ea]/45 to-transparent" />
+
+              <div className="relative z-10 flex min-h-[clamp(126px,18vh,170px)] w-full items-center justify-center">
                 <motion.div
                   className="absolute inset-x-0 flex flex-col items-center"
-                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 8 }}
-                  animate={{ opacity: isVerseReady ? 1 : 0, y: isVerseReady ? 0 : 8 }}
-                  transition={{ duration: prefersReducedMotion ? 0.01 : 0.45, ease: [0.16, 1, 0.3, 1] }}
+                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 7 }}
+                  animate={{ opacity: isVerseReady ? 1 : 0, y: isVerseReady ? 0 : 7 }}
+                  transition={{ duration: prefersReducedMotion ? 0.01 : 0.38, ease: [0.16, 1, 0.3, 1] }}
                   aria-hidden={!isVerseReady}
                 >
                   <div
                     id="splash-verse"
-                    className="max-w-[min(100%,39rem)] text-[clamp(1.1rem,3.8vw,2.15rem)] leading-[2.2] text-[#f4ecd8] drop-shadow-[0_3px_18px_rgba(24,13,7,0.35)]"
+                    className="max-w-[min(100%,38rem)] text-[clamp(1.08rem,3.7vw,2.08rem)] leading-[2.15] text-[#2b1a10]"
                     style={{ direction: "rtl" }}
                   >
                     <QcfVerse
@@ -116,7 +121,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
                   </div>
                   <span
                     id="splash-verse-source"
-                    className="mt-5 rounded-full border border-white/15 bg-black/15 px-3 py-1 text-[clamp(0.65rem,1.8vw,0.8rem)] font-bold text-white/70 backdrop-blur-sm"
+                    className="mt-4 rounded-full border border-[#2b1a10]/10 bg-[#f7f2ea]/75 px-3 py-1 text-[clamp(0.62rem,1.7vw,0.78rem)] font-bold text-[#7f6a55]"
                   >
                     {APP_VERSES.splash.source}
                   </span>
@@ -126,28 +131,28 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
                   {!isVerseReady && (
                     <motion.div
                       key="verse-wait"
-                      className="flex items-center gap-2 text-white/45"
+                      className="flex items-center gap-1.5"
                       aria-hidden="true"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
+                      transition={{ duration: 0.18 }}
                     >
-                      <span className="h-1 w-1 rounded-full bg-[#deab65]/60" />
-                      <span className="h-1 w-1 rounded-full bg-[#deab65]" />
-                      <span className="h-1 w-1 rounded-full bg-[#deab65]/60" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#b88a4f]/35" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#b88a4f]/70" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#b88a4f]/35" />
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
-            </main>
+            </motion.section>
 
-            <footer className="flex items-end justify-between border-t border-white/15 pt-4 text-[clamp(0.58rem,1.6vw,0.72rem)] font-bold text-white/50">
-              <span>القرآن • الأذكار • مواقيت الصلاة</span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#deab65]" />
-                يومك بطمأنينة
-              </span>
+            <footer className="mt-[clamp(18px,4vh,30px)] flex items-center gap-3 text-[clamp(0.62rem,1.7vw,0.76rem)] font-medium text-[#7f6a55]/65">
+              <span>القرآن</span>
+              <span className="h-1 w-1 rounded-full bg-[#b88a4f]/55" />
+              <span>الأذكار</span>
+              <span className="h-1 w-1 rounded-full bg-[#b88a4f]/55" />
+              <span>مواقيت الصلاة</span>
             </footer>
           </motion.div>
         </motion.div>
