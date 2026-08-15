@@ -10,6 +10,8 @@ interface QcfVerseProps {
   className?: string;
   style?: React.CSSProperties;
   showOrnaments?: boolean;
+  hideFallback?: boolean;
+  onReady?: () => void;
 }
 
 export default function QcfVerse({
@@ -20,6 +22,8 @@ export default function QcfVerse({
   className = '',
   style = {},
   showOrnaments = true,
+  hideFallback = false,
+  onReady,
 }: QcfVerseProps) {
   const [words, setWords] = useState<MushafWord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +35,12 @@ export default function QcfVerse({
     const loadWords = async () => {
       setLoading(true);
       try {
-        const page = await MushafLayoutService.getPage(pageNumber);
+        let page = await MushafLayoutService.getPage(pageNumber);
+        if (!page) {
+          await MushafLayoutService.downloadPage(pageNumber);
+          page = await MushafLayoutService.getPage(pageNumber);
+        }
+
         if (!mounted || !page) {
           setLoading(false);
           return;
@@ -60,7 +69,7 @@ export default function QcfVerse({
       }
     };
 
-    loadWords();
+    void loadWords();
     return () => { mounted = false; };
   }, [verseKey, pageNumber, wordStart, wordEnd]);
 
@@ -69,7 +78,17 @@ export default function QcfVerse({
     [pageNumber]
   );
 
-  if (loading || !isFontLoaded || words.length === 0) {
+  const isReady = !loading && isFontLoaded && words.length > 0;
+
+  useEffect(() => {
+    if (isReady) onReady?.();
+  }, [isReady, onReady]);
+
+  if (!isReady) {
+    if (hideFallback) {
+      return <span className={className} style={style} aria-hidden="true" />;
+    }
+
     return (
       <span
         className={className}

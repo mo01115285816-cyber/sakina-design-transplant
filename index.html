@@ -24,53 +24,60 @@
         background: #ece7de;
       }
 
-      /* Technical pre-React guard: visually matches SplashScreen.tsx while React loads. */
+      /* Boot guard: no Quran text is rendered before React/QCF readiness. */
       #pre-react-splash {
         position: fixed;
         inset: 0;
         display: flex;
-        flex-direction: column;
         align-items: center;
         justify-content: center;
         background: #ece7de;
         z-index: 9999;
         pointer-events: none;
+        transition: opacity 260ms ease;
       }
 
-      #pre-react-splash .splash-verse {
-        color: #2b1a10;
-        font-family: "Thmanyah Sans", system-ui, sans-serif;
-        font-size: 20px;
-        font-weight: 400;
-        line-height: 1.6;
-        text-align: center;
-        direction: rtl;
-        padding: 0 24px;
+      #pre-react-splash.is-hidden {
+        opacity: 0;
       }
 
-      #pre-react-splash .splash-source {
-        margin-top: 20px;
-        color: rgba(184, 138, 79, 0.8);
-        font-family: "Thmanyah Sans", system-ui, sans-serif;
-        font-size: 14px;
-        font-weight: 500;
+      #pre-react-splash .splash-mark {
+        width: clamp(76px, 18vw, 132px);
+        height: clamp(76px, 18vw, 132px);
+        object-fit: contain;
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        #pre-react-splash {
+          transition-duration: 1ms;
+        }
       }
     </style>
   </head>
   <body>
     <div id="pre-react-splash" aria-hidden="true">
-      <div class="splash-verse">إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَّوْقُوتًا</div>
-      <div class="splash-source">سورة النساء • الآية ١٠٣</div>
+      <img class="splash-mark" src="images/quran-circle.png" alt="" />
     </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      window.addEventListener('load', function () {
-        window.setTimeout(function () {
-          var splash = document.getElementById('pre-react-splash');
-          if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
-        }, 150);
-      });
+      (function () {
+        var splash = document.getElementById('pre-react-splash');
+        var root = document.getElementById('root');
+        if (!splash || !root) return;
+
+        function hideBootGuard() {
+          if (splash.classList.contains('is-hidden')) return;
+          splash.classList.add('is-hidden');
+          window.setTimeout(function () {
+            if (splash.parentNode) splash.parentNode.removeChild(splash);
+          }, 280);
+        }
+
+        new MutationObserver(function () {
+          if (root.childNodes.length > 0) hideBootGuard();
+        }).observe(root, { childList: true });
+      })();
     </script>
   </body>
 </html>
