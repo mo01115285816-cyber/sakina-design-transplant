@@ -187,6 +187,28 @@ class PrayerAlarmPlugin : Plugin() {
     }
 
     /**
+     * Open this app's system settings so the user can restore denied location access.
+     */
+    @PluginMethod
+    fun openAppSettings(call: PluginCall) {
+        try {
+            val intent = android.content.Intent(
+                android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                android.net.Uri.parse("package:${context.packageName}")
+            ).apply {
+                flags = android.content.Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+            context.startActivity(intent)
+            call.resolve(JSObject().apply {
+                put("success", true)
+            })
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to open app settings", e)
+            call.reject("Failed to open app settings: ${e.message}")
+        }
+    }
+
+    /**
      * Check if battery optimization is enabled for this app.
      * Returns true if the app WILL be killed by the system.
      */

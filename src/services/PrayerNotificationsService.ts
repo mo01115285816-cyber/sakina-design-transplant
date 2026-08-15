@@ -15,6 +15,10 @@ export class PrayerNotificationsService {
       return false;
     }
     try {
+      const current = await LocalNotifications.checkPermissions();
+      if (current.display === 'granted') return true;
+      if (current.display === 'denied') return false;
+
       const result = await LocalNotifications.requestPermissions();
       return result.display === 'granted';
     } catch (e) {

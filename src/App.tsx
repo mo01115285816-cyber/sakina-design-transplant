@@ -10,6 +10,8 @@ import React, {
 } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Capacitor } from "@capacitor/core";
+import { App as CapacitorApp } from "@capacitor/app";
+import { Geolocation } from "@capacitor/geolocation";
 import AuthScreen from "@/components/AuthScreen";
 import type { AuthUser } from "@/services/auth-service";
 import {
@@ -27,6 +29,8 @@ import {
 import type { CalculationMethod, AsrSchool } from "@/utils/locationDetection";
 import {
   calculatePrayerTimes,
+  calculateSecondaryPrayerTimes,
+  formatPrayerDate,
   getLocalTimeMinutes,
   getLocalNowForCountdown,
 } from "@/utils/prayerTimes";
@@ -132,6 +136,8 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [showLocationDialog, setShowLocationDialog] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const locationPermissionRequested = useRef(false);
   const [showAzkarCounter, setShowAzkarCounter] = useState(false);
   const [showAsmaAlHusna, setShowAsmaAlHusna] = useState(false);
   const [showBatteryModal, setShowBatteryModal] = useState(false);
@@ -544,53 +550,20 @@ export default function App() {
   const ringOffset = ringLength * (1 - state.progress);
 
   const secondaryTimes = useMemo(() => {
-    const fajrPrayer = prayerSchedule.find((p) => p.key === "fajr");
-    const sunrisePrayer = prayerSchedule.find((p) => p.key === "sunrise");
-    const maghribPrayer = prayerSchedule.find((p) => p.key === "maghrib");
-
-    const defaultFajr = fajrPrayer?.date
-      ? new Date(fajrPrayer.date)
-      : new Date();
-    if (!fajrPrayer?.date) defaultFajr.setHours(4, 30, 0, 0);
-
-    const defaultSunrise = sunrisePrayer?.date
-      ? new Date(sunrisePrayer.date)
-      : new Date();
-    if (!sunrisePrayer?.date) defaultSunrise.setHours(6, 5, 0, 0);
-
-    const defaultMaghrib = maghribPrayer?.date
-      ? new Date(maghribPrayer.date)
-      : new Date();
-    if (!maghribPrayer?.date) defaultMaghrib.setHours(18, 50, 0, 0);
-
-    // 1. Duha: 15 minutes after Sunrise
-    const duhaTime = new Date(defaultSunrise.getTime() + 15 * 60 * 1000);
-
-    // 2. Midnight: Halfway between Maghrib and Fajr (of next day)
-    const nextFajr = new Date(defaultFajr.getTime() + 24 * 60 * 60 * 1000);
-    const nightDurationMs = nextFajr.getTime() - defaultMaghrib.getTime();
-    const midnightTime = new Date(
-      defaultMaghrib.getTime() + nightDurationMs / 2,
+    const calculated = calculateSecondaryPrayerTimes(
+      now,
+      cityLat,
+      cityLon,
+      calcMethod,
+      asrSchool,
     );
-
-    // 3. Last third of the night: Tahajjud start
-    const lastThirdTime = new Date(nextFajr.getTime() - nightDurationMs / 3);
-
-    const formatToLocalTimeAr = (date: Date): string => {
-      const formatted = new Intl.DateTimeFormat("ar-EG", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      }).format(date);
-      return formatted.replace("ص", "ص").replace("م", "م");
-    };
-
     return {
-      duha: formatToLocalTimeAr(duhaTime),
-      midnight: formatToLocalTimeAr(midnightTime),
-      tahajjud: formatToLocalTimeAr(lastThirdTime),
+      duha: formatPrayerDate(calculated.duha, cityLat, cityLon),
+      midnight: formatPrayerDate(calculated.midnight, cityLat, cityLon),
+      firstThird: formatPrayerDate(calculated.firstThird, cityLat, cityLon),
+      lastThird: formatPrayerDate(calculated.lastThird, cityLat, cityLon),
     };
-  }, [prayerSchedule]);
+  }, [now.getDate(), now.getMonth(), now.getFullYear(), cityLat, cityLon, calcMethod, asrSchool]);
 
   /* ── Handlers ── */
   const handleCitySelected = useCallback(
@@ -598,6 +571,7 @@ export default function App() {
       setCityName(name);
       setCityLat(lat);
       setCityLon(lon);
+      setLocationError(null);
       if (isAutoCalcMethod) {
         setCalcMethod(detectCalcMethodByLocation(lat, lon));
       }
@@ -628,73 +602,235 @@ export default function App() {
     [cityLat, cityLon],
   );
 
-  const handleRetryGPS = useCallback(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const lat = pos.coords.latitude;
-          const lon = pos.coords.longitude;
-          let placeName = "موقعك الحالي";
-          try {
-            const [osmRes, arcgisRes] = await Promise.allSettled([
-              fetch(
-                `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1&accept-language=ar`,
-              ),
-              fetch(
-                `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&location=${lon},${lat}&langCode=ar`,
-              ),
-            ]);
+  const applyDetectedLocation = useCallback(async (lat: number, lon: number) => {
+    let placeName = "موقعك الحالي";
+    try {
+      const [osmRes, arcgisRes] = await Promise.allSettled([
+        fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1&accept-language=ar`,
+        ),
+        fetch(
+          `https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/reverseGeocode?f=json&location=${lon},${lat}&langCode=ar`,
+        ),
+      ]);
 
-            let foundName = null;
-
-            if (arcgisRes.status === "fulfilled") {
-              try {
-                const data = await arcgisRes.value.json();
-                if (data && data.address && data.address.Match_addr) {
-                  foundName = data.address.Match_addr.split(",")[0];
-                }
-              } catch (e) {}
-            }
-
-            if (!foundName && osmRes.status === "fulfilled") {
-              try {
-                const data = await osmRes.value.json();
-                if (data && data.name) {
-                  foundName = data.name;
-                }
-              } catch (e) {}
-            }
-
-            if (foundName) {
-              placeName = foundName;
-            }
-          } catch (e) {
-            console.warn("Reverse geocode error:", e);
-          }
-
-          handleCitySelected(placeName, lat, lon);
-        },
-        (error) => {
-          console.warn("GPS Error:", error);
-          setIsAutoLocation(false);
-          // Optional: we can show a toast here to notify that auto location failed,
-          // but we won't reset the location or forcefully show the dialog if they already have a location
-          // unless they literally have 'جاري تحديد الموقع...'
-          setCityName((prev) =>
-            prev === "جاري تحديد الموقع..." ? "القاهرة، مصر" : prev,
-          );
-        },
-        { timeout: 8000, enableHighAccuracy: false },
-      );
+      let foundName: string | null = null;
+      if (arcgisRes.status === "fulfilled") {
+        try {
+          const data = await arcgisRes.value.json();
+          if (data?.address?.Match_addr) foundName = data.address.Match_addr.split(",")[0];
+        } catch {
+          // Keep the generic location label when reverse geocoding fails.
+        }
+      }
+      if (!foundName && osmRes.status === "fulfilled") {
+        try {
+          const data = await osmRes.value.json();
+          if (data?.name) foundName = data.name;
+        } catch {
+          // Keep the generic location label when reverse geocoding fails.
+        }
+      }
+      if (foundName) placeName = foundName;
+    } catch (error) {
+      console.warn("Reverse geocode error:", error);
     }
+
+    localStorage.setItem("app_lastLocation", JSON.stringify({ name: placeName, lat, lon }));
+    handleCitySelected(placeName, lat, lon);
+    setLocationError(null);
   }, [handleCitySelected]);
 
-  // Try auto location on mount if enabled
-  useEffect(() => {
-    if (isAutoLocation) {
-      handleRetryGPS();
+  const openLocationAppSettings = useCallback(async () => {
+    try {
+      const { PrayerAlarmService } = await import("@/services/PrayerAlarmService");
+      await PrayerAlarmService.openAppSettings();
+    } catch (error) {
+      console.warn("Unable to open app settings:", error);
     }
   }, []);
+
+  const requestLocationPermission = useCallback(async (): Promise<boolean> => {
+    if (!Capacitor.isNativePlatform()) return true;
+
+    try {
+      const current = await Geolocation.checkPermissions();
+      if (current.location === "granted" || current.coarseLocation === "granted") return true;
+      if (locationPermissionRequested.current) return false;
+
+      locationPermissionRequested.current = true;
+      const requested = await Geolocation.requestPermissions({
+        permissions: ["location", "coarseLocation"],
+      });
+      return requested.location === "granted" || requested.coarseLocation === "granted";
+    } catch (error) {
+      console.warn("Location permission request failed:", error);
+      return false;
+    }
+  }, []);
+
+  const handleRetryGPS = useCallback(async () => {
+    setLocationError(null);
+
+    // Apply a recent last-known position immediately, then refresh it in the background.
+    try {
+      const saved = localStorage.getItem("app_lastLocation");
+      if (saved) {
+        const cached = JSON.parse(saved) as { name?: string; lat?: number; lon?: number };
+        if (Number.isFinite(cached.lat) && Number.isFinite(cached.lon)) {
+          handleCitySelected(cached.name || "موقعك الحالي", cached.lat as number, cached.lon as number);
+        }
+      }
+    } catch {
+      // Ignore malformed cache and continue with a fresh request.
+    }
+
+    const permissionGranted = await requestLocationPermission();
+    if (!permissionGranted) {
+      setIsAutoLocation(false);
+      setLocationError("لم يتم السماح بالموقع. يمكنك السماح بالموقع التقريبي أو الدقيق من إعدادات التطبيق.");
+      return;
+    }
+
+    const onSuccess = async (lat: number, lon: number) => {
+      await applyDetectedLocation(lat, lon);
+    };
+
+    try {
+      if (Capacitor.isNativePlatform()) {
+        const position = await Geolocation.getCurrentPosition({
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 120000,
+          enableLocationFallback: true,
+        });
+        await onSuccess(position.coords.latitude, position.coords.longitude);
+        return;
+      }
+
+      if (!navigator.geolocation) throw new Error("Geolocation is unavailable");
+      await new Promise<void>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            try {
+              await onSuccess(position.coords.latitude, position.coords.longitude);
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          },
+          reject,
+          { timeout: 10000, enableHighAccuracy: true, maximumAge: 120000 },
+        );
+      });
+    } catch (firstError) {
+      console.warn("High-accuracy GPS failed; trying cached/network fallback:", firstError);
+      try {
+        if (Capacitor.isNativePlatform()) {
+          const fallback = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: false,
+            timeout: 6000,
+            maximumAge: 600000,
+            enableLocationFallback: true,
+          });
+          await onSuccess(fallback.coords.latitude, fallback.coords.longitude);
+          return;
+        }
+        if (navigator.geolocation) {
+          await new Promise<void>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+              async (position) => {
+                try {
+                  await onSuccess(position.coords.latitude, position.coords.longitude);
+                  resolve();
+                } catch (error) {
+                  reject(error);
+                }
+              },
+              reject,
+              { timeout: 6000, enableHighAccuracy: false, maximumAge: 600000 },
+            );
+          });
+          return;
+        }
+      } catch (fallbackError) {
+        console.warn("Location fallback failed:", fallbackError);
+      }
+
+      setIsAutoLocation(false);
+      setLocationError("تعذر تحديد موقعك الآن. استخدم الموقع المحفوظ أو اختر موقعًا يدويًا، ويمكنك فتح إعدادات الموقع للمحاولة مرة أخرى.");
+    }
+  }, [applyDetectedLocation, handleCitySelected, requestLocationPermission]);
+
+  // Request the required foreground permissions together on first launch, then locate.
+  useEffect(() => {
+    if (!isAutoLocation) return;
+    void Promise.allSettled([
+      handleRetryGPS(),
+      PrayerNotificationsService.requestPermission(),
+    ]);
+  }, [handleRetryGPS, isAutoLocation]);
+
+  // Refresh location after returning from background so travel/timezone changes apply immediately.
+  useEffect(() => {
+    if (!isAutoLocation || !Capacitor.isNativePlatform()) return;
+
+    let disposed = false;
+    let listener: { remove: () => Promise<void> } | null = null;
+    void CapacitorApp.addListener("appStateChange", ({ isActive }) => {
+      if (!disposed && isActive) void handleRetryGPS();
+    }).then((handle) => {
+      if (disposed) void handle.remove();
+      else listener = handle;
+    }).catch((error) => {
+      console.warn("Unable to listen for app state changes:", error);
+    });
+
+    return () => {
+      disposed = true;
+      if (listener) void listener.remove();
+    };
+  }, [handleRetryGPS, isAutoLocation]);
+
+  // Keep prayer times aligned with movement while auto-location is enabled.
+  useEffect(() => {
+    if (!isAutoLocation || !Capacitor.isNativePlatform()) return;
+
+    let watchId: string | null = null;
+    let disposed = false;
+    void Geolocation.watchPosition(
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 300000,
+        minimumUpdateInterval: 300000,
+        enableLocationFallback: true,
+      },
+      async (position, error) => {
+        if (disposed) return;
+        if (error) {
+          console.warn("Location watch error:", error);
+          return;
+        }
+        if (position) {
+          await applyDetectedLocation(position.coords.latitude, position.coords.longitude);
+        }
+      },
+    ).then((id) => {
+      if (disposed) {
+        void Geolocation.clearWatch({ id });
+      } else {
+        watchId = id;
+      }
+    }).catch((error) => {
+      console.warn("Unable to start location watch:", error);
+    });
+
+    return () => {
+      disposed = true;
+      if (watchId) void Geolocation.clearWatch({ id: watchId });
+    };
+  }, [applyDetectedLocation, isAutoLocation]);
 
   useEffect(() => {
     localStorage.setItem("app_isAutoLocation", isAutoLocation.toString());
@@ -829,9 +965,12 @@ export default function App() {
         onClose={() => setShowLocationDialog(false)}
         onCitySelected={handleCitySelected}
         onAutoLocationRequest={() => {
+          locationPermissionRequested.current = false;
           setIsAutoLocation(true);
-          handleRetryGPS();
+          void handleRetryGPS();
         }}
+        locationError={locationError}
+        onOpenLocationSettings={openLocationAppSettings}
         isAutoLocation={isAutoLocation}
         setIsAutoLocation={setIsAutoLocation}
         currentCityName={cityName}
@@ -1201,7 +1340,7 @@ export default function App() {
                     <div className="flex items-center justify-between">
                       <span className="text-[14.5px] font-bold">الضحى</span>
                       <span className="text-[14.5px] font-bold tabular-nums tracking-tight text-[#b88a4f]">
-                        {secondaryTimes.duha}
+                        {secondaryTimes.duha.time} {secondaryTimes.duha.meridiem}
                       </span>
                     </div>
 
@@ -1211,17 +1350,27 @@ export default function App() {
                         منتصف الليل
                       </span>
                       <span className="text-[14.5px] font-bold tabular-nums tracking-tight text-[#b88a4f]">
-                        {secondaryTimes.midnight}
+                        {secondaryTimes.midnight.time} {secondaryTimes.midnight.meridiem}
                       </span>
                     </div>
 
-                    {/* Row 3: Last third */}
+                    {/* Row 3: First third */}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[14.5px] font-bold">
+                        الثلث الأول من الليل
+                      </span>
+                      <span className="text-[14.5px] font-bold tabular-nums tracking-tight text-[#b88a4f]">
+                        {secondaryTimes.firstThird.time} {secondaryTimes.firstThird.meridiem}
+                      </span>
+                    </div>
+
+                    {/* Row 4: Last third */}
                     <div className="flex items-center justify-between">
                       <span className="text-[14.5px] font-bold">
                         الثلث الأخير من الليل
                       </span>
                       <span className="text-[14.5px] font-bold tabular-nums tracking-tight text-[#b88a4f]">
-                        {secondaryTimes.tahajjud}
+                        {secondaryTimes.lastThird.time} {secondaryTimes.lastThird.meridiem}
                       </span>
                     </div>
                   </div>

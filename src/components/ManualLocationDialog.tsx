@@ -8,6 +8,8 @@ type Props = {
   onClose: () => void;
   onCitySelected: (cityName: string, lat: number, lon: number) => void;
   onAutoLocationRequest: () => void;
+  locationError?: string | null;
+  onOpenLocationSettings: () => void;
 
   // Current state
   isAutoLocation: boolean;
@@ -22,6 +24,8 @@ export default function ManualLocationDialog({
   onClose,
   onCitySelected,
   onAutoLocationRequest,
+  locationError,
+  onOpenLocationSettings,
   isAutoLocation,
   setIsAutoLocation,
   currentCityName,
@@ -101,6 +105,19 @@ export default function ManualLocationDialog({
               </div>
 
               <div className="cut-crystal-satin rounded-[24px] p-2 shadow-sm mb-8">
+                {locationError && (
+                  <div className="mx-2 mb-3 rounded-[18px] border border-[#d8b48b]/60 bg-[#fff8ec] px-3 py-3 text-right text-[13px] leading-6 text-[#6f4f35]" role="alert">
+                    <p>{locationError}</p>
+                    <button
+                      type="button"
+                      onClick={onOpenLocationSettings}
+                      className="mt-2 font-bold text-[#9a6c35] underline underline-offset-4"
+                    >
+                      فتح إعدادات التطبيق
+                    </button>
+                  </div>
+                )}
+
                 {/* Auto Location Row */}
                 <div className="flex items-center justify-between px-4 py-4 border-b border-[#e6dccf]">
                   <div className="flex items-center gap-3">

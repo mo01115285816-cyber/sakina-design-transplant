@@ -172,6 +172,21 @@ class PrayerAlarmServiceImpl {
   }
 
   /**
+   * Open this app's Android settings page so the user can restore denied location access.
+   */
+  async openAppSettings(): Promise<boolean> {
+    if (!this.isNative) return false;
+
+    try {
+      const result = await this.callPlugin('openAppSettings');
+      return result?.success ?? false;
+    } catch (e) {
+      console.warn('PrayerAlarmService.openAppSettings failed:', e);
+      return false;
+    }
+  }
+
+  /**
    * Check if battery optimization is enabled for this app.
    * If true, the app WILL be killed by the system after a few days.
    *

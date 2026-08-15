@@ -1,4 +1,6 @@
 import { PrayerTimes, Coordinates, CalculationMethod, Madhab } from "adhan";
+import * as SunCalc from "suncalc";
+import tzlookup from "@photostructure/tz-lookup";
 import type { CalculationMethod as CalcMethodType, AsrSchool } from "./locationDetection";
 
 export type PrayerItem = {
@@ -9,6 +11,16 @@ export type PrayerItem = {
   minutes: number;
   date?: Date;
 };
+
+export type SecondaryPrayerTimes = {
+  duha: Date;
+  midnight: Date;
+  firstThird: Date;
+  lastThird: Date;
+};
+
+// Duha begins when the sun reaches a defined post-sunrise altitude, not a fixed delay.
+export const DUHA_SOLAR_ALTITUDE_DEGREES = 4.5;
 
 // Map custom UI/Location method strings to Adhan library Enum values
 function getAdhanCalculationMethod(method: CalcMethodType) {
@@ -32,153 +44,84 @@ function getAdhanMadhab(school: AsrSchool) {
   return school === "HANAFI" ? Madhab.Hanafi : Madhab.Shafi;
 }
 
-// ═══════════════════════════════════════════════════════════════
-// القاعدة #6: حساب DST يدوياً — لا تعتمد على Intl.DateTimeFormat مع timeZone
-// لأن tzdata النظام على أجهزة أندرويد قديمة (7-10) قد لا يعرف DST 2026 لمصر
-// ═══════════════════════════════════════════════════════════════
-
 /**
- * حساب DST المصري يدوياً (بدون Intl أو tzdata)
- * Egypt DST 2023+:
- *   - Starts: last Friday of April (00:00 local)
- *   - Ends:   last Thursday of October (00:00 local)
- *   - Summer: UTC+3
- *   - Winter: UTC+2
- */
-function isEgyptDSTActive(date: Date): boolean {
-  const year = date.getUTCFullYear();
-
-  // Find last Friday of April
-  let lastFridayApril = new Date(Date.UTC(year, 3, 30));
-  while (lastFridayApril.getUTCDay() !== 5) { // 5 = Friday
-    lastFridayApril.setUTCDate(lastFridayApril.getUTCDate() - 1);
-  }
-  // The legal transition is at 00:00 local standard time (UTC+2).
-  const dstStart = Date.UTC(year, 3, lastFridayApril.getUTCDate(), 0, 0, 0) - 2 * 60 * 60 * 1000;
-
-  // Find last Thursday of October
-  let lastThursdayOctober = new Date(Date.UTC(year, 9, 31));
-  while (lastThursdayOctober.getUTCDay() !== 4) { // 4 = Thursday
-    lastThursdayOctober.setUTCDate(lastThursdayOctober.getUTCDate() - 1);
-  }
-  // DST remains active through the last Thursday and ends at 00:00 local
-  // on the following day (UTC+3 while the transition is evaluated).
-  const dstEnd = Date.UTC(year, 9, lastThursdayOctober.getUTCDate() + 1, 0, 0, 0) - 3 * 60 * 60 * 1000;
-
-  return date.getTime() >= dstStart && date.getTime() < dstEnd;
-}
-
-/**
- * Resolve the app's supported timezone approximation from coordinates.
- * The same mapping is used for prayer formatting and countdown state.
+ * Resolve the IANA timezone for the selected coordinates.
+ * The resolver uses current timezone boundary data and falls back to the
+ * device timezone only when coordinates are invalid or unavailable.
  */
 export function getTimeZoneForCoordinates(lat: number, lon: number): string {
-  if (lon >= 24 && lon <= 37 && lat >= 22 && lat <= 32) return "Africa/Cairo";
-  if (lon >= 34 && lon <= 56 && lat >= 16 && lat <= 33) return "Asia/Riyadh";
-  if (lon >= 25 && lon <= 45 && lat >= 36 && lat <= 42) return "Europe/Istanbul";
-  if (lon >= 60 && lon <= 78 && lat >= 23 && lat <= 37) return "Asia/Karachi";
-  if (lon >= 68 && lon <= 90 && lat >= 6 && lat <= 36) return "Asia/Kolkata";
-  if (lon >= -8 && lon <= 2 && lat >= 49 && lat <= 61) return "Europe/London";
-  if (lon >= -5 && lon <= 15 && lat >= 42 && lat <= 55) return "Europe/Paris";
-  if (lon >= -125 && lon <= -65 && lat >= 25 && lat <= 50) return "America/New_York";
-  return "UTC";
+  try {
+    return tzlookup(lat, lon);
+  } catch {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  }
+}
+
+type ZonedParts = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+};
+
+function getZonedParts(date: Date, timeZone: string): ZonedParts {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    calendar: "gregory",
+    numberingSystem: "latn",
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(date);
+
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return {
+    year: Number(values.year),
+    month: Number(values.month),
+    day: Number(values.day),
+    hour: Number(values.hour),
+    minute: Number(values.minute),
+    second: Number(values.second),
+  };
 }
 
 /**
- * حساب offset يدوي لكل timezone (بالدقائق من UTC)
- * هذا يضمن دقة التوقيت على كل الأجهزة (Android 7.0+)
+ * Return the actual UTC offset for an IANA timezone at a specific instant.
+ * This delegates DST rules to the platform's IANA tzdata instead of a
+ * hand-maintained country table.
  */
 export function getManualOffsetMinutes(date: Date, timeZone: string): number {
-  switch (timeZone) {
-    case "Africa/Cairo":
-      return isEgyptDSTActive(date) ? 180 : 120; // +3h summer, +2h winter
-    case "Asia/Riyadh":
-    case "Asia/Dubai":
-    case "Asia/Kuwait":
-    case "Asia/Bahrain":
-    case "Asia/Qatar":
-      return 180; // UTC+3, no DST
-    case "Europe/Istanbul":
-      return 180; // UTC+3, no DST since 2016
-    case "Asia/Karachi":
-      return 300; // UTC+5
-    case "Asia/Kolkata":
-      return 330; // UTC+5:30
-    case "Asia/Dhaka":
-      return 360; // UTC+6
-    case "Asia/Jakarta":
-      return 420; // UTC+7
-    case "Asia/Kuala_Lumpur":
-      return 480; // UTC+8
-    case "Europe/London":
-      // UK DST: last Sunday of March to last Sunday of October
-      return isUKDSTActive(date) ? 60 : 0;
-    case "Europe/Paris":
-    case "Europe/Berlin":
-    case "Europe/Madrid":
-    case "Europe/Rome":
-      return isEUDSTActive(date) ? 120 : 60; // CET/CEST
-    case "America/New_York":
-      return isUSDSTActive(date) ? -240 : -300; // EST/EDT
-    case "America/Chicago":
-      return isUSDSTActive(date) ? -300 : -360; // CST/CDT
-    case "America/Denver":
-      return isUSDSTActive(date) ? -360 : -420; // MST/MDT
-    case "America/Los_Angeles":
-      return isUSDSTActive(date) ? -420 : -480; // PST/PDT
-    default:
-      return 0; // Fallback to UTC
-  }
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    timeZoneName: "longOffset",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).formatToParts(date);
+  const offset = parts.find((part) => part.type === "timeZoneName")?.value ?? "GMT";
+  if (offset === "GMT" || offset === "UTC") return 0;
+
+  const match = offset.match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/);
+  if (!match) return 0;
+  const hours = Number(match[2]);
+  const minutes = Number(match[3] ?? 0);
+  const total = hours * 60 + minutes;
+  return match[1] === "-" ? -total : total;
 }
 
-function isUKDSTActive(date: Date): boolean {
-  const year = date.getUTCFullYear();
-  const dstStart = getLastSundayOfMonth(year, 2, 1); // March, 01:00 UTC
-  const dstEnd = getLastSundayOfMonth(year, 9, 1);   // October, 01:00 UTC
-  return date.getTime() >= dstStart && date.getTime() < dstEnd;
-}
-
-function isEUDSTActive(date: Date): boolean {
-  const year = date.getUTCFullYear();
-  const dstStart = getLastSundayOfMonth(year, 2, 1); // March, 01:00 UTC
-  const dstEnd = getLastSundayOfMonth(year, 9, 1);   // October, 01:00 UTC
-  return date.getTime() >= dstStart && date.getTime() < dstEnd;
-}
-
-function isUSDSTActive(date: Date): boolean {
-  const year = date.getUTCFullYear();
-  const dstStart = getSecondSundayOfMonth(year, 2, 7); // March, 07:00 UTC (02:00 local standard)
-  const dstEnd = getFirstSundayOfMonth(year, 10, 6);   // November, 06:00 UTC (02:00 local daylight)
-  return date.getTime() >= dstStart && date.getTime() < dstEnd;
-}
-
-function getLastSundayOfMonth(year: number, month: number, hourUTC: number): number {
-  let d = new Date(Date.UTC(year, month + 1, 0)); // Last day of month
-  while (d.getUTCDay() !== 0) { // 0 = Sunday
-    d.setUTCDate(d.getUTCDate() - 1);
-  }
-  d.setUTCHours(hourUTC, 0, 0, 0);
-  return d.getTime();
-}
-
-function getSecondSundayOfMonth(year: number, month: number, hourUTC: number): number {
-  let d = new Date(Date.UTC(year, month, 1));
-  let sundayCount = 0;
-  while (sundayCount < 2) {
-    if (d.getUTCDay() === 0) sundayCount++;
-    if (sundayCount < 2) d.setUTCDate(d.getUTCDate() + 1);
-  }
-  d.setUTCHours(hourUTC, 0, 0, 0);
-  return d.getTime();
-}
-
-function getFirstSundayOfMonth(year: number, month: number, hourUTC: number): number {
-  let d = new Date(Date.UTC(year, month, 1));
-  while (d.getUTCDay() !== 0) {
-    d.setUTCDate(d.getUTCDate() + 1);
-  }
-  d.setUTCHours(hourUTC, 0, 0, 0);
-  return d.getTime();
+/**
+ * Return the Gregorian date represented by the target location's wall clock.
+ * Adhan only uses the calendar date fields, so this prevents device timezone
+ * differences from selecting the wrong civil day near midnight.
+ */
+function getCalculationDate(date: Date, timeZone: string): Date {
+  const parts = getZonedParts(date, timeZone);
+  return new Date(parts.year, parts.month - 1, parts.day);
 }
 
 /**
@@ -190,8 +133,7 @@ function toArabicDigits(n: number, pad: number = 2): string {
 }
 
 /**
- * تنسيق الدقائق بالأرقام العربية مع ص/م (بدون Intl.DateTimeFormat)
- * القاعدة #6: حساب يدوي باستخدام getUTCHours() + manualOffset
+ * تنسيق الدقائق بالأرقام العربية مع ص/م
  */
 function formatMinutesArabic(minutes: number): { time: string; meridiem: string } {
   let hours = Math.floor(minutes / 60);
@@ -205,10 +147,11 @@ function formatMinutesArabic(minutes: number): { time: string; meridiem: string 
   };
 }
 
-// Helper: Converts a Date to total local minutes from midnight, using local timezone
+// Converts an instant to total local minutes from midnight at the location.
 export function getLocalTimeMinutes(date: Date, lat: number, lon: number): number {
-  const locationNow = getLocalNowForCountdown(date, lat, lon);
-  return locationNow.getUTCHours() * 60 + locationNow.getUTCMinutes();
+  const timeZone = getTimeZoneForCoordinates(lat, lon);
+  const parts = getZonedParts(date, timeZone);
+  return parts.hour * 60 + parts.minute;
 }
 
 // Returns a Date whose UTC clock fields represent the target location's wall clock.
@@ -217,6 +160,67 @@ export function getLocalNowForCountdown(date: Date, lat: number, lon: number): D
   const timeZone = getTimeZoneForCoordinates(lat, lon);
   const offsetMinutes = getManualOffsetMinutes(date, timeZone);
   return new Date(date.getTime() + offsetMinutes * 60 * 1000);
+}
+
+export function formatPrayerDate(date: Date, lat: number, lon: number): { time: string; meridiem: string } {
+  const roundedDate = new Date(date.getTime() + 30 * 1000);
+  const timeZone = getTimeZoneForCoordinates(lat, lon);
+  const parts = getZonedParts(roundedDate, timeZone);
+  return formatMinutesArabic(parts.hour * 60 + parts.minute);
+}
+
+function findSolarAltitudeTime(
+  sunrise: Date,
+  lat: number,
+  lon: number,
+  altitudeDegrees: number,
+): Date {
+  let low = sunrise.getTime();
+  let high = low + 3 * 60 * 60 * 1000;
+  if (SunCalc.getPosition(new Date(high), lat, lon).altitude < altitudeDegrees) {
+    return sunrise;
+  }
+
+  for (let i = 0; i < 42; i += 1) {
+    const middle = Math.floor((low + high) / 2);
+    const altitude = SunCalc.getPosition(new Date(middle), lat, lon).altitude;
+    if (altitude >= altitudeDegrees) high = middle;
+    else low = middle;
+  }
+
+  return new Date(Math.round(high / 60000) * 60000);
+}
+
+export function calculateSecondaryPrayerTimes(
+  date: Date,
+  lat: number,
+  lon: number,
+  method: CalcMethodType,
+  school: AsrSchool,
+): SecondaryPrayerTimes {
+  const coordinates = new Coordinates(lat, lon);
+  const timeZone = getTimeZoneForCoordinates(lat, lon);
+  const params = getAdhanCalculationMethod(method);
+  params.madhab = getAdhanMadhab(school);
+  const calculationDate = getCalculationDate(date, timeZone);
+  const prayerTimes = new PrayerTimes(coordinates, calculationDate, params);
+  const nextDay = new Date(calculationDate);
+  nextDay.setDate(nextDay.getDate() + 1);
+  const nextDayPrayerTimes = new PrayerTimes(coordinates, nextDay, params);
+  const nightDuration = nextDayPrayerTimes.fajr.getTime() - prayerTimes.maghrib.getTime();
+  const roundToMinute = (value: number) => new Date(Math.round(value / 60000) * 60000);
+
+  return {
+    duha: findSolarAltitudeTime(
+      prayerTimes.sunrise,
+      lat,
+      lon,
+      DUHA_SOLAR_ALTITUDE_DEGREES,
+    ),
+    midnight: roundToMinute(prayerTimes.maghrib.getTime() + nightDuration / 2),
+    firstThird: roundToMinute(prayerTimes.maghrib.getTime() + nightDuration / 3),
+    lastThird: roundToMinute(prayerTimes.maghrib.getTime() + nightDuration * (2 / 3)),
+  };
 }
 
 // Core function to calculate prayer times for any coordinate/date
@@ -228,29 +232,26 @@ export function calculatePrayerTimes(
   school: AsrSchool
 ): PrayerItem[] {
   const coordinates = new Coordinates(lat, lon);
+  const timeZone = getTimeZoneForCoordinates(lat, lon);
   const params = getAdhanCalculationMethod(method);
   params.madhab = getAdhanMadhab(school);
 
-  const adhanTimes = new PrayerTimes(coordinates, date, params);
+  const adhanTimes = new PrayerTimes(
+    coordinates,
+    getCalculationDate(date, timeZone),
+    params,
+  );
 
-  /**
-   * القاعدة #6: حساب DST يدوياً
-   * نحسب offset يدوياً بناءً على الموقع الجغرافي
-   * ثم نستخدم getUTCHours() + offset بدلاً من Intl.DateTimeFormat
-   */
   const mapPrayer = (
     key: PrayerItem["key"],
     name: string,
     timeDate: Date
   ): PrayerItem => {
-    // حساب الدقائق يدوياً باستخدام UTC + manual offset
-    const utcMinutes = timeDate.getUTCHours() * 60 + timeDate.getUTCMinutes();
-
-    const timeZone = getTimeZoneForCoordinates(lat, lon);
-    const offsetMinutes = getManualOffsetMinutes(timeDate, timeZone);
-    let localMinutes = utcMinutes + offsetMinutes;
-    localMinutes = ((localMinutes % 1440) + 1440) % 1440; // handle day wrap
-
+    // Round astronomical output to the nearest minute, matching published
+    // prayer-time references instead of truncating raw seconds.
+    const roundedDate = new Date(timeDate.getTime() + 30 * 1000);
+    const localParts = getZonedParts(roundedDate, timeZone);
+    const localMinutes = localParts.hour * 60 + localParts.minute;
     const formatted = formatMinutesArabic(localMinutes);
 
     return {
