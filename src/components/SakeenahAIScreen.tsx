@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, startTransition, useMemo } from "react";
-import { Capacitor } from "@capacitor/core";
 import { getCurrentSession } from "@/services/auth-service";
+import { supabaseKey, supabaseUrl } from "@/services/supabase-client";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   Sparkles, ArrowUp, RefreshCw, ChevronRight, ChevronDown, ChevronUp, 
@@ -526,9 +526,9 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
         content: m.content
       }));
 
-      const apiBaseUrl = ((import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "").replace(/\/$/, "");
-      if (Capacitor.isNativePlatform() && !apiBaseUrl) {
-        throw new Error("لم يتم إعداد رابط خادم سَكِينَة لتطبيق Android.");
+      const normalizedSupabaseUrl = supabaseUrl?.replace(/\/$/, "");
+      if (!normalizedSupabaseUrl || !supabaseKey) {
+        throw new Error("لم يتم إعداد اتصال Supabase لوظائف سَكِينَة AI.");
       }
 
       const session = await getCurrentSession();
@@ -536,13 +536,14 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
         throw new Error("يجب تسجيل الدخول أولًا لاستخدام سكينة AI.");
       }
 
-      const res = await fetch(`${apiBaseUrl}/api/sakeenah-ai/chat/stream`, {
+      const res = await fetch(`${normalizedSupabaseUrl}/functions/v1/sakeenah-ai`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          apikey: supabaseKey,
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ messages: history }),
+        body: JSON.stringify({ messages: history, stream: true }),
       });
 
       if (!res.ok) {
