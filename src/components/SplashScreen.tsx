@@ -7,8 +7,8 @@ interface SplashScreenProps {
   onComplete: () => void;
 }
 
-const MIN_SPLASH_MS = 900;
-const MAX_SPLASH_MS = 1700;
+const MIN_DISPLAY_MS = 2000;
+const MAX_READY_WAIT_MS = 5000;
 
 export default function SplashScreen({ onComplete }: SplashScreenProps) {
   const [isVisible, setIsVisible] = useState(true);
@@ -19,7 +19,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
   const finishWhenStable = useCallback(() => {
     const now = typeof performance === "undefined" ? Date.now() : performance.now();
     const elapsed = now - startedAtRef.current;
-    const remaining = Math.max(0, MIN_SPLASH_MS - elapsed);
+    const remaining = Math.max(0, MIN_DISPLAY_MS - elapsed);
     const timer = window.setTimeout(() => setIsVisible(false), remaining);
     return () => window.clearTimeout(timer);
   }, []);
@@ -32,7 +32,7 @@ export default function SplashScreen({ onComplete }: SplashScreenProps) {
   }, [finishWhenStable, isVerseReady]);
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setIsVisible(false), MAX_SPLASH_MS);
+    const timer = window.setTimeout(() => setIsVisible(false), MAX_READY_WAIT_MS);
     return () => window.clearTimeout(timer);
   }, []);
 
