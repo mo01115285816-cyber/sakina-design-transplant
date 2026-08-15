@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx src/server/index.ts",
     "build": "npm run verify-fonts && npm run pack-fonts && vite build && esbuild src/server/index.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "build:android": "npm run verify-fonts && npm run pack-fonts && vite build --mode android",
     "start": "node dist/server.cjs",
     "download-fonts": "node scripts/download-qcf-fonts.js",
     "pack-fonts": "node scripts/pack-qcf-fonts.js",

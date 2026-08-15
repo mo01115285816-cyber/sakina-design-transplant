@@ -7,11 +7,70 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>سَكِينَة — Sakinah</title>
-    <link rel="preload" as="image" href="/images/quran-circle.png" fetchpriority="high" />
-    <link rel="preload" as="image" href="/images/quran/surah-header-frame.webp" type="image/webp" fetchpriority="high" />
+    <link rel="preload" as="image" href="images/quran-circle.png" fetchpriority="high" />
+    <link rel="preload" as="image" href="images/quran/surah-header-frame.webp" type="image/webp" fetchpriority="high" />
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        min-height: 100%;
+        background: #ece7de;
+      }
+
+      #root {
+        min-height: 100vh;
+        min-height: 100dvh;
+        background: #ece7de;
+      }
+
+      /* Technical pre-React guard: visually matches SplashScreen.tsx while React loads. */
+      #pre-react-splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #ece7de;
+        z-index: 9999;
+        pointer-events: none;
+      }
+
+      #pre-react-splash .splash-verse {
+        color: #2b1a10;
+        font-family: "Thmanyah Sans", system-ui, sans-serif;
+        font-size: 20px;
+        font-weight: 400;
+        line-height: 1.6;
+        text-align: center;
+        direction: rtl;
+        padding: 0 24px;
+      }
+
+      #pre-react-splash .splash-source {
+        margin-top: 20px;
+        color: rgba(184, 138, 79, 0.8);
+        font-family: "Thmanyah Sans", system-ui, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+      }
+    </style>
   </head>
   <body>
+    <div id="pre-react-splash" aria-hidden="true">
+      <div class="splash-verse">إِنَّ الصَّلَاةَ كَانَتْ عَلَى الْمُؤْمِنِينَ كِتَابًا مَّوْقُوتًا</div>
+      <div class="splash-source">سورة النساء • الآية ١٠٣</div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      window.addEventListener('load', function () {
+        window.setTimeout(function () {
+          var splash = document.getElementById('pre-react-splash');
+          if (splash && splash.parentNode) splash.parentNode.removeChild(splash);
+        }, 150);
+      });
+    </script>
   </body>
 </html>

@@ -5,7 +5,8 @@ import { defineConfig } from 'vite';
 
 export default defineConfig(({ mode }) => {
   return {
-    base: mode === 'production' ? '/' : './',  // '/' for Vercel, './' for Capacitor dev
+    // Vercel serves from the domain root; Capacitor loads the bundle from its local WebView.
+    base: mode === 'android' ? './' : '/',
     plugins: [react(), tailwindcss()],  // Tailwind v4 design plugin + React
     resolve: {
       alias: {

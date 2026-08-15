@@ -1,3 +1,6 @@
+@import "tailwindcss";
+@import "./styles/player.css";
+
 @font-face {
   font-family: 'KFGQPC Uthman Taha Naskh';
   src: url('/fonts/KFGQPC_Uthmanic_Script_HAFS_Regular.otf') format('opentype');
@@ -53,9 +56,6 @@
   font-style: normal;
   font-display: swap;
 }
-
-@import "tailwindcss";
-@import "./styles/player.css";
 
 @theme {
   --font-sans: "Thmanyah Sans", ui-sans-serif, system-ui, sans-serif;
