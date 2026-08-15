@@ -854,11 +854,11 @@ export default function App() {
             <img
               src={state.background}
               alt={`خلفية ${state.current.name}`}
-              className="hero-image absolute inset-0 h-full w-full object-cover pointer-events-none -z-10 will-change-transform [transform:translateZ(0)]"
+              className="hero-image absolute inset-0 h-full w-full object-cover pointer-events-none z-0 will-change-transform [transform:translateZ(0)]"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#180d07]/65 via-[#2a170f]/30 to-[#ece7de] pointer-events-none -z-10 will-change-transform [transform:translateZ(0)]" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#180d07]/65 via-[#2a170f]/30 to-[#ece7de] pointer-events-none z-[1] will-change-transform [transform:translateZ(0)]" />
 
-            <div className="relative mx-auto w-full max-w-[390px] px-4 pb-7 pt-6">
+            <div className="relative z-[2] mx-auto w-full max-w-[390px] px-4 pb-7 pt-6">
               {/* ── Fixed Floating Glassmorphic Header ── */}
               <AnimatePresence>
                 {isScrolled && (
