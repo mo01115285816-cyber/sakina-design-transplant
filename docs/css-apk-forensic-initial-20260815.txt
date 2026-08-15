@@ -1,0 +1,38 @@
+=== SOURCE CSS HEAD ===
+@import "tailwindcss";
+@import "./styles/player.css";
+
+@font-face {
+  font-family: 'KFGQPC Uthman Taha Naskh';
+  src: url('/fonts/KFGQPC_Uthmanic_Script_HAFS_Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+@font-face {
+  font-family: 'Thmanyah Sans';
+  src: url('/fonts/thmanyahsans-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+=== SOURCE CSS IMPORT ORDER ===
+1:@import "tailwindcss";
+2:@import "./styles/player.css";
+=== TAILWIND CONFIG FILES ===
+./tailwind.config.js
+=== EXISTING DIST CSS ===
+=== APK CSS ENTRIES ===
+assets/public/assets/index-DoR2A_MD.css
+=== APK CSS SIZE/HEAD ===
+142115
+@layer properties{@supports ((-webkit-hyphens:none) and (not (margin-trim:inline))) or ((-moz-orient:inline) and (not (color:rgb(from red r g b)))){*,:before,:after,::backdrop{--tw-translate-x:0;--tw-translate-y:0;--tw-translate-z:0;--tw-scale-x:1;--tw-scale-y:1;--tw-scale-z:1;--tw-rotate-x:initial;--tw-rotate-y:initial;--tw-rotate-z:initial;--tw-skew-x:initial;--tw-skew-y:initial;--tw-scroll-snap-strictness:proximit
+=== APK REQUIRED TAILWIND MARKERS ===
+    288 --spacing
+     70 @property
+      1 bg-quranify
+    161 color-mix
+      1 h-5\.5
+     20 oklch
+      1 z-45

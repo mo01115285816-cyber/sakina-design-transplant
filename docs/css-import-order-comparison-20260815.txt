@@ -1,0 +1,19 @@
+baseline_bytes=142115
+ab_bytes=142114
+baseline_sha_prefix=8c1d485ad9c2ffc0934092ce6f9e57d6a514b1d2c6c4eddd5366f974515a4210
+ab_sha_prefix=b6ff3832f20c3cdd6b5ad9efcbc61b3cae8a4e1566e5fefc08c58d4c13fa4987
+h-5\\.5: baseline=1 ab=1
+z-45: baseline=1 ab=1
+bg-quranify: baseline=1 ab=1
+--color-quranify: baseline=13 ab=13
+--spacing: baseline=288 ab=288
+@property: baseline=70 ab=70
+color-mix: baseline=161 ab=161
+oklch: baseline=20 ab=20
+first_diff_offset=1961
+baseline_context=-hue-rotate:initial;--tw-backdrop-invert:initial;--tw-backdrop-opacity:initial;--tw-backdrop-saturate:initial;--tw-backdrop-sepia:initial;--tw-duration:initial;--tw-ease:initial}}}@layer theme{:root,:host{--font-sans:"Thmanyah Sans",ui-sans-serif,system-ui,sans-serif;--font-serif:"Thmanyah Serif Text",ui-serif,Georgia,serif;--font-mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;--color-red-50:oklch(97.1% .013 17.38);--color-red
+ab_context=-hue-rotate:initial;--tw-backdrop-invert:initial;--tw-backdrop-opacity:initial;--tw-backdrop-saturate:initial;--tw-backdrop-sepia:initial;--tw-duration:initial;--tw-ease:initial}}}:root,:host{--color-quranify-text-primary:#2b1a10;--color-quranify-text-secondary:#7f6a55;--color-quranify-accent-primary:#deab65;--color-quranify-accent-secondary:#b88a4f;--color-quranify-live:#b88a4f;--font-sans:"Thmanyah Sans",ui-sans-serif,system-ui,sans-serif;--font-serif:"Thmanyah Serif Text",
+selector_set_baseline=0
+selector_set_ab=0
+selectors_only_baseline=0
+selectors_only_ab=0

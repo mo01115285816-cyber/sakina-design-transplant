@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import "./styles/player.css";
+@import "tailwindcss";
 
 @font-face {
   font-family: 'KFGQPC Uthman Taha Naskh';

@@ -1,0 +1,37 @@
+=== APK ===
+/home/ubuntu/sakina-pro/releases/sakina-debug-css-import-order-fixed-20260815.apk 118660635 bytes
+874c5d153b9724f2daa9571bd262b5b6ef3f1f554ba00986fd08eb84314d0aab  /home/ubuntu/sakina-pro/releases/sakina-debug-css-import-order-fixed-20260815.apk
+=== INDEX REFERENCES ===
+href="images/quran-circle.png"
+href="images/quran/surah-header-frame.webp"
+src="./assets/index-BYhs1WUT.js"
+href="./assets/index-B7lO0XkM.css"
+=== CSS ENTRY/SIZE ===
+assets/public/assets/index-B7lO0XkM.css
+142114
+@layer properties{@supports ((-webkit-hyphens:none) and (not (margin-trim:inline))) or ((-moz-orient:inline) and (not (color:rgb(from red r g b)))){*,:before,:after,::backdrop{--tw
+=== TAILWIND MARKERS ===
+     13 --color-quranify
+    288 --spacing
+     70 @property
+      1 bg-quranify
+    161 color-mix
+      1 h-5\.5
+     20 oklch
+      1 z-45
+=== SAFE AREA / INLINE SPLASH ===
+0
+5
+=== SOURCE ORDER ===
+@import "./styles/player.css";
+@import "tailwindcss";
+
+@font-face {
+=== VERSIONS ===
+    "@tailwindcss/vite": "4.1.17",
+    "tailwindcss": "4.1.17",
+
+=== BROWSER PREVIEW ===
+تم تشغيل dist المصحح بترتيب imports الجديد على http://localhost:4175/؛ ظهرت الشاشة الرئيسية ومحتواها العربي وبطاقات الصلاة والتنقل السفلي بشكل كامل.
+Console view: لا توجد رسائل console.
+العلامات الصفراء/الحمراء في screenshot هي annotations الخاصة بأداة الفحص وليست من تصميم التطبيق.

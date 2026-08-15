@@ -1,0 +1,203 @@
+=== STYLE BLOCKS ===
+STYLE_BLOCK_COUNT=0
+=== DYNAMIC CLASSNAME EXPRESSIONS ===
+src/App.tsx:955:                        className={`leading-relaxed drop-shadow-sm ${state.reflection.isQuran ? "text-[18px] text-[#f4ecd8] font-medium font-serif" : "text-[15px] text-white/90 font-bold"}`}
+src/App.tsx:1067:                  className={`h-1.5 rounded-full transition-all duration-300 ${currentSlide === 0 ? "w-6 bg-[#2b1a10]" : "w-1.5 bg-[#c2b5a3] hover:bg-[#a89680]"}`}
+src/App.tsx:1083:                  className={`h-1.5 rounded-full transition-all duration-300 ${currentSlide === 1 ? "w-6 bg-[#2b1a10]" : "w-1.5 bg-[#c2b5a3] hover:bg-[#a89680]"}`}
+src/App.tsx:1108:                    className={`relative flex items-center justify-between px-5 py-3 rounded-full transition-all duration-300 ${
+src/App.tsx:1117:                        className={`text-[15px] transition-colors ${isHighlighted ? "text-[#b88a4f] font-black" : "text-[#2b1a10]"}`}
+src/App.tsx:1145:                        className={`text-[15px] font-bold tabular-nums tracking-tight transition-colors ${isHighlighted ? "text-[#b88a4f]" : "text-[#2b1a10]"}`}
+src/App.tsx:1150:                          className={`mr-1 text-[11px] font-bold ${isHighlighted ? "text-[#b88a4f]" : "text-[#7f6a55]"}`}
+src/App.tsx:1179:                  className={`transition-transform duration-300 text-[#7f6a55] ${
+src/App.tsx:1259:        <div className={activeTab === "sakeenah-ai" && !showAzkarCounter ? "block relative w-full h-screen overflow-hidden" : "hidden"}>
+src/App.tsx:1354:                    className={`relative flex items-center gap-2 rounded-[24px] px-5 py-2 transition-colors duration-200 ${
+src/components/AsmaAlHusnaScreen.tsx:439:            className={`relative flex items-center gap-2 rounded-full px-5 py-2 transition-all duration-200 ${
+src/components/AsmaAlHusnaScreen.tsx:456:              className={`relative z-10 overflow-hidden transition-all duration-200 ease-out ${activeTab === "main" ? "max-w-[100px] opacity-100" : "max-w-0 opacity-0"}`}
+src/components/AsmaAlHusnaScreen.tsx:467:            className={`relative flex items-center gap-2 rounded-full px-5 py-2 transition-all duration-200 ${
+src/components/AsmaAlHusnaScreen.tsx:489:              className={`relative z-10 overflow-hidden transition-all duration-200 ease-out ${activeTab === "favorites" ? "max-w-[100px] opacity-100" : "max-w-0 opacity-0"}`}
+src/components/AzkarCounterScreen.tsx:365:          className={`flex h-11 w-11 items-center justify-center rounded-full border shadow-sm transition-all duration-300 ${
+src/components/AzkarCounterScreen.tsx:401:          className={`mb-1.5 flex h-8 w-12 items-center justify-center rounded-full transition-all duration-300 ${
+src/components/AzkarCounterScreen.tsx:500:                  className={`px-4 py-1.5 rounded-full flex items-center gap-2 border text-[13px] font-bold select-none transition-all duration-300 ${
+src/components/AzkarCounterScreen.tsx:507:                    className={`h-1.5 w-1.5 rounded-full ${isComplete ? "bg-[#b88a4f]" : "bg-[#deab65] animate-pulse"}`}
+src/components/AzkarCounterScreen.tsx:530:                  className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold transition-all duration-200 ${
+src/components/AzkarCounterScreen.tsx:586:          className={`px-5 py-2.5 cut-crystal-capsule font-bold text-[12.5px] shadow-sm flex items-center justify-center gap-2 ${
+src/components/AzkarCounterScreen.tsx:593:            className={`h-1.5 w-1.5 rounded-full ${autoTransition ? "bg-white animate-pulse" : "bg-[#7f6a55]"}`}
+src/components/AzkarTabScreen.tsx:318:                className={`w-10 h-10 rounded-[12px] flex items-center justify-center gem-rim-glow ${cat.bg}`}
+src/components/AzkarTabScreen.tsx:380:                      className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 shadow-inner ${
+src/components/AzkarTabScreen.tsx:394:                      className={`text-[15px] font-bold flex-1 text-right transition-colors duration-300 ${
+src/components/AzkarTabScreen.tsx:439:                    className={`w-9 h-9 rounded-[10px] flex items-center justify-center flex-shrink-0 ${style.bg}`}
+src/components/BatteryOptimizationModal.tsx:215:                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+src/components/ManualLocationDialog.tsx:115:                    className={`w-12 h-7 rounded-full flex items-center p-1 cursor-pointer transition-colors ${tempAutoLocation ? "bg-[#b88a4f]" : "bg-[#e6dccf]"}`}
+src/components/ManualLocationDialog.tsx:139:                  className={`w-full flex items-center justify-between px-4 py-4 transition-colors ${tempAutoLocation ? "opacity-40 cursor-not-allowed" : "hover:bg-[#f7f2ea]/50 rounded-b-[24px]"}`}
+src/components/MuezzinSelectorSection.tsx:288:                className={`w-full flex items-center justify-between p-4 rounded-[22px] border backdrop-blur-md transition-all duration-200 cursor-pointer active:scale-[0.99] ${
+src/components/MuezzinSelectorSection.tsx:297:                    className={`w-4.5 h-4.5 rounded-full border flex items-center justify-center transition-all ${
+src/components/MuezzinSelectorSection.tsx:308:                    className={`text-[13.5px] font-bold text-right transition-colors ${
+src/components/MuezzinSelectorSection.tsx:324:                    className={`w-8.5 h-8.5 rounded-full flex items-center justify-center transition-all border ${
+src/components/MushafPageRenderer.tsx:160:              className={`surah-frame__title ${isLongHeaderName ? 'surah-frame__title--long' : ''}`}
+src/components/MushafPageRenderer.tsx:180:        <div key={`line-${lineNum}`} className={`qcf-line ${lineObj.isCentered ? 'qcf-centered' : 'qcf-justified'}`}>
+src/components/MushafPageRenderer.tsx:219:      className={`qcf-page select-none ${isOpeningPage ? 'qcf-opening-page' : ''}`}
+src/components/MushafPageRenderer.tsx:241:        <div className="qcf-opening-folio" aria-label={`رقم الصفحة ${toArabicPageDigits(pageNumber)}`}>
+src/components/MushafSpreadControlRail.tsx:59:      className={`mushaf-spread-rail-button ${active ? 'mushaf-spread-rail-button--active' : ''}`}
+src/components/MushafSpreadControlRail.tsx:107:      <div className={`mushaf-spread-side-rail__card cut-crystal-capsule ${primaryTextClassName}`} dir="ltr">
+src/components/MushafSpreadSurface.tsx:83:        className={`mushaf-spread-pages ${isReady ? 'mushaf-spread-pages--ready' : 'mushaf-spread-pages--pending'}`}
+src/components/MushafSpreadSurface.tsx:89:            className={`mushaf-page-slot mushaf-page-slot--${slot.side}`}
+src/components/MushafSpreadSurface.tsx:124:              <Loader2 className={`animate-spin ${loadingAccentClassName}`} size={40} />
+src/components/PrayerSettingsScreen.tsx:195:          className={`px-2 pt-1 transition-all duration-300 ${!currentPrefs.enabled ? "opacity-45" : ""}`}
+src/components/PrayerSettingsScreen.tsx:202:          className={`cut-crystal-panel rounded-[28px] p-5 transition-all duration-300 shadow-md ${
+src/components/PrayerSettingsScreen.tsx:222:                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+src/components/PrayerSettingsScreen.tsx:258:                    className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+src/components/PrayerSettingsScreen.tsx:319:                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+src/components/PrayerSettingsScreen.tsx:347:                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+src/components/QuranLiveBroadcast.tsx:136:          className={`w-full overflow-hidden rounded-[28px] relative transition-all duration-300 cut-crystal-panel !border-white/15 !border-t-white/50 !shadow-[0_12px_32px_rgba(0,0,0,0.12)] ${
+src/components/QuranLiveBroadcast.tsx:195:                  className={`h-8 px-4 rounded-full flex items-center justify-center gap-1.5 text-[12px] whitespace-nowrap font-bold tracking-wide transition-all active:scale-[0.96] shadow-sm border shrink-0 ${
+src/components/QuranReaderScreen.tsx:497:      className={`fixed inset-0 w-full h-[100vh] overflow-hidden flex flex-col justify-center px-4 sm:px-8 font-sans transition-colors duration-500 ${activeTheme.bg} ${activeTheme.text}`}
+src/components/QuranReaderScreen.tsx:519:      <div className={`flex-1 w-full max-w-5xl mx-auto flex flex-col justify-center overflow-hidden relative`}>
+src/components/QuranReaderScreen.tsx:537:                  className={`absolute right-0 top-0 bottom-0 h-full rounded-full ${activeTheme.accent.replace('text-', 'bg-')}`}
+src/components/QuranReaderScreen.tsx:571:                  <Loader2 className={`animate-spin ${activeTheme.accent}`} size={40} />
+src/components/QuranReaderScreen.tsx:572:                  <span className={`text-xs font-sans opacity-60 ${activeTheme.accent}`}>
+src/components/QuranReaderScreen.tsx:688:              className={`p-2 rounded-full transition-colors hover:text-[#b88a4f] ${bookmarkedVerses.includes(selectedVerseForAction.verse_key) ? "text-[#b88a4f]" : "text-[#2b1a10]"}`}
+src/components/QuranReaderScreen.tsx:718:            <div className={`w-px h-6 border-l ${activeTheme.border}`}></div>
+src/components/QuranReaderScreen.tsx:727:              className={`w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg transition-transform active:scale-95 bg-red-500 hover:bg-red-600`}
+src/components/QuranReaderScreen.tsx:732:            <div className={`w-px h-6 border-l ${activeTheme.border}`}></div>
+src/components/QuranReaderScreen.tsx:737:              className={`flex items-center gap-1.5 transition-colors hover:opacity-70 ${isNotContinuousMode ? activeTheme.accent : activeTheme.text}`}
+src/components/QuranReaderScreen.tsx:743:                  <span className={`absolute -top-1.5 -right-1.5 text-[9px] font-bold text-white w-4 h-4 rounded-full flex items-center justify-center border border-white ${activeTheme.accent.replace('text-', 'bg-')}`}>
+src/components/QuranReaderScreen.tsx:775:                <div className={`flex rounded-xl p-1 gap-1 border ${activeTheme.border} bg-black/5`}>
+src/components/QuranReaderScreen.tsx:778:                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${playMode === 'single' ? `bg-[#b88a4f] text-[#fff9f1] shadow-md` : 'hover:opacity-70 opacity-70'}`}
+src/components/QuranReaderScreen.tsx:784:                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${playMode === 'page' ? `bg-[#b88a4f] text-[#fff9f1] shadow-md` : 'hover:opacity-70 opacity-70'}`}
+src/components/QuranReaderScreen.tsx:790:                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${playMode === 'continuous' ? `bg-[#b88a4f] text-[#fff9f1] shadow-md` : 'hover:opacity-70 opacity-70'}`}
+src/components/QuranReaderScreen.tsx:806:                      <span className={`text-xs font-bold ${activeTheme.accent}`}>{repeatSettings.count === 10 ? '∞' : repeatSettings.count}</span>
+src/components/QuranReaderScreen.tsx:818:                      className={`w-full ${activeTheme.accent.replace('text-', 'accent-')} h-1.5 bg-black/10 rounded-lg appearance-none cursor-pointer`}
+src/components/QuranReaderScreen.tsx:856:              className={`!absolute top-6 left-6 z-50 w-10 h-10 cut-crystal-capsule flex items-center justify-center shadow-md transition-all duration-300 ${isBookmarked ? "text-[#b88a4f]" : "text-[#2b1a10]"} hover:opacity-80`}
+src/components/QuranReaderScreen.tsx:919:              <div className={`p-5 border-b text-center font-sans font-bold text-lg ${activeTheme.border}`}>
+src/components/QuranReaderScreen.tsx:930:                    className={`w-full text-right px-4 py-3 rounded-xl mb-1 transition-colors flex items-center justify-between font-sans ${selectedReciter === r.id ? `bg-[#b88a4f]/10 text-[#b88a4f]` : `hover:opacity-80`}`}
+src/components/QuranReaderScreen.tsx:933:                    {selectedReciter === r.id && <div className={`w-2 h-2 rounded-full ${activeTheme.accent.replace('text-', 'bg-')}`}></div>}
+src/components/QuranReaderScreen.tsx:967:                    className={`flex flex-col items-center justify-center p-3 rounded-xl border ${
+src/components/QuranReaderScreen.tsx:971:                    <div className={`w-8 h-8 rounded-full ${t.bg} border ${t.border} mb-2 shadow-inner`}></div>
+src/components/QuranReaderScreen.tsx:972:                    <span className={`text-[12px] font-bold ${isSel ? activeTheme.text : ''}`}>{t.name}</span>
+src/components/QuranReaderScreen.tsx:991:                      <div className={`flex justify-between items-center p-4 border-b ${activeTheme.border}`}>
+src/components/QuranReaderScreen.tsx:992:                          <h3 className={`font-bold flex items-center gap-2 ${activeTheme.accent}`}>
+src/components/QuranReaderScreen.tsx:1003:                                  <Loader2 className={`animate-spin ${activeTheme.accent}`} size={32} />
+src/components/QuranReadingGatewayScreen.tsx:110:            <ChevronDown size={14} className={`text-[#b88a4f] transition-transform duration-200 ${isModeDropdownOpen ? "rotate-180" : ""}`} />
+src/components/QuranReadingGatewayScreen.tsx:160:            <ChevronDown size={14} className={`text-[#b88a4f] transition-transform duration-200 ${isFilterDropdownOpen ? "rotate-180" : ""}`} />
+src/components/QuranReadingGatewayScreen.tsx:191:                      <span className={`text-[13px] ${selectedTypeFilter === opt.id ? "font-black text-[#b88a4f]" : "font-medium"}`}>
+src/components/QuranReadingGatewayScreen.tsx:211:              className={`flex-1 py-1.5 text-[14px] font-bold rounded-full transition-all duration-300 relative ${
+src/components/QuranReadingGatewayScreen.tsx:221:              className={`flex-1 py-1.5 text-[14px] font-bold rounded-full transition-all duration-300 relative ${
+src/components/QuranReadingGatewayScreen.tsx:398:            <div className={`flex-1 h-full relative flex items-center transition-opacity duration-200 ${isSearchActive ? "opacity-100" : "opacity-0"}`} dir="rtl">
+src/components/QuranReadingGatewayScreen.tsx:415:            <div className={`w-12 h-14 shrink-0 flex items-center justify-center transition-opacity duration-200 ${isSearchActive ? "opacity-100" : "opacity-0 pointer-events-none"}`}>
+src/components/QuranRecitersScreen.tsx:378:              className={`text-[#b88a4f] transition-transform duration-200 ${isModeDropdownOpen ? "rotate-180" : ""}`}
+src/components/QuranRecitersScreen.tsx:462:                      className={`w-full flex items-center justify-between py-2.5 px-3.5 rounded-[16px] transition-all duration-150 text-right ${
+src/components/QuranRecitersScreen.tsx:665:            className={`flex-1 h-full relative flex items-center transition-opacity duration-200 ${isSearchActive ? "opacity-100" : "opacity-0"}`}
+src/components/QuranRecitersScreen.tsx:685:            className={`w-12 h-14 shrink-0 flex items-center justify-center transition-opacity duration-200 ${isSearchActive ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+src/components/QuranRecitersScreen.tsx:744:                    className={`w-full flex items-center justify-between py-4 px-3 rounded-2xl transition-colors ${
+src/components/QuranRecitersScreen.tsx:751:                      className={`text-[15px] text-right ${selectedFilter === option ? "font-bold text-[#b88a4f]" : "font-bold text-[#7f6a55]"}`}
+src/components/QuranSurahsScreen.tsx:197:                className={`w-full h-[60px] md:h-[64px] rounded-full px-5 md:px-6 flex items-center justify-between group active:scale-[0.99] transition-all duration-200 cursor-pointer relative overflow-hidden ${
+src/components/QuranSurahsScreen.tsx:213:                            className={`w-0.5 bg-white rounded-full origin-bottom ${isPlaying ? "animate-[bounce_0.8s_infinite_100ms]" : "h-1"}`}
+src/components/QuranSurahsScreen.tsx:217:                            className={`w-0.5 bg-white rounded-full origin-bottom ${isPlaying ? "animate-[bounce_0.8s_infinite_300ms]" : "h-2"}`}
+src/components/QuranSurahsScreen.tsx:221:                            className={`w-0.5 bg-white rounded-full origin-bottom ${isPlaying ? "animate-[bounce_0.8s_infinite_500ms]" : "h-1.2"}`}
+src/components/QuranSurahsScreen.tsx:254:                      className={`font-display font-bold text-[18px] md:text-[20px] transition-colors leading-none pt-1 select-none whitespace-nowrap truncate ${
+src/components/QuranSurahsScreen.tsx:289:                    className={`w-8.5 h-8.5 flex items-center justify-center rounded-full active:scale-95 transition-all ${
+src/components/QuranSurahsScreen.tsx:305:                    className={`w-8.5 h-8.5 flex items-center justify-center rounded-full active:scale-95 transition-all ${
+src/components/QuranTabScreen.tsx:483:            <div className={currentScreen === "reciters" ? "block w-full" : "hidden"}>
+src/components/QuranTabScreen.tsx:501:            <div className={currentScreen === "surahs" ? "block w-full" : "hidden"}>
+src/components/QuranTabScreen.tsx:607:                  <div className={`relative w-[42px] h-[42px] rounded-full text-white flex items-center justify-center text-[12.5px] font-black shrink-0 shadow-[0_4px_10px_rgba(0,0,0,0.12)] ring-2 ring-[#fdfcfb] overflow-hidden ${
+src/components/SakeenahAIScreen.tsx:804:                    <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
+src/components/SakeenahAIScreen.tsx:856:                    className={isUser ? "mr-auto max-w-[85%]" : "w-full"}
+src/components/SakeenahAIScreen.tsx:874:                              className={`w-full resize-none bg-transparent p-4 text-right text-[14px] font-sans font-bold leading-relaxed text-[#fff9f1] outline-none placeholder:text-white/50 ${
+src/components/SakeenahAIScreen.tsx:882:                              <div className={`p-4 transition-all duration-300 ease-in-out ${
+src/components/SakeenahAIScreen.tsx:893:                                <div className={`flex items-center justify-start ${!expandedMsgs.has(m.id) ? "absolute bottom-2.5 left-2.5 z-10" : "px-4 pb-3 pt-0"}`}>
+src/components/SakeenahAIScreen.tsx:914:                              className={`inline-flex h-7 items-center justify-center rounded-full px-3 text-[12px] font-bold transition-all ${
+src/components/SakeenahAIScreen.tsx:945:                              className={`inline-flex h-7 w-7 items-center justify-center text-[#7f6a55] transition-colors hover:text-[#b88a4f] active:scale-90 cursor-pointer ${
+src/components/SakeenahAIScreen.tsx:985:                              className={`inline-flex h-7 w-7 items-center justify-center text-[#7f6a55] transition-all hover:text-red-500 active:scale-90 cursor-pointer ${
+src/components/SakeenahAIScreen.tsx:996:                              className={`inline-flex h-7 w-7 items-center justify-center text-[#7f6a55] transition-all hover:text-[#b88a4f] active:scale-90 cursor-pointer ${
+src/components/SakeenahAIScreen.tsx:1007:                              className={`inline-flex h-7 w-7 items-center justify-center text-[#7f6a55] transition-all hover:text-[#b88a4f] active:scale-90 cursor-pointer ${
+src/components/SakeenahAIScreen.tsx:1084:                className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-300 ${
+src/components/SettingsScreen.tsx:299:                      className={`transition-transform duration-200 ${isCalcExpanded ? "rotate-180" : ""}`}
+src/components/SettingsScreen.tsx:326:                          className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-[12.5px] font-bold transition-all cursor-pointer ${
+src/components/SettingsScreen.tsx:380:                      className={`transition-transform duration-200 ${isAsrExpanded ? "rotate-180" : ""}`}
+src/components/SettingsScreen.tsx:407:                          className={`w-full text-right flex items-center justify-between px-3 py-2 rounded-xl text-[12.5px] font-bold transition-all cursor-pointer ${
+src/components/SettingsScreen.tsx:440:                  className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors duration-300 ${isMulkReminderEnabled ? "bg-[#b88a4f]/10 text-[#b88a4f]" : "bg-[#e6dccf]/20 text-[#7f6a55]"}`}
+src/components/SettingsScreen.tsx:461:                className={`text-[13px] font-bold transition-colors duration-300 ${isMulkReminderEnabled ? "text-[#2b1a10]" : "text-[#7f6a55]/60"}`}
+src/components/SettingsScreen.tsx:467:                  className={`text-[13.5px] font-bold transition-colors duration-300 ${
+src/components/SettingsScreen.tsx:494:                  className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors duration-300 ${isBaqarahReminderEnabled ? "bg-[#b88a4f]/10 text-[#b88a4f]" : "bg-[#e6dccf]/20 text-[#7f6a55]"}`}
+src/components/SettingsScreen.tsx:515:                className={`text-[13px] font-bold transition-colors duration-300 ${isBaqarahReminderEnabled ? "text-[#2b1a10]" : "text-[#7f6a55]/60"}`}
+src/components/SettingsScreen.tsx:521:                  className={`text-[13.5px] font-bold transition-colors duration-300 ${
+src/components/auth/GlassInput.tsx:29:          className={`peer w-full bg-transparent px-4 py-3.5 text-[15px] text-[#2b1a10] placeholder:text-[#7f6a55]/45 outline-none ${className}`}
+src/components/player/PlayerBottomSheet.tsx:66:                      className={`text-[15px] transition-colors ${
+src/components/player/PlayerBottomSheet.tsx:73:                      className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 transition-all duration-300 ${
+src/components/player/PlayerControls.tsx:18:        className={`w-12 h-12 flex items-center justify-center rounded-full transition-transform active:scale-90 ${shuffleMode ? 'text-[#b88a4f]' : 'text-[#7f6a55]/60'}`}
+src/components/player/PlayerPillsGrid.tsx:34:        <Clock size={14} className={timerMinutesRemaining !== null ? "text-quranify-live animate-pulse" : "text-quranify-accent-primary"} />
+src/components/player/PlayerSeekBar.tsx:55:          className={`absolute w-4 h-4 bg-[#b88a4f] rounded-full shadow-md border-2 border-white transition-transform ${isDragging ? "scale-125" : "group-hover:scale-110"}`}
+src/components/player/PlayerVolumeSlider.tsx:47:            className={`absolute w-3 h-3 bg-white rounded-full shadow-md transition-transform ${isDragging ? "scale-125" : "group-hover:scale-110"}`}
+src/components/player/QuranAudioPlayerScreen.tsx:310:      className={`relative w-full h-full flex flex-col justify-between overflow-hidden select-none font-sans min-h-screen transition-colors duration-500 ${
+src/components/player/QuranAudioPlayerScreen.tsx:317:        className={`absolute inset-0 -z-20 transition-colors duration-500 ${
+src/components/player/QuranAudioPlayerScreen.tsx:359:            className={`w-12 h-1.5 rounded-full transition-all duration-200 group-hover:scale-x-110 group-active:scale-95 ${
+src/components/player/QuranAudioPlayerScreen.tsx:370:          className={`hover:opacity-90 active:scale-95 transition-all rounded-full px-6 py-2 font-sans font-bold text-sm flex items-center justify-center cursor-pointer ${
+src/components/player/QuranAudioPlayerScreen.tsx:404:                className={`w-[calc(100%-32px)] max-w-[340px] rounded-[28px] p-4 flex flex-col pointer-events-auto will-change-transform font-sans ${
+src/components/player/QuranAudioPlayerScreen.tsx:413:                  <h3 className={`text-base font-display font-bold ${isVideoTheme ? 'text-white' : 'text-[#2b1a10]'}`}>
+src/components/player/QuranAudioPlayerScreen.tsx:434:                        className={`py-2.5 px-3.5 rounded-2xl flex items-center justify-between font-bold text-sm transition-all cursor-pointer active:scale-95 ${
+src/components/player/QuranAudioPlayerScreen.tsx:449:                            className={`w-4.5 h-4.5 rounded-full flex items-center justify-center shrink-0 shadow-xs ${
+src/components/player/QuranAudioPlayerScreen.tsx:489:                className={`w-[calc(100%-32px)] max-w-[360px] h-full max-h-[410px] rounded-[32px] p-4.5 flex flex-col pointer-events-auto will-change-transform font-sans ${
+src/components/player/QuranAudioPlayerScreen.tsx:506:                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
+src/components/player/QuranAudioPlayerScreen.tsx:520:                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all active:scale-95 cursor-pointer ${
+src/components/player/QuranAudioPlayerScreen.tsx:533:                  <h3 className={`text-base font-display font-bold tracking-wide ${isVideoTheme ? 'text-white' : 'text-[#2b1a10]'}`}>
+src/components/player/QuranAudioPlayerScreen.tsx:545:                    className={`w-full py-2 pr-9 pl-4 text-sm rounded-full focus:outline-none transition-colors text-right font-sans ${
+src/components/player/QuranAudioPlayerScreen.tsx:551:                  <Search size={15} className={`absolute right-3.5 top-2.5 pointer-events-none ${isVideoTheme ? 'text-white/60' : 'text-[#b88a4f]'}`} />
+src/components/player/QuranAudioPlayerScreen.tsx:565:                          className={`w-full p-2.5 rounded-2xl flex items-center justify-between shadow-sm transition-all font-sans ${
+src/components/player/QuranAudioPlayerScreen.tsx:579:                            <p className={`text-sm font-bold leading-snug truncate ${isVideoTheme ? 'text-white' : 'text-[#2b1a10]'}`}>{sVocalized}</p>
+src/components/player/QuranAudioPlayerScreen.tsx:580:                            <p className={`text-xs font-bold truncate ${isVideoTheme ? 'text-white/70' : 'text-[#7f6a55]'}`}>{sArabic}</p>
+src/components/player/QuranAudioPlayerScreen.tsx:583:                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${
+src/components/player/QuranAudioPlayerScreen.tsx:586:                            <div className={`flex items-center gap-0.5 ${isVideoTheme ? 'text-white' : 'text-[#b88a4f]'}`}>
+src/components/player/QuranAudioPlayerScreen.tsx:587:                              <div className={`w-0.5 h-3 rounded-full animate-bounce ${isVideoTheme ? 'bg-white' : 'bg-[#b88a4f]'}`} style={{ animationDelay: '0ms' }} />
+src/components/player/QuranAudioPlayerScreen.tsx:588:                              <div className={`w-0.5 h-4 rounded-full animate-bounce ${isVideoTheme ? 'bg-white' : 'bg-[#b88a4f]'}`} style={{ animationDelay: '150ms' }} />
+src/components/player/QuranAudioPlayerScreen.tsx:589:                              <div className={`w-0.5 h-2.5 rounded-full animate-bounce ${isVideoTheme ? 'bg-white' : 'bg-[#b88a4f]'}`} style={{ animationDelay: '300ms' }} />
+src/components/player/QuranAudioPlayerScreen.tsx:590:                              <div className={`w-0.5 h-3.5 rounded-full animate-bounce ${isVideoTheme ? 'bg-white' : 'bg-[#b88a4f]'}`} style={{ animationDelay: '450ms' }} />
+src/components/player/QuranAudioPlayerScreen.tsx:605:                        className={`w-full p-2.5 rounded-2xl flex items-center justify-between transition-all cursor-pointer group font-sans ${
+src/components/player/QuranAudioPlayerScreen.tsx:614:                          <p className={`text-xs font-medium truncate ${isVideoTheme ? 'text-white/70' : 'text-[#7f6a55] group-hover:text-[#b88a4f]/80'}`}>{sArabic}</p>
+src/components/player/QuranAudioPlayerScreen.tsx:616:                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold shrink-0 border transition-all ${
+src/components/player/QuranAudioPlayerScreen.tsx:641:            className={`w-9 h-9 flex items-center justify-center rounded-full transition-all shrink-0 cursor-pointer active:scale-95 ${
+src/components/player/QuranAudioPlayerScreen.tsx:648:              className={isFavorite ? (isVideoTheme ? "fill-white text-white optical-shadow-guard" : "fill-[#deab65] text-[#b88a4f] drop-shadow-xs") : isVideoTheme ? "text-white/70" : "text-[#7f6a55]"}
+src/components/player/QuranAudioPlayerScreen.tsx:655:              <h2 className={`text-2xl sm:text-3xl font-display font-bold tracking-tight leading-tight ${isVideoTheme ? 'text-white optical-shadow-guard' : 'text-[#2b1a10]'}`}>
+src/components/player/QuranAudioPlayerScreen.tsx:658:              <p className={`text-[15px] sm:text-[16px] font-bold font-sans mt-0.5 ${isVideoTheme ? 'text-white/75 optical-shadow-guard' : 'text-[#7f6a55]'}`} dir="rtl">
+src/components/player/QuranAudioPlayerScreen.tsx:684:            className={`transition-all active:scale-90 cursor-pointer flex items-center justify-center relative ${
+src/components/player/QuranAudioPlayerScreen.tsx:694:                <span className={`absolute -top-1 -right-1 w-2 h-2 rounded-full animate-pulse ${isVideoTheme ? 'bg-white' : 'bg-[#deab65]'}`} />
+src/components/player/QuranAudioPlayerScreen.tsx:708:            className={`transition-all active:scale-90 cursor-pointer flex items-center justify-center ${
+src/components/player/QuranAudioPlayerScreen.tsx:721:            className={`flex items-center justify-center active:scale-95 transition-all cursor-pointer ${
+src/components/player/QuranAudioPlayerScreen.tsx:729:              <Pause size={isVideoTheme ? 24 : 38} className={isVideoTheme ? "fill-current text-current" : "fill-white text-white"} />
+src/components/player/QuranAudioPlayerScreen.tsx:731:              <Play size={isVideoTheme ? 24 : 38} className={isVideoTheme ? "fill-current text-current translate-x-[1px]" : "fill-white text-white translate-x-[2px]"} />
+src/components/player/QuranAudioPlayerScreen.tsx:744:            className={`transition-all active:scale-90 cursor-pointer flex items-center justify-center ${
+src/components/player/QuranAudioPlayerScreen.tsx:757:            className={`transition-all active:scale-90 cursor-pointer flex items-center justify-center font-bold ${
+src/components/player/QuranAudioPlayerScreen.tsx:773:            className={`relative w-full rounded-full cursor-pointer transition-[height] duration-150 select-none flex items-center group overflow-hidden ${
+src/components/player/QuranAudioPlayerScreen.tsx:790:              className={`absolute top-0 bottom-0 left-0 rounded-full h-full ${isVideoTheme ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.4)]' : 'bg-gradient-to-r from-[#deab65] to-[#b88a4f]'}`}
+src/components/player/QuranAudioPlayerScreen.tsx:795:          <div className={`flex items-center justify-between w-full mt-2 text-sm font-bold font-mono tracking-tight ${
+src/components/player/QuranAudioPlayerScreen.tsx:811:          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+src/components/player/QuranAudioPlayerScreen.tsx:828:          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+src/components/player/QuranAudioPlayerScreen.tsx:847:          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+src/components/player/QuranAudioPlayerScreen.tsx:854:          <span className={`${isVideoTheme ? 'text-base' : 'text-2xl'} font-black font-serif leading-none select-none drop-shadow-xs`}>
+src/components/player/QuranAudioPlayerScreen.tsx:862:          className={`w-10 h-10 rounded-full flex items-center justify-center transition-all cursor-pointer ${
+src/components/player/QuranAudioPlayerScreen.tsx:897:              className={`fixed bottom-0 inset-x-0 z-50 p-6 pb-10 flex flex-col text-white rounded-t-[32px] font-sans ${
+src/components/player/QuranAudioPlayerScreen.tsx:908:                  <Moon size={18} className={isVideoTheme ? "text-white" : "text-[#deab65]"} />
+src/components/player/QuranAudioPlayerScreen.tsx:940:                      className={`p-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-between cursor-pointer font-sans ${
+src/components/player/QuranAudioPlayerScreen.tsx:951:                      {isSelected && <Check size={18} className={isVideoTheme ? "text-black" : "text-white"} />}
+src/components/player/QuranAudioPlayerScreen.tsx:978:              className={`fixed bottom-0 inset-x-0 z-50 p-6 pb-10 flex flex-col text-white rounded-t-[32px] font-sans ${
+src/components/player/QuranAudioPlayerScreen.tsx:989:                  <Clock size={18} className={isVideoTheme ? "text-white" : "text-[#deab65]"} />
+src/components/player/QuranAudioPlayerScreen.tsx:1017:                      className={`w-full p-4 rounded-2xl font-bold text-sm transition-all flex items-center justify-between cursor-pointer font-sans ${
+src/components/player/QuranAudioPlayerScreen.tsx:1028:                      {isSelected && <Check size={18} className={isVideoTheme ? "text-black" : "text-white"} />}
+src/components/player/QuranAudioPlayerScreen.tsx:1056:              className={`absolute bottom-[78px] right-4 sm:right-8 z-50 w-52 sm:w-56 rounded-full px-3.5 py-2 flex items-center gap-3 select-none will-change-transform font-sans ${
+src/components/player/QuranAudioPlayerScreen.tsx:1065:                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer active:scale-90 ${
+src/components/player/QuranAudioPlayerScreen.tsx:1076:                <div className={`absolute inset-x-0 h-1.5 rounded-full pointer-events-none ${
+src/components/player/QuranAudioPlayerScreen.tsx:1080:                  className={`absolute left-0 h-1.5 rounded-full pointer-events-none ${isVideoTheme ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.4)]' : 'bg-gradient-to-r from-[#deab65] to-[#b88a4f]'}`}
+src/components/player/QuranAudioPlayerScreen.tsx:1084:                  className={`absolute w-3.5 h-3.5 rounded-full shadow-md transition-transform pointer-events-none ${
+src/components/player/QuranAudioPlayerScreen.tsx:1104:                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer active:scale-90 ${
+src/components/player/QuranAudioPlayerScreen.tsx:1135:              className={`fixed bottom-0 inset-x-0 z-50 p-6 pb-10 flex flex-col text-center text-white rounded-t-[32px] font-sans ${
+src/components/player/QuranAudioPlayerScreen.tsx:1144:              <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border ${isVideoTheme ? 'bg-white/10 text-white border-white/20' : 'bg-white/10 text-[#deab65] border-white/20'}`}>
+src/components/player/QuranAudioPlayerScreen.tsx:1155:                className={`w-full py-3.5 rounded-2xl font-bold text-base shadow-md active:scale-95 transition-all cursor-pointer font-sans ${isVideoTheme ? 'bg-white text-black hover:bg-white/90' : 'bg-gradient-to-r from-[#deab65] to-[#b88a4f] text-white'}`}
+=== TAILWIND/VITE VERSIONS ===
+{
+  "tailwind": "4.1.17",
+  "vitePlugin": "4.1.17",
+  "vite": "7.3.2"
+}
+=== LOCKFILES/NODE_MODULES ===
+bun.lock
+package-lock.json
+node_modules=absent
