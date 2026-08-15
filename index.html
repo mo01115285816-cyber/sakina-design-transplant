@@ -3,81 +3,28 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <meta name="theme-color" content="#ece7de" />
+    <meta name="theme-color" content="#180d07" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>سَكِينَة — Sakinah</title>
-    <link rel="preload" as="image" href="images/quran-circle.png" fetchpriority="high" />
-    <link rel="preload" as="image" href="images/quran/surah-header-frame.webp" type="image/webp" fetchpriority="high" />
     <style>
       html, body {
         margin: 0;
         padding: 0;
         width: 100%;
         min-height: 100%;
-        background: #ece7de;
+        background: #180d07;
       }
 
       #root {
         min-height: 100vh;
         min-height: 100dvh;
-        background: #ece7de;
-      }
-
-      /* Boot guard: no Quran text is rendered before React/QCF readiness. */
-      #pre-react-splash {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #ece7de;
-        z-index: 9999;
-        pointer-events: none;
-        transition: opacity 260ms ease;
-      }
-
-      #pre-react-splash.is-hidden {
-        opacity: 0;
-      }
-
-      #pre-react-splash .splash-mark {
-        width: clamp(76px, 18vw, 132px);
-        height: clamp(76px, 18vw, 132px);
-        object-fit: contain;
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        #pre-react-splash {
-          transition-duration: 1ms;
-        }
+        background: #180d07;
       }
     </style>
   </head>
   <body>
-    <div id="pre-react-splash" aria-hidden="true">
-      <img class="splash-mark" src="images/quran-circle.png" alt="" />
-    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-    <script>
-      (function () {
-        var splash = document.getElementById('pre-react-splash');
-        var root = document.getElementById('root');
-        if (!splash || !root) return;
-
-        function hideBootGuard() {
-          if (splash.classList.contains('is-hidden')) return;
-          splash.classList.add('is-hidden');
-          window.setTimeout(function () {
-            if (splash.parentNode) splash.parentNode.removeChild(splash);
-          }, 280);
-        }
-
-        new MutationObserver(function () {
-          if (root.childNodes.length > 0) hideBootGuard();
-        }).observe(root, { childList: true });
-      })();
-    </script>
   </body>
 </html>
