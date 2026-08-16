@@ -1,11 +1,20 @@
 import React, { useState, useRef, useEffect, useCallback, startTransition, useMemo } from "react";
 import { getCurrentSession } from "@/services/auth-service";
+import type { AuthUser } from "@/services/auth-service";
 import { supabaseKey, supabaseUrl } from "@/services/supabase-client";
 import { motion, AnimatePresence } from "motion/react";
-import { 
-  Sparkles, ArrowUp, RefreshCw, ChevronRight, ChevronDown, ChevronUp, 
-  BookOpen, ShieldCheck, Heart, AlertCircle, Bot,
-  Check, Copy, Pencil, ThumbsUp, ThumbsDown, HelpCircle
+import {
+  ArrowUp,
+  RefreshCw,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  AlertCircle,
+  Check,
+  Copy,
+  Pencil,
+  ThumbsUp,
+  ThumbsDown,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -22,7 +31,19 @@ type Message = {
 
 type SakeenahAIScreenProps = {
   onBack: () => void;
+  user: AuthUser;
 };
+
+type WelcomeLine = {
+  title: string;
+  subtitle: string;
+};
+
+const welcomeLines: WelcomeLine[] = [
+  { title: "ما الذي تحب أن تعرفه اليوم؟", subtitle: "اسأل بهدوء عن القرآن أو الأذكار أو أحكام العبادة." },
+  { title: "كيف نعين قلبك اليوم؟", subtitle: "ابدأ بسؤال شرعي واضح، وسنمضي فيه خطوة خطوة." },
+  { title: "في أي أمر شرعي نبدأ معًا؟", subtitle: "مساحة هادئة للتعلّم والتدبّر وحسن الفهم." },
+];
 
 const CodeBlock = ({ children }: { children: string }) => {
   const [copied, setCopied] = useState(false);
@@ -221,7 +242,7 @@ const cleanArabicTextForSpeech = (rawText: string) => {
   return text.trim();
 };
 
-export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }: SakeenahAIScreenProps) {
+export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, user }: SakeenahAIScreenProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -230,16 +251,26 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
   const [copiedResponseId, setCopiedResponseId] = useState<string | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState("");
-  const [showWelcomeCard, setShowWelcomeCard] = useState(() => {
-    return !localStorage.getItem("sakeenah_welcome_dismissed");
-  });
-
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isMultiline, setIsMultiline] = useState(false);
   const [longMsgs, setLongMsgs] = useState<Set<string>>(new Set());
   const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set());
+  const [welcomeLineIndex, setWelcomeLineIndex] = useState(0);
+
+  const userName = useMemo(() => {
+    const label = String(user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split("@")[0] ?? "صديق سكينة").trim();
+    return label.split(/\s+/)[0] || "صديق سكينة";
+  }, [user]);
+
+  useEffect(() => {
+    if (messages.length > 0) return;
+    const timer = window.setInterval(() => {
+      setWelcomeLineIndex((current) => (current + 1) % welcomeLines.length);
+    }, 5000);
+    return () => window.clearInterval(timer);
+  }, [messages.length]);
 
   // Auto-resize the textarea — professional scrollHeight approach
   const adjustTextareaHeight = useCallback(() => {
@@ -420,64 +451,6 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
         return cleaned;
       });
       handleSendMessage(lastUserText);
-    }
-  };
-
-  // ── PRESET QUESTIONS BANK ──
-  const questionBank = useMemo(() => [
-    { text: "ما حكم قراءة سورة الكهف يوم الجمعة؟", category: "قرآن" },
-    { text: "ما هي شروط صحة الصلاة الخمسة؟", category: "صلاة" },
-    { text: "أذكر حديثاً شريفاً في فضل بر الوالدين", category: "حديث" },
-    { text: "كيف تكون صلاة قيام الليل بالتفصيل؟", category: "صلاة" },
-    { text: "ما هي شروط توبة العبد المقبولة؟", category: "أخلاق" },
-    { text: "كيف يحافظ المسلم على خشوعه في الصلاة؟", category: "صلاة" },
-    { text: "ما فضل قراءة آية الكرسي دبر كل صلاة؟", category: "قرآن" },
-    { text: "هل يصح الوضوء مع وجود طلاء الأظافر؟", category: "فقه" },
-    { text: "ما هي كفارة اليمين بالتفصيل؟", category: "فقه" },
-    { text: "أريد حديثاً عن فضل حسن الخلق وسعته", category: "حديث" },
-    { text: "ما حكم إخراج زكاة الفطر نقداً؟", category: "فقه" },
-    { text: "كيف كان هدي النبي ﷺ في الصبر على البلاء؟", category: "سيرة" },
-    { text: "ما هي السبع الموبقات التي حذر منها النبي؟", category: "حديث" },
-    { text: "ما فضل قراءة القرآن الكريم وحفظه؟", category: "قرآن" },
-    { text: "كيفية سجود السهو ومتى يشرع؟", category: "صلاة" },
-    { text: "ما هو فضل كفالة اليتيم في الإسلام؟", category: "أخلاق" }
-  ], []);
-
-  // Helper to pick 4 random questions without duplicating current ones
-  const getRandomQuestions = (currentQuestions: typeof questionBank = []) => {
-    const currentTexts = currentQuestions.map(q => q.text);
-    const available = questionBank.filter(q => !currentTexts.includes(q.text));
-    const shuffled = [...available].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, 4);
-  };
-
-  const [activeQuestions, setActiveQuestions] = useState<typeof questionBank>(() => getRandomQuestions([]));
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const handleRefreshQuestions = () => {
-    setRefreshing(true);
-    setTimeout(() => {
-      setActiveQuestions(getRandomQuestions(activeQuestions));
-      setRefreshKey(prev => prev + 1);
-      setRefreshing(false);
-    }, 300);
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case "قرآن":
-        return BookOpen;
-      case "صلاة":
-        return ShieldCheck;
-      case "أخلاق":
-        return Heart;
-      case "حديث":
-      case "سيرة":
-        return Sparkles;
-      case "فقه":
-      default:
-        return HelpCircle;
     }
   };
 
@@ -679,13 +652,19 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
       
       {/* Background soft ambient shapes */}
       <div className="absolute top-[-20%] right-[-10%] w-[300px] h-[300px] bg-[#b88a4f]/5 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[250px] h-[250px] bg-[#deab65]/5 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-[-10%] left-[-10%] w-[250px] h-[250px] bg-[#deab65]/5 rounded-full blur-[100px] pointer-events-none" />
+        {messages.length === 0 && (
+          <div
+            className="pointer-events-none fixed inset-x-0 bottom-0 z-0 h-[34vh] bg-gradient-to-t from-[#d8b27b]/45 via-[#d8b27b]/16 to-transparent"
+            aria-hidden="true"
+          />
+        )}
 
       {/* ── FLOATING TOP HEADER ── */}
       <div className="absolute top-6 left-5 right-5 flex items-center justify-between z-[45] pointer-events-none">
         {/* Right Element (in RTL): Title Capsule */}
         <div className="cut-crystal-capsule px-5 h-10 rounded-full shadow-md flex items-center justify-center gap-1.5 pointer-events-auto transition-all duration-300">
-          <span className="text-[14.5px] font-display font-black whitespace-nowrap pt-0.5">سكينة AI</span>
+          <span className="text-[14.5px] font-display font-black whitespace-nowrap pt-0.5">سَكِينَة AI</span>
         </div>
 
         {/* Left Elements: Controls */}
@@ -714,126 +693,26 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack }:
       {/* ── MAIN CHAT AREA / EMPTY STATE ── */}
       <div className="flex-1 flex flex-col justify-between relative z-10 overflow-hidden">
         
-        {/* Welcome Card Modal Overlay */}
-        <AnimatePresence>
-          {showWelcomeCard && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-[#ece7de]/85 backdrop-blur-md z-[45] flex items-center justify-center p-5"
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                transition={{ type: "spring", damping: 25, stiffness: 350 }}
-                className="w-full max-w-[360px] bg-gradient-to-b from-[#fdfcfb] to-[#f7f2ea] border border-[#e6dccf] rounded-[28px] overflow-hidden shadow-[0_4px_16px_rgba(43,26,16,0.03)]"
-              >
-                {/* Top accent bar — subtle warm gradient */}
-                <div className="h-1.5 bg-gradient-to-r from-[#deab65] via-[#b88a4f] to-[#deab65]" />
-
-                <div className="p-6 flex flex-col items-center text-center">
-                  {/* Icon — matches app's rounded square style */}
-                  <div className="w-16 h-16 rounded-[20px] bg-gradient-to-br from-[#deab65] to-[#b88a4f] flex items-center justify-center shadow-[0_8px_20px_rgba(184,138,79,0.25)] mb-4">
-                    <Bot size={30} strokeWidth={1.5} className="text-white" />
-                  </div>
-
-                  {/* Title */}
-                  <h3 className="text-[19px] font-display font-display font-black text-[#2b1a10] mb-1">ملاذك الآمن للأسئلة الشرعية</h3>
-
-                  {/* Subtitle */}
-                  <p className="text-[13px] font-sans text-[#7f6a55] font-bold leading-relaxed mt-2 mb-4 max-w-[280px]">
-                    تحدث بحرية تامة وبخصوصية مطلقة دون حرج. سأجيبك بدقة ومسؤولية من القرآن الكريم والكتب الستة في الحديث الشريف.
-                  </p>
-
-                  {/* Security badge — subtle, matches app palette */}
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#b88a4f]/[0.08] border border-[#b88a4f]/15 rounded-full text-[11px] font-bold text-[#7f6a55] mb-5">
-                    <ShieldCheck size={13} className="text-[#b88a4f]" />
-                    <span>خصوصية تامة وسرية مشفرة بنسبة ١٠٠٪</span>
-                  </div>
-
-                  {/* CTA button — matches app's dark button style */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      localStorage.setItem("sakeenah_welcome_dismissed", "true");
-                      setShowWelcomeCard(false);
-                    }}
-                    className="w-full bg-[#2b1a10] text-[#fff9f1] hover:bg-[#3a2517] active:scale-[0.98] transition-all py-3 rounded-[16px] font-display font-black text-[14px] shadow-[0_4px_12px_rgba(43,26,16,0.15)] cursor-pointer"
-                  >
-                    بدء المحادثة المباركة
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-
-
         {messages.length === 0 ? (
-          /* Empty State */
-          <div className="flex-1 overflow-y-auto pt-24 pb-6 flex flex-col items-center justify-start scrollbar-thin hide-scrollbar">
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ duration: 0.4, type: "spring" }}
-              className="text-center flex flex-col items-center space-y-4 max-w-[320px] w-full"
-            >
-              {/* Sleek compact logo for return visit */}
-              <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-gradient-to-br from-[#deab65] to-[#b88a4f] text-white shadow-[0_6px_20px_rgba(184,138,79,0.18)]">
-                <Bot size={28} strokeWidth={1.5} />
-              </div>
-
-              <div>
-                <h3 className="text-[17px] font-display font-display font-black text-[#2b1a10]">طرح أسئلة شرعية</h3>
-                <p className="text-[11.5px] text-[#7f6a55] font-black mt-1">كيف يمكنني مساعدتك اليوم؟</p>
-              </div>
-
-              {/* Quick Preset Cards */}
-              <div className="w-full pt-4 space-y-2">
-                <div className="flex items-center justify-between w-full pr-1 pl-1 mb-1">
-                  <p className="text-[11px] font-black text-[#7f6a55] tracking-wider text-right">أسئلة مقترحة شائعة:</p>
-                  <button
-                    type="button"
-                    onClick={handleRefreshQuestions}
-                    className="w-7 h-7 cut-crystal-capsule rounded-full flex items-center justify-center text-[#7f6a55] hover:text-[#b88a4f] active:scale-95 transition-all cursor-pointer shadow-sm"
-                    title="تحديث الأسئلة المقترحة"
-                  >
-                    <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
-                  </button>
-                </div>
-
-                <div className="space-y-2 min-h-[192px]">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={refreshKey}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -8 }}
-                      transition={{ duration: 0.2, ease: "easeInOut" }}
-                      className="space-y-2"
-                    >
-                      {activeQuestions.map((q) => {
-                        const IconComponent = getCategoryIcon(q.category);
-                        return (
-                          <motion.button
-                            key={q.text}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => handleSendMessage(q.text)}
-                            className="w-full text-right p-3 bg-white/70 border border-[#e6dccf] rounded-2xl text-[12.5px] font-bold text-[#2b1a10] hover:bg-white transition-all shadow-[0_2px_8px_rgba(43,26,16,0.01)] flex items-center justify-between gap-2 group cursor-pointer"
-                          >
-                            <span>{q.text}</span>
-                            <IconComponent size={13} className="text-[#b88a4f] opacity-40 group-hover:opacity-100 transition-opacity shrink-0" />
-                          </motion.button>
-                        );
-                      })}
-                    </motion.div>
-                  </AnimatePresence>
-                </div>
-              </div>
-            </motion.div>
+          <div className="flex-1 overflow-hidden pt-24 pb-28">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={welcomeLineIndex}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.28, ease: "easeOut" }}
+                className="flex h-full flex-col items-center justify-center px-4 text-center"
+              >
+                <p className="text-[13px] font-bold text-[#8a6a3d]">أهلًا بك، {userName}</p>
+                <h1 className="mt-3 max-w-[330px] font-display text-[29px] font-black leading-[1.25] text-[#2b1a10]">
+                  {welcomeLines[welcomeLineIndex].title}
+                </h1>
+                <p className="mt-3 max-w-[285px] text-[13px] font-bold leading-7 text-[#7f6a55]">
+                  {welcomeLines[welcomeLineIndex].subtitle}
+                </p>
+              </motion.div>
+            </AnimatePresence>
           </div>
         ) : (
           /* Active Chat Thread */

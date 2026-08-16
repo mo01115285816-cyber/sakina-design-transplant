@@ -1425,7 +1425,7 @@ export default function App() {
               </div>
             ) : currentUser ? (
               <Suspense fallback={<ScreenLoader label="جارٍ تحميل سكينة AI..." />}>
-                <SakeenahAIScreen onBack={handleBackToMain} />
+                <SakeenahAIScreen onBack={handleBackToMain} user={currentUser} />
               </Suspense>
             ) : (
               <AuthScreen
