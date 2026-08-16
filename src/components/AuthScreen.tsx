@@ -108,10 +108,10 @@ export default function AuthScreen({ onBack, onAuthenticated }: AuthScreenProps)
   };
 
   return (
-    <div dir="rtl" className="relative min-h-screen w-full overflow-hidden bg-[#ece7de] font-sans text-[#2b1a10]">
+    <div dir="rtl" className="relative min-h-screen w-full overflow-x-hidden overflow-y-auto bg-[#ece7de] font-sans text-[#2b1a10]">
       <AuroraBackground />
 
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-md flex-col px-5 py-8">
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-md flex-col px-5 py-8 pb-10">
         <div className="flex items-center justify-between">
           <button
             type="button"
@@ -246,15 +246,20 @@ export default function AuthScreen({ onBack, onAuthenticated }: AuthScreenProps)
               {googleLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleIcon />}
               المتابعة باستخدام Google
             </motion.button>
+
+            <motion.button
+              custom={6}
+              variants={fieldsStagger}
+              initial="hidden"
+              animate="show"
+              type="button"
+              onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); setNotice(""); }}
+              className="flex h-11 items-center justify-center rounded-2xl border border-[#b88a4f]/30 bg-[#b88a4f]/10 text-[14px] font-black text-[#8d6738] transition hover:bg-[#b88a4f]/15 active:scale-[0.98]"
+            >
+              {mode === "login" ? "إنشاء حساب جديد" : "العودة إلى تسجيل الدخول"}
+            </motion.button>
           </div>
         </motion.form>
-
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.5 }} className="mt-6 text-center text-[13px] text-[#7f6a55]">
-          {mode === "login" ? "ليس لديك حساب؟" : "لديك حساب بالفعل؟"}{" "}
-          <button type="button" onClick={() => { setMode(mode === "login" ? "signup" : "login"); setError(""); setNotice(""); }} className="font-black text-[#b88a4f] hover:underline">
-            {mode === "login" ? "أنشئ حسابًا جديدًا" : "تسجيل الدخول"}
-          </button>
-        </motion.p>
 
         <p className="mt-auto pt-8 text-center text-[11px] leading-relaxed text-[#7f6a55]/70">
           بتسجيل الدخول فأنت توافق على <button type="button" className="underline">الشروط</button> و <button type="button" className="underline">سياسة الخصوصية</button>
