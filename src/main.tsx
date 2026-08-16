@@ -24,14 +24,14 @@ function Boot() {
 
   return (
     <div dir="rtl" className="min-h-[100dvh] w-full bg-[#ece7de] text-[#2b1a10]">
-      {!isSplashComplete && (
-        <SplashScreen canComplete={isAppReady} onComplete={() => setIsSplashComplete(true)} />
-      )}
-
-      {isSplashComplete && isAppReady && (
+      {isAppReady && (
         <Suspense fallback={<div className="min-h-[100dvh] w-full bg-[#ece7de]" />}>
           <App />
         </Suspense>
+      )}
+
+      {!isSplashComplete && (
+        <SplashScreen canComplete={isAppReady} onComplete={() => setIsSplashComplete(true)} />
       )}
     </div>
   );
