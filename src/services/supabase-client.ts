@@ -1,7 +1,10 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { authStorage } from "./storage-service";
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const PRODUCTION_SUPABASE_URL = "https://vmidpocwksqdvsyrvcog.supabase.co";
+const configuredSupabaseUrl = (import.meta.env.VITE_SUPABASE_URL as string | undefined)?.trim();
+const isPlaceholderUrl = !configuredSupabaseUrl || /your-project|replace[-_ ]?me/i.test(configuredSupabaseUrl);
+const supabaseUrl = isPlaceholderUrl ? PRODUCTION_SUPABASE_URL : configuredSupabaseUrl;
 const supabaseKey =
   (import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined) ??
   (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined);

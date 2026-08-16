@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "tsx src/server/index.ts",
-    "build": "npm run verify-fonts && npm run pack-fonts && vite build && esbuild src/server/index.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "build:android": "npm run verify-fonts && npm run pack-fonts && vite build --mode android",
+    "build": "npm run verify-fonts && npm run pack-fonts && npm run verify-public-env && vite build && esbuild src/server/index.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "build:android": "npm run verify-fonts && npm run pack-fonts && npm run verify-public-env && vite build --mode android",
     "start": "node dist/server.cjs",
     "download-fonts": "node scripts/download-qcf-fonts.js",
     "pack-fonts": "node scripts/pack-qcf-fonts.js",
     "verify-fonts": "node scripts/verify-fonts.js",
+    "verify-public-env": "node scripts/verify-public-env.js",
     "fix-basmala": "node scripts/fix-basmala-codes.js",
     "prebuild": "npm run verify-fonts"
   },
