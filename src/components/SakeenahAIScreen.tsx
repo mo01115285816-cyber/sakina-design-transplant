@@ -928,7 +928,13 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
         )}
 
         {/* ── BACKGROUND UNDER INPUT BAR ── */}
-        <div className="fixed inset-x-0 bottom-0 z-10 pointer-events-none h-20 bg-gradient-to-t from-[#ece7de] via-[#ece7de]/80 to-transparent" />
+        <div
+          className={`fixed inset-x-0 bottom-0 z-10 pointer-events-none h-28 ${
+            messages.length === 0
+              ? "bg-gradient-to-t from-[#d8b27b]/55 via-[#d8b27b]/20 to-transparent"
+              : "bg-gradient-to-t from-[#ece7de] via-[#ece7de]/80 to-transparent"
+          }`}
+        />
 
         {/* ── FLOATING INPUT FIELD BAR ── */}
         <div className="fixed inset-x-0 bottom-0 z-20 flex justify-center pointer-events-none px-4 pb-4">
