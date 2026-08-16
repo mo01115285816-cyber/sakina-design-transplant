@@ -1418,9 +1418,9 @@ export default function App() {
 
         {/* TAB: SAKEENAH AI */}
         {activeTab === "sakeenah-ai" && !showAzkarCounter && (
-          <div className="block relative h-screen w-full overflow-hidden">
+          <div className="block relative min-h-screen w-full overflow-x-hidden overflow-y-auto">
             {!isAuthReady ? (
-              <div className="flex h-screen items-center justify-center bg-[#ece7de] text-sm font-bold text-[#7f6a55]">
+              <div className="flex min-h-screen items-center justify-center bg-[#ece7de] text-sm font-bold text-[#7f6a55]">
                 جارٍ التحقق من الجلسة...
               </div>
             ) : currentUser ? (
