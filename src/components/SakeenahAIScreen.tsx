@@ -45,6 +45,13 @@ const welcomeLines: WelcomeLine[] = [
   { title: "في أي أمر شرعي نبدأ معًا؟", subtitle: "مساحة هادئة للتعلّم والتدبّر وحسن الفهم." },
 ];
 
+const getInitialWelcomeLineIndex = () => {
+  const previous = Number.parseInt(localStorage.getItem("sakeenah_ai_welcome_line_index") ?? "-1", 10);
+  return Number.isInteger(previous) && previous >= 0
+    ? (previous + 1) % welcomeLines.length
+    : 0;
+};
+
 const CodeBlock = ({ children }: { children: string }) => {
   const [copied, setCopied] = useState(false);
 
@@ -257,20 +264,17 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
   const [isMultiline, setIsMultiline] = useState(false);
   const [longMsgs, setLongMsgs] = useState<Set<string>>(new Set());
   const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set());
-  const [welcomeLineIndex, setWelcomeLineIndex] = useState(0);
+  const [welcomeLineIndex] = useState(getInitialWelcomeLineIndex);
+
+  useEffect(() => {
+    localStorage.setItem("sakeenah_ai_welcome_line_index", String(welcomeLineIndex));
+  }, [welcomeLineIndex]);
 
   const userName = useMemo(() => {
     const label = String(user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split("@")[0] ?? "صديق سكينة").trim();
     return label.split(/\s+/)[0] || "صديق سكينة";
   }, [user]);
 
-  useEffect(() => {
-    if (messages.length > 0) return;
-    const timer = window.setInterval(() => {
-      setWelcomeLineIndex((current) => (current + 1) % welcomeLines.length);
-    }, 5000);
-    return () => window.clearInterval(timer);
-  }, [messages.length]);
 
   // Auto-resize the textarea — professional scrollHeight approach
   const adjustTextareaHeight = useCallback(() => {
@@ -655,7 +659,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
         <div className="absolute bottom-[-10%] left-[-10%] w-[250px] h-[250px] bg-[#deab65]/5 rounded-full blur-[100px] pointer-events-none" />
         {messages.length === 0 && (
           <div
-            className="pointer-events-none fixed inset-x-0 bottom-0 z-0 h-[34vh] bg-gradient-to-t from-[#d8b27b]/45 via-[#d8b27b]/16 to-transparent"
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-0 h-[38vh] bg-gradient-to-t from-[#d8b27b]/55 via-[#d8b27b]/20 to-transparent"
             aria-hidden="true"
           />
         )}
