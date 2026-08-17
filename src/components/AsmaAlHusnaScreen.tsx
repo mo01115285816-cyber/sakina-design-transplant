@@ -115,7 +115,7 @@ export default function AsmaAlHusnaScreen({ onClose }: Props) {
   return (
     <div
       dir="rtl"
-      className="fixed inset-0 z-50 bg-[#ece7de] overflow-hidden font-sans flex flex-col h-full"
+      className="fixed inset-0 z-50 w-full max-w-full overflow-x-hidden bg-[#ece7de] font-sans flex flex-col h-full"
     >
       {/* ── FLOATING HEADER ── */}
       <div className="fixed top-6 left-6 right-6 flex items-center justify-between z-40 pointer-events-none">
@@ -137,7 +137,7 @@ export default function AsmaAlHusnaScreen({ onClose }: Props) {
       </div>
 
       {/* ── SCROLLABLE BODY ── */}
-      <div className="flex-1 overflow-y-auto px-6 pt-24 pb-28 hide-scrollbar">
+      <div className="min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-x-none px-6 pt-24 pb-28 hide-scrollbar">
         {/* ── NAME OF THE DAY BANNER ── */}
         {!filterFavoritesOnly && !searchQuery && (
           <motion.div
@@ -279,16 +279,17 @@ export default function AsmaAlHusnaScreen({ onClose }: Props) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-end justify-center"
+            transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-[#2b1a10]/28"
             onClick={() => setSelectedNameId(null)}
           >
             {/* Modal Box */}
             <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="w-full max-w-[390px] cut-crystal-panel rounded-t-[32px] p-6 flex flex-col max-h-[88vh]"
+              initial={{ opacity: 0, y: 20, scale: 0.985 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.99 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              className="will-change-transform flex max-h-[88vh] w-full max-w-[390px] flex-col overflow-hidden rounded-t-[32px] border border-[#e6dccf] bg-[#ece7de] p-6 shadow-[0_-16px_40px_rgba(43,26,16,0.18)]"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Grab indicator line */}
@@ -324,7 +325,7 @@ export default function AsmaAlHusnaScreen({ onClose }: Props) {
               </div>
 
               {/* Main Medallion rendering of Selected Name */}
-              <div className="text-center py-4 mb-4 rounded-3xl border border-white/40 bg-white/30 backdrop-blur-sm relative">
+              <div className="relative mb-4 rounded-[26px] border border-[#d8c9b8] bg-[#f7f2ea] px-4 py-4 text-center shadow-[0_8px_20px_rgba(43,26,16,0.06)]">
                 {/* Decorative background vectors or shapes */}
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03]">
                   <Quote size={120} className="text-[#b88a4f]" />
@@ -342,14 +343,14 @@ export default function AsmaAlHusnaScreen({ onClose }: Props) {
               </div>
 
               {/* SCROLLABLE DETAILED CONTENT */}
-              <div className="flex-1 overflow-y-auto space-y-4 pr-1 pl-1 hide-scrollbar">
+              <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-x-none px-1 hide-scrollbar">
                 {/* 1. MEANING DETAIL */}
                 <div className="space-y-1.5">
                   <h4 className="flex items-center gap-1.5 text-[12px] font-bold text-[#b88a4f]">
                     <Info size={13} />
                     <span>المعنى والبيان التفصيلي</span>
                   </h4>
-                  <div className="cut-crystal-satin p-4 rounded-2xl shadow-sm">
+                  <div className="rounded-[22px] border border-[#d8c9b8] bg-[#f7f2ea] p-4 shadow-[0_4px_14px_rgba(43,26,16,0.05)]">
                     <p className="text-[14px] text-[#2b1a10] leading-relaxed font-bold">
                       {selectedName.meaningDetail}
                     </p>
@@ -363,7 +364,7 @@ export default function AsmaAlHusnaScreen({ onClose }: Props) {
                       <Quote size={12} />
                       <span>الدليل والأثر من القرآن والسنة</span>
                     </h4>
-                    <div className="cut-crystal-satin p-4 rounded-2xl text-center shadow-sm">
+                    <div className="rounded-[22px] border border-[#d8c9b8] bg-[#f7f2ea] p-4 text-center shadow-[0_4px_14px_rgba(43,26,16,0.05)]">
                       <p className="text-[16px] md:text-[18px] font-normal leading-relaxed text-[#593d18] font-quran select-text">
                         {selectedName.proof}
                       </p>
@@ -377,7 +378,7 @@ export default function AsmaAlHusnaScreen({ onClose }: Props) {
                     <BookOpen size={13} />
                     <span>كيف نتعبد ونعمل بهذا الاسم?</span>
                   </h4>
-                  <div className="cut-crystal-satin p-4 rounded-2xl shadow-sm">
+                  <div className="rounded-[22px] border border-[#d8c9b8] bg-[#f7f2ea] p-4 shadow-[0_4px_14px_rgba(43,26,16,0.05)]">
                     <p className="text-[13.5px] text-[#7f6a55] leading-relaxed font-bold">
                       {selectedName.reflection}
                     </p>
@@ -386,17 +387,17 @@ export default function AsmaAlHusnaScreen({ onClose }: Props) {
               </div>
 
               {/* Navigation Arrows inside details */}
-              <div className="mt-5 pt-4 border-t border-[#e6dccf]/60 flex items-center justify-between gap-4">
+              <div className="mt-5 flex items-center justify-between gap-3 border-t border-[#d8c9b8] pt-4">
                 <button
                   onClick={handlePrevName}
-                  className="flex-1 h-11 rounded-2xl border border-[#e6dccf] bg-[#f7f2ea] text-xs font-bold text-[#2b1a10] flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
+                  className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[24px] border border-[#d8c9b8] bg-[#f7f2ea] text-xs font-bold text-[#2b1a10] shadow-[0_3px_10px_rgba(43,26,16,0.06)] transition-transform duration-150 active:scale-[0.97]"
                 >
                   <ChevronRight size={16} />
                   <span>الاسم السابق</span>
                 </button>
                 <button
                   onClick={handleNextName}
-                  className="flex-1 h-11 rounded-2xl border border-[#e6dccf] bg-[#f7f2ea] text-xs font-bold text-[#2b1a10] flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
+                  className="flex h-10 flex-1 items-center justify-center gap-1.5 rounded-[24px] border border-[#d8c9b8] bg-[#f7f2ea] text-xs font-bold text-[#2b1a10] shadow-[0_3px_10px_rgba(43,26,16,0.06)] transition-transform duration-150 active:scale-[0.97]"
                 >
                   <span>الاسم التالي</span>
                   <ChevronLeft size={16} />
