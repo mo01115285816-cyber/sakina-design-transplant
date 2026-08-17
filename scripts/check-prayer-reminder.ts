@@ -31,10 +31,16 @@ const notificationService = readFileSync(new URL('../src/services/PrayerNotifica
 const prayerAlarmService = readFileSync(new URL('../src/services/PrayerAlarmService.ts', import.meta.url), 'utf8');
 const countdownService = readFileSync(new URL('../android/app/src/main/java/com/sakeenah/app/service/CountdownForegroundService.kt', import.meta.url), 'utf8');
 const scheduler = readFileSync(new URL('../android/app/src/main/java/com/sakeenah/app/util/AlarmScheduler.kt', import.meta.url), 'utf8');
+const settings = readFileSync(new URL('../src/components/SettingsScreen.tsx', import.meta.url), 'utf8');
 
 assert(!app.includes('schedulePrePrayerReminder('), 'App must not call the legacy per-prayer scheduler');
 assert(!app.includes('schedulePrayerTime('), 'App must not create a second prayer-time notification path');
 assert((app.match(/syncPrayerSchedule\(/g) ?? []).length === 1, 'App must have one central schedule reconciliation call');
+assert(app.includes('prayerTimeNotificationsEnabled: true'), 'Prayer-time notifications must remain mandatory');
+assert(app.includes('prePrayerRemindersEnabled: true'), 'Ten-minute reminders must remain mandatory');
+assert(!app.includes('isPrayerReminderEnabled'), 'Global prayer notification toggle must not return to App');
+assert(!app.includes('isPrePrayerReminderEnabled'), 'Global pre-prayer toggle must not return to App');
+assert(!settings.includes('منبهات الصلاة'), 'Global prayer notification card must not appear in Settings');
 assert(prayerAlarmService.includes('schedulePrayerTime?: boolean'), 'Native schedule contract must carry prayer-time enablement');
 assert(!notificationService.includes('id: Math.floor(Math.random()'), 'Notification IDs must never be random');
 assert(!prayerAlarmService.includes('isBatteryOptimizationEnabled'), 'PrayerAlarmService must not expose unused battery optimization APIs');

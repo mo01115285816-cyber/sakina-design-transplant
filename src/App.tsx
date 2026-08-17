@@ -243,25 +243,6 @@ export default function App() {
     }
   });
 
-  const [isPrePrayerReminderEnabled, setIsPrePrayerReminderEnabled] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem("app_isPrePrayerReminderEnabled");
-      return saved !== null ? saved === "true" : true;
-    } catch {
-      return true;
-    }
-  });
-
-  const [isPrayerReminderEnabled, setIsPrayerReminderEnabled] =
-    useState<boolean>(() => {
-      try {
-        const saved = localStorage.getItem("app_isPrayerReminderEnabled");
-        return saved !== null ? saved === "true" : true;
-      } catch {
-        return true;
-      }
-    });
-
   const [isMulkReminderEnabled, setIsMulkReminderEnabled] = useState<boolean>(
     () => {
       try {
@@ -460,10 +441,11 @@ export default function App() {
         await PrayerNotificationsService.syncPrayerSchedule({
           prayers,
           prayerPrefs,
-                    prayerTimeNotificationsEnabled: isPrayerReminderEnabled,
-          prePrayerRemindersEnabled: isPrePrayerReminderEnabled,
-          secondaryReminders:
- {
+          // Prayer notifications and the 10-minute reminder are mandatory app capabilities.
+          // The user grants notification permission; there is no settings toggle for them.
+          prayerTimeNotificationsEnabled: true,
+          prePrayerRemindersEnabled: true,
+          secondaryReminders: {
             mulk: isMulkReminderEnabled ? mulkReminderTime : undefined,
             baqarah: isBaqarahReminderEnabled ? baqarahReminderTime : undefined,
           },
@@ -480,8 +462,6 @@ export default function App() {
   }, [
     prayerSchedule,
     tomorrowSchedule,
-    isPrayerReminderEnabled,
-    isPrePrayerReminderEnabled,
     isMulkReminderEnabled,
     mulkReminderTime,
     isBaqarahReminderEnabled,
@@ -928,17 +908,6 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("app_isAutoAsrSchool", isAutoAsrSchool.toString());
   }, [isAutoAsrSchool]);
-
-  useEffect(() => {
-    localStorage.setItem(
-      "app_isPrayerReminderEnabled",
-      isPrayerReminderEnabled.toString(),
-    );
-    localStorage.setItem(
-      "app_isPrePrayerReminderEnabled",
-      isPrePrayerReminderEnabled.toString(),
-    );
-  }, [isPrayerReminderEnabled, isPrePrayerReminderEnabled]);
 
   useEffect(() => {
     localStorage.setItem(
@@ -1521,10 +1490,6 @@ export default function App() {
             onToggleAutoAsrSchool={handleToggleAutoAsrSchool}
             onChangeCalcMethod={setCalcMethod}
             onChangeAsrSchool={setAsrSchool}
-            isPrayerReminderEnabled={isPrayerReminderEnabled}
-            onTogglePrayerReminder={setIsPrayerReminderEnabled}
-            isPrePrayerReminderEnabled={isPrePrayerReminderEnabled}
-            onTogglePrePrayerReminder={setIsPrePrayerReminderEnabled}
             onChangeLocation={handleChangeLocation}
             onBack={handleBackToMain}
             currentUser={currentUser}

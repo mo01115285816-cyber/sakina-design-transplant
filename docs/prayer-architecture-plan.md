@@ -14,7 +14,7 @@ The app currently derives the visible countdown from wall-clock minutes and clam
 
 ## Root Cause D — permission orchestration
 
-Location and notification requests currently run concurrently, exact-alarm capability is not a scheduling gate, and a one-session ref blocks location retry. The fix sequences location handling separately from the notification capability onboarding, checks exact-alarm capability before native scheduling, and uses foreground refresh to check location state without reopening a system dialog automatically. The onboarding exposes only notification and exact-alarm capabilities required by the scheduler; battery optimization and vendor auto-start remain optional platform limitations rather than unconditional permission requests.
+Location and notification requests currently run concurrently, exact-alarm capability is not a scheduling gate, and a one-session ref blocks location retry. The fix sequences location handling separately from the notification capability onboarding, checks exact-alarm capability before native scheduling, and uses foreground refresh to check location state without reopening a system dialog automatically. The onboarding exposes only notification and exact-alarm capabilities required by the scheduler; the prayer-time and ten-minute reminder events remain mandatory application capabilities with no Settings toggles. Battery optimization and vendor auto-start remain optional platform limitations rather than unconditional permission requests.
 
 ## Root Cause E — competing legacy path
 
