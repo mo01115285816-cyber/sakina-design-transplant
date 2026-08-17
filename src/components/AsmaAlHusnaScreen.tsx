@@ -13,34 +13,15 @@ import {
   Heart,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   BookOpen,
   Quote,
   Info,
-  Check,
-  ArrowLeft,
 } from "lucide-react";
+import { HomeIcon } from "@/components/icons/AppIcons";
 
 type Props = {
   onClose: () => void;
 };
-
-function HomeIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="h-[17px] w-[17px]"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" />
-      <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    </svg>
-  );
-}
 
 export default function AsmaAlHusnaScreen({ onClose }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
@@ -184,10 +165,6 @@ export default function AsmaAlHusnaScreen({ onClose }: Props) {
                 <span className="text-[40px] font-display font-bold text-white mb-3 group-active:scale-95 transition-transform drop-shadow-[0_2px_12px_rgba(0,0,0,0.1)] leading-tight">
                   {nameOfTheDay.name}
                 </span>
-                <p className="text-[13.5px] font-medium text-white/90 leading-relaxed max-w-[90%] mb-5 text-center">
-                  {nameOfTheDay.meaningDetail}
-                </p>
-
                 <div className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-white/15 border border-white/20 text-[12px] font-bold text-white group-hover:bg-white/25 transition-all shadow-sm">
                   <span>تأمل في معاني الاسم</span>
                   <ChevronLeft size={14} />
@@ -431,49 +408,57 @@ export default function AsmaAlHusnaScreen({ onClose }: Props) {
       </AnimatePresence>
 
       {/* ── INTERNAL FLOATING NAVIGATION ── */}
-      <nav className="fixed bottom-6 inset-x-6 z-40 flex justify-center pointer-events-none">
-        <div className="pointer-events-auto inline-flex items-center gap-1.5 px-2.5 py-2 cut-crystal-capsule">
+      <nav className="fixed inset-x-0 bottom-6 z-40 flex justify-center pointer-events-none">
+        <div className="pointer-events-auto flex items-center gap-1 rounded-[32px] cut-crystal-capsule px-1.5 py-1.5 shadow-lg">
           {/* الصفحة الرئيسية Tab */}
           <button
             onClick={() => setActiveTab("main")}
-            className={`relative flex items-center gap-2 rounded-full px-5 py-2 transition-all duration-200 ${
+            className={`relative flex items-center gap-2 rounded-[24px] px-5 py-2 transition-colors duration-200 ${
               activeTab === "main"
                 ? "text-[#2b1a10]"
-                : "text-[#2b1a10]/50 hover:bg-[#2b1a10]/5 hover:text-[#2b1a10]/70"
+                : "text-[#7f6a55] hover:bg-[#2b1a10]/5"
             }`}
           >
             {activeTab === "main" && (
               <motion.div
-                layoutId="asmaTabIndicator"
-                className="absolute inset-0 rounded-full bg-gradient-to-b from-white/95 to-white/75 shadow-[0_2px_10px_rgba(43,26,16,0.15),inset_0_1px_1.5px_rgba(255,255,255,1)] border border-[#2b1a10]/12"
+                layoutId="activeTabIndicator"
+                className="absolute inset-0 rounded-[24px] bg-[#2b1a10]/10 shadow-inner"
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               />
             )}
             <span className="relative z-10 flex items-center justify-center">
               <HomeIcon />
             </span>
-            <div
-              className={`relative z-10 overflow-hidden transition-all duration-200 ease-out ${activeTab === "main" ? "max-w-[100px] opacity-100" : "max-w-0 opacity-0"}`}
-            >
-              <span className="text-[13px] font-bold whitespace-nowrap pl-1">
-                الرئيسية
-              </span>
-            </div>
+            <AnimatePresence mode="popLayout">
+              {activeTab === "main" && (
+                <motion.div
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  className="relative z-10 overflow-hidden flex items-center"
+                >
+                  <span className="text-[13px] font-bold whitespace-nowrap pl-1">
+                    الرئيسية
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </button>
 
           {/* المفضلة Tab */}
           <button
             onClick={() => setActiveTab("favorites")}
-            className={`relative flex items-center gap-2 rounded-full px-5 py-2 transition-all duration-200 ${
+            className={`relative flex items-center gap-2 rounded-[24px] px-5 py-2 transition-colors duration-200 ${
               activeTab === "favorites"
                 ? "text-[#2b1a10]"
-                : "text-[#2b1a10]/50 hover:bg-[#2b1a10]/5 hover:text-[#2b1a10]/70"
+                : "text-[#7f6a55] hover:bg-[#2b1a10]/5"
             }`}
           >
             {activeTab === "favorites" && (
               <motion.div
-                layoutId="asmaTabIndicator"
-                className="absolute inset-0 rounded-full bg-gradient-to-b from-white/95 to-white/75 shadow-[0_2px_10px_rgba(43,26,16,0.15),inset_0_1px_1.5px_rgba(255,255,255,1)] border border-[#2b1a10]/12"
+                layoutId="activeTabIndicator"
+                className="absolute inset-0 rounded-[24px] bg-[#2b1a10]/10 shadow-inner"
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               />
             )}
@@ -485,13 +470,21 @@ export default function AsmaAlHusnaScreen({ onClose }: Props) {
                 }
               />
             </span>
-            <div
-              className={`relative z-10 overflow-hidden transition-all duration-200 ease-out ${activeTab === "favorites" ? "max-w-[100px] opacity-100" : "max-w-0 opacity-0"}`}
-            >
-              <span className="text-[13px] font-bold whitespace-nowrap pl-1">
-                المفضلة ({favorites.length})
-              </span>
-            </div>
+            <AnimatePresence mode="popLayout">
+              {activeTab === "favorites" && (
+                <motion.div
+                  initial={{ opacity: 0, width: 0 }}
+                  animate={{ opacity: 1, width: "auto" }}
+                  exit={{ opacity: 0, width: 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  className="relative z-10 overflow-hidden flex items-center"
+                >
+                  <span className="text-[13px] font-bold whitespace-nowrap pl-1">
+                    المفضلة ({favorites.length})
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </button>
         </div>
       </nav>
