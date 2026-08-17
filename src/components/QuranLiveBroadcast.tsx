@@ -30,6 +30,20 @@ export default function QuranLiveBroadcast({
   const [isLoading, setIsLoading] = useState(false);
 
   const activeStation = radioStations[currentIndex];
+  const scrimProfile =
+    activeStation.logoType === "cairo"
+      ? {
+          primary:
+            "linear-gradient(90deg, rgba(0,0,0,0) 18%, rgba(0,0,0,0.08) 48%, rgba(0,0,0,0.64) 100%)",
+          bottom:
+            "linear-gradient(0deg, rgba(0,0,0,0.34) 0%, rgba(0,0,0,0) 58%)",
+        }
+      : {
+          primary:
+            "linear-gradient(90deg, rgba(0,0,0,0) 18%, rgba(0,0,0,0.10) 48%, rgba(0,0,0,0.58) 100%)",
+          bottom:
+            "linear-gradient(0deg, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0) 58%)",
+        };
 
   // Handle stream loading states
   useEffect(() => {
@@ -133,12 +147,18 @@ export default function QuranLiveBroadcast({
             className="absolute inset-0 w-full h-full object-cover object-center transform group-hover:scale-[1.02] transition-transform duration-700 ease-out z-0"
           />
 
-          {/* Ultra-Light Soft Optical Scrim for legibility (Bare minimum to preserve artwork clarity while keeping text readable) */}
-          <div className="absolute inset-0 bg-gradient-to-l from-black/40 via-black/15 to-transparent z-1" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent z-1" />
+          {/* Dynamic optical scrims keep the right-aligned station copy readable without hiding the artwork. */}
+          <div
+            className="absolute inset-0 z-1 pointer-events-none"
+            style={{ background: scrimProfile.primary }}
+          />
+          <div
+            className="absolute inset-0 z-1 pointer-events-none"
+            style={{ background: scrimProfile.bottom }}
+          />
 
-          {/* Compact navigation chevrons for stations */}
-          <div className="absolute top-1/2 -translate-y-1/2 left-2 z-30 pointer-events-auto">
+          {/* Compact navigation chevrons for stations; the transparent hit area is larger than the visible icon. */}
+          <div className="absolute top-1/2 -translate-y-1/2 left-0 z-30 w-10 h-10 flex items-center justify-center pointer-events-auto touch-manipulation">
             <button
               type="button"
               onClick={handlePrevStation}
@@ -149,7 +169,7 @@ export default function QuranLiveBroadcast({
               <ChevronRight size={13} className="translate-x-[0.5px]" />
             </button>
           </div>
-          <div className="absolute top-1/2 -translate-y-1/2 right-2 z-30 pointer-events-auto">
+          <div className="absolute top-1/2 -translate-y-1/2 right-0 z-30 w-10 h-10 flex items-center justify-center pointer-events-auto touch-manipulation">
             <button
               type="button"
               onClick={handleNextStation}
@@ -187,8 +207,9 @@ export default function QuranLiveBroadcast({
 
               {/* Action buttons section */}
               <div className="mt-2 flex items-center gap-2">
-                {/* Play/Pause compact pill button */}
-                <button
+                {/* Play/Pause compact pill button with a larger transparent touch target. */}
+                <div className="relative -m-2 p-2 touch-manipulation">
+                  <button
                   onClick={togglePlayback}
                   disabled={isActiveAndPlaying && isLoading}
                   className={`h-7 px-3 rounded-full flex items-center justify-center gap-1.5 text-[11px] whitespace-nowrap font-bold tracking-wide transition-all active:scale-[0.96] shadow-md border shrink-0 cursor-pointer backdrop-blur-md ${
@@ -233,7 +254,8 @@ export default function QuranLiveBroadcast({
                   {!isActiveAndPlaying && (
                     <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse mr-0.5 shrink-0"></span>
                   )}
-                </button>
+                  </button>
+                </div>
               </div>
             </div>
 
