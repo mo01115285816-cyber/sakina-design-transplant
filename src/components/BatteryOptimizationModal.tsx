@@ -1,174 +1,127 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { App as CapacitorApp } from '@capacitor/app';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Settings, Shield, Clock, Smartphone, Check } from 'lucide-react';
-
-/**
- * BatteryOptimizationModal — Professional multi-step permission request.
- *
- * This modal ensures the app survives Android's Doze Mode and aggressive
- * manufacturer battery killers (Samsung, Xiaomi, OPPO, Vivo).
- *
- * Steps:
- * 1. Battery Optimization Bypass (all devices)
- * 2. Exact Alarm Permission (Android 12+)
- * 3. Auto-start Settings (Xiaomi/OPPO/Vivo/Samsung only)
- *
- * Shows on every app launch until all permissions are granted.
- * Uses Sakineh's glassmorphic design language.
- */
+import { X, Settings, Clock, Bell, Check } from 'lucide-react';
+import { PrayerAlarmService } from '@/services/PrayerAlarmService';
+import { PrayerNotificationsService } from '@/services/PrayerNotificationsService';
 
 interface PermissionStep {
-  id: string;
+  id: 'notifications' | 'exactAlarm';
   title: string;
   description: string;
   icon: React.ReactNode;
-  required: boolean;
 }
 
 export default function BatteryOptimizationModal({
   onDismiss,
 }: {
-  onDismiss: () => void;
+  onDismiss: (refresh?: boolean) => void;
 }) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
   const [isProcessing, setIsProcessing] = useState(false);
+  const [needsNotifications, setNeedsNotifications] = useState(false);
   const [needsExactAlarm, setNeedsExactAlarm] = useState(false);
-  const [needsAutoStart, setNeedsAutoStart] = useState(false);
-  const [isBatteryOptimizationEnabled, setIsBatteryOptimizationEnabled] = useState(false);
+  const [notificationBlocked, setNotificationBlocked] = useState(false);
+  const [statusLoaded, setStatusLoaded] = useState(false);
+
+  const loadPermissionStatus = useCallback(async () => {
+    try {
+      const notificationStatus = await PrayerNotificationsService.getPermissionStatus();
+      const canSchedule = await PrayerAlarmService.canScheduleExactAlarms();
+      setNeedsNotifications(notificationStatus !== 'granted');
+      setNotificationBlocked(notificationStatus === 'denied');
+      setNeedsExactAlarm(!canSchedule);
+      setStatusLoaded(true);
+    } catch (error) {
+      console.warn('Failed to load permission status:', error);
+    }
+  }, []);
 
   useEffect(() => {
-    loadPermissionStatus();
-  }, []);
+    void loadPermissionStatus();
+    let disposed = false;
+    let listener: { remove: () => Promise<void> } | null = null;
+    void CapacitorApp.addListener('appStateChange', ({ isActive }) => {
+      if (!disposed && isActive) void loadPermissionStatus();
+    }).then((handle) => {
+      if (disposed) void handle.remove();
+      else listener = handle;
+    }).catch((error) => {
+      console.warn('Unable to observe permission settings return:', error);
+    });
+    return () => {
+      disposed = true;
+      if (listener) void listener.remove();
+    };
+  }, [loadPermissionStatus]);
 
-  const loadPermissionStatus = async () => {
-    try {
-      const { PrayerAlarmService } = await import('@/services/PrayerAlarmService');
-
-      // Check battery optimization
-      const batteryEnabled = await PrayerAlarmService.isBatteryOptimizationEnabled();
-      setIsBatteryOptimizationEnabled(batteryEnabled);
-
-      // Check exact alarm permission (Android 12+)
-      const canSchedule = await PrayerAlarmService.canScheduleExactAlarms();
-      setNeedsExactAlarm(!canSchedule);
-
-      // Check if auto-start is needed (Xiaomi/OPPO/Vivo/Samsung)
-      const isAggressive = await PrayerAlarmService.isAggressiveManufacturer();
-      setNeedsAutoStart(isAggressive);
-    } catch (e) {
-      console.warn('Failed to load permission status:', e);
+  const steps = useMemo<PermissionStep[]>(() => {
+    const required: PermissionStep[] = [];
+    if (needsNotifications) {
+      required.push({
+        id: 'notifications',
+        title: 'إشعارات الصلاة',
+        description: 'نحتاج إذن الإشعارات حتى يصلك تذكير الصلاة وإشعار دخول الوقت. لن نرسل إشعارات خارج هذه الوظيفة.',
+        icon: <Bell size={28} className="text-[#b88a4f]" />,
+      });
     }
-  };
+    if (needsExactAlarm) {
+      required.push({
+        id: 'exactAlarm',
+        title: 'التنبيهات الدقيقة',
+        description: 'يحتاج أندرويد إذنًا خاصًا حتى يوقظ التطبيق عند وقت التذكير المحسوب بدقة، حتى أثناء النوم العميق.',
+        icon: <Clock size={28} className="text-[#b88a4f]" />,
+      });
+    }
+    return required;
+  }, [needsExactAlarm, needsNotifications]);
 
-  const handleBatteryOptimization = useCallback(async () => {
+  const currentRequiredStep = steps[currentStep];
+
+  useEffect(() => {
+    if (statusLoaded && steps.length === 0) onDismiss(true);
+    else if (currentStep >= steps.length) setCurrentStep(steps.length - 1);
+  }, [currentStep, onDismiss, statusLoaded, steps.length]);
+
+  const advanceAfterVerification = useCallback(async (stepId: PermissionStep['id']) => {
+    await loadPermissionStatus();
+    const status = stepId === 'notifications'
+      ? await PrayerNotificationsService.getPermissionStatus()
+      : null;
+    const verified = stepId === 'notifications'
+      ? status === 'granted'
+      : await PrayerAlarmService.canScheduleExactAlarms();
+
+    if (!verified) return;
+    setCompletedSteps((previous) => new Set([...previous, stepId]));
+    setCurrentStep((step) => step + 1);
+  }, [loadPermissionStatus]);
+
+  const handleCurrentStep = useCallback(async () => {
+    if (!currentRequiredStep) return;
     setIsProcessing(true);
     try {
-      const { PrayerAlarmService } = await import('@/services/PrayerAlarmService');
-      await PrayerAlarmService.requestIgnoreBatteryOptimization();
-      setCompletedSteps(prev => new Set([...prev, 'battery']));
-      setIsBatteryOptimizationEnabled(false);
-    } catch (e) {
-      console.warn('Battery optimization request failed:', e);
-    } finally {
-      setIsProcessing(false);
-      // Auto-advance to next step after 1 second
-      setTimeout(() => setCurrentStep(1), 1000);
-    }
-  }, []);
-
-  const handleExactAlarm = useCallback(async () => {
-    setIsProcessing(true);
-    try {
-      const { PrayerAlarmService } = await import('@/services/PrayerAlarmService');
-      await PrayerAlarmService.requestExactAlarmPermission();
-      setCompletedSteps(prev => new Set([...prev, 'exactAlarm']));
-      setNeedsExactAlarm(false);
-    } catch (e) {
-      console.warn('Exact alarm request failed:', e);
-    } finally {
-      setIsProcessing(false);
-      setTimeout(() => {
-        if (needsAutoStart) {
-          setCurrentStep(2);
+      if (currentRequiredStep.id === 'notifications') {
+        if (notificationBlocked) {
+          await PrayerAlarmService.openAppSettings();
         } else {
-          // All done
-          localStorage.setItem('sakeenah_battery_modal_seen', 'true');
-          onDismiss();
+          await PrayerNotificationsService.requestPermission();
         }
-      }, 1000);
-    }
-  }, [needsAutoStart, onDismiss]);
-
-  const handleAutoStart = useCallback(async () => {
-    setIsProcessing(true);
-    try {
-      const { PrayerAlarmService } = await import('@/services/PrayerAlarmService');
-      await PrayerAlarmService.openAutoStartSettings();
-      setCompletedSteps(prev => new Set([...prev, 'autoStart']));
-      setNeedsAutoStart(false);
-    } catch (e) {
-      console.warn('Auto-start request failed:', e);
+      } else {
+        await PrayerAlarmService.requestExactAlarmPermission();
+      }
+      await advanceAfterVerification(currentRequiredStep.id);
+    } catch (error) {
+      console.warn(`Permission step failed: ${currentRequiredStep.id}`, error);
     } finally {
       setIsProcessing(false);
-      setTimeout(() => {
-        localStorage.setItem('sakeenah_battery_modal_seen', 'true');
-        onDismiss();
-      }, 1000);
     }
-  }, [onDismiss]);
+  }, [advanceAfterVerification, currentRequiredStep, notificationBlocked]);
 
   const handleLater = useCallback(() => {
-    // Save to localStorage to prevent showing again until app restart
-    // User can access this from Settings screen later
-    localStorage.setItem('sakeenah_battery_modal_seen', 'true');
-    onDismiss();
+    onDismiss(false);
   }, [onDismiss]);
-
-  // Build dynamic steps based on device requirements
-  const steps: PermissionStep[] = [
-    {
-      id: 'battery',
-      title: 'ضبط البطارية',
-      description: 'للتأكد من بقاء الأذان على الوقت الصحيح، نحتاج ضبط وضع البطارية للتطبيق على: غير مقيد / السماح بالنشاط في الخلفية.',
-      icon: <Settings size={28} className="text-[#b88a4f]" />,
-      required: isBatteryOptimizationEnabled,
-    },
-    ...(needsExactAlarm
-      ? [
-          {
-            id: 'exactAlarm',
-            title: 'إذن التنبيهات الدقيقة',
-            description: 'يحتاج أندرويد إذن خاص لضمان دقة الأذان بالثانية، حتى في وضع النوم العميق.',
-            icon: <Clock size={28} className="text-[#b88a4f]" />,
-            required: true,
-          },
-        ]
-      : []),
-    ...(needsAutoStart
-      ? [
-          {
-            id: 'autoStart',
-            title: 'التشغيل التلقائي',
-            description: 'هاتفك يحتاج إضافة التطبيق لقائمة التشغيل التلقائي لضمان عمله في الخلفية.',
-            icon: <Smartphone size={28} className="text-[#b88a4f]" />,
-            required: true,
-          },
-        ]
-      : []),
-  ];
-
-  // Filter to only show required steps
-  const requiredSteps = steps.filter(s => s.required);
-  const currentRequiredStep = requiredSteps[currentStep];
-
-  // If all steps are completed or not required, dismiss
-  useEffect(() => {
-    if (currentStep >= requiredSteps.length) {
-      localStorage.setItem('sakeenah_battery_modal_seen', 'true');
-      onDismiss();
-    }
-  }, [currentStep, requiredSteps.length, onDismiss]);
 
   if (!currentRequiredStep) return null;
 
@@ -186,46 +139,40 @@ export default function BatteryOptimizationModal({
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: '100%', opacity: 0 }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-[390px] bg-[#fdfcfb] rounded-t-[32px] shadow-2xl overflow-hidden"
+          onClick={(event) => event.stopPropagation()}
+          className="relative w-full max-w-[390px] overflow-hidden rounded-t-[32px] bg-[#fdfcfb] shadow-2xl"
         >
-          {/* Drag Handle */}
-          <div className="flex justify-center pt-3 pb-2">
-            <div className="w-10 h-1 bg-[#e6dccf] rounded-full" />
+          <div className="flex justify-center pb-2 pt-3">
+            <div className="h-1 w-10 rounded-full bg-[#e6dccf]" />
           </div>
-
-          {/* Close Button */}
-          <div className="absolute top-4 left-4">
+          <div className="absolute left-4 top-4">
             <button
               onClick={handleLater}
-              className="w-8 h-8 rounded-full bg-[#f7f2ea] border border-[#e6dccf] flex items-center justify-center text-[#7f6a55] hover:bg-[#ece7de] transition-colors cursor-pointer"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-[#e6dccf] bg-[#f7f2ea] text-[#7f6a55] transition-colors hover:bg-[#ece7de]"
               aria-label="إغلاق"
             >
               <X size={16} />
             </button>
           </div>
 
-          {/* Content */}
           <div className="px-6 pb-8 pt-4">
-            {/* Step Indicator */}
-            <div className="flex items-center justify-center gap-2 mb-6">
-              {requiredSteps.map((step, index) => (
+            <div className="mb-6 flex items-center justify-center gap-2">
+              {steps.map((step, index) => (
                 <div
                   key={step.id}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  className={`h-2 rounded-full transition-all duration-300 ${
                     index === currentStep
                       ? 'w-6 bg-[#b88a4f]'
                       : index < currentStep
-                      ? 'bg-[#2b1a10]'
-                      : 'bg-[#e6dccf]'
+                        ? 'w-2 bg-[#2b1a10]'
+                        : 'w-2 bg-[#e6dccf]'
                   }`}
                 />
               ))}
             </div>
 
-            {/* Icon */}
-            <div className="flex justify-center mb-6">
-              <div className="w-20 h-20 rounded-[24px] cut-crystal-panel flex items-center justify-center shadow-md">
+            <div className="mb-6 flex justify-center">
+              <div className="cut-crystal-panel flex h-20 w-20 items-center justify-center rounded-[24px] shadow-md">
                 {completedSteps.has(currentRequiredStep.id) ? (
                   <Check size={36} className="text-[#2b1a10]" strokeWidth={2.5} />
                 ) : (
@@ -234,50 +181,32 @@ export default function BatteryOptimizationModal({
               </div>
             </div>
 
-            {/* Title */}
-            <h2 className="text-[22px] font-display font-black text-[#2b1a10] text-center mb-3">
-              {completedSteps.has(currentRequiredStep.id)
-                ? 'تم بنجاح ✓'
-                : currentRequiredStep.title}
+            <h2 className="mb-3 text-center text-[22px] font-display font-black text-[#2b1a10]">
+              {currentRequiredStep.title}
             </h2>
-
-            {/* Description */}
-            <p className="text-[14px] text-[#7f6a55] font-bold text-center leading-relaxed mb-8 max-w-[320px] mx-auto">
+            <p className="mx-auto mb-8 max-w-[320px] text-center text-[14px] font-bold leading-relaxed text-[#7f6a55]">
               {currentRequiredStep.description}
             </p>
 
-            {/* Action Button */}
-            {!completedSteps.has(currentRequiredStep.id) && (
-              <button
-                onClick={
-                  currentRequiredStep.id === 'battery'
-                    ? handleBatteryOptimization
-                    : currentRequiredStep.id === 'exactAlarm'
-                    ? handleExactAlarm
-                    : handleAutoStart
-                }
-                disabled={isProcessing}
-                className="w-full h-13 bg-[#2b1a10] text-[#fff9f1] hover:brightness-110 active:scale-[0.98] transition-all text-[15px] font-black rounded-[20px] shadow-md cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {isProcessing ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-[#fff9f1]/30 border-t-[#fff9f1] rounded-full animate-spin" />
-                    <span>جاري الفتح...</span>
-                  </>
-                ) : (
-                  <>
-                    <Settings size={18} />
-                    <span>افتح الإعدادات</span>
-                  </>
-                )}
-              </button>
-            )}
+            <button
+              onClick={handleCurrentStep}
+              disabled={isProcessing}
+              className="flex h-13 w-full items-center justify-center gap-2 rounded-[20px] bg-[#2b1a10] text-[15px] font-black text-[#fff9f1] shadow-md transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
+            >
+              {isProcessing ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#fff9f1]/30 border-t-[#fff9f1]" />
+              ) : (
+                <>
+                  {currentRequiredStep.id === 'notifications' && notificationBlocked ? <Settings size={18} /> : <Settings size={18} />}
+                  <span>{currentRequiredStep.id === 'notifications' && notificationBlocked ? 'افتح إعدادات التطبيق' : 'تفعيل الآن'}</span>
+                </>
+              )}
+            </button>
 
-            {/* Later Link */}
-            <div className="text-center mt-4">
+            <div className="mt-4 text-center">
               <button
                 onClick={handleLater}
-                className="text-[13px] font-bold text-[#b88a4f] hover:text-[#deab65] transition-colors underline cursor-pointer"
+                className="text-[13px] font-bold text-[#b88a4f] underline transition-colors hover:text-[#deab65]"
               >
                 لاحقاً
               </button>

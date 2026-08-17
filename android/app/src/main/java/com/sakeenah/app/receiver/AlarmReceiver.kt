@@ -1,11 +1,16 @@
 package com.sakeenah.app.receiver
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import com.sakeenah.app.MainActivity
+import com.sakeenah.app.R
 import com.sakeenah.app.service.CountdownForegroundService
 import com.sakeenah.app.service.AdhanPlayerService
 import com.sakeenah.app.data.AudioStateHolder
@@ -60,32 +65,88 @@ class AlarmReceiver : BroadcastReceiver() {
                 // READ PRAYER PREFERENCES BEFORE PLAYING ADHAN
                 // ═══════════════════════════════════════════════════════════════
                 
-                val shouldPlayAdhan = PrayerPreferencesReader.shouldPlayAdhan(context, prayerKey)
-                
-                if (!shouldPlayAdhan) {
-                    Log.d(TAG, "Prayer $prayerName adhan is disabled or mode is not azan — skipping")
+                val enabled = PrayerPreferencesReader.isPrayerEnabled(context, prayerKey)
+                if (!enabled) {
+                    Log.d(TAG, "Prayer $prayerName is disabled — skipping prayer-time notification")
                     return
                 }
 
-                // Get the selected muezzin URI from AudioStateHolder
-                val muezzinUri = AudioStateHolder.state.value.artworkUrl.takeIf { it.isNotEmpty() }
+                val mode = PrayerPreferencesReader.getPrayerMode(context, prayerKey)
+                val randomReflection = getReflectionsForPrayer(prayerKey).randomOrNull() ?: ""
 
-                // Generate random spiritual reflection for notification body
-                val reflections = getReflectionsForPrayer(prayerKey)
-                val randomReflection = reflections.randomOrNull() ?: ""
-
-                // Start the adhan player service
-                AdhanPlayerService.start(
-                    context,
-                    prayerKey,
-                    prayerName,
-                    randomReflection,
-                    muezzinUri
-                )
-
-                Log.d(TAG, "Started adhan player for $prayerName (user enabled adhan)")
+                if (mode == "azan_short" || mode == "azan_full") {
+                    // Get the selected muezzin URI from AudioStateHolder
+                    val muezzinUri = AudioStateHolder.state.value.artworkUrl.takeIf { it.isNotEmpty() }
+                    AdhanPlayerService.start(
+                        context,
+                        prayerKey,
+                        prayerName,
+                        randomReflection,
+                        muezzinUri
+                    )
+                    Log.d(TAG, "Started adhan player for $prayerName")
+                } else {
+                    showPrayerNotification(context, prayerKey, prayerName, randomReflection, mode)
+                    Log.d(TAG, "Shown prayer-time notification for $prayerName mode=$mode")
+                }
             }
         }
+    }
+
+    private fun showPrayerNotification(
+        context: Context,
+        prayerKey: String,
+        prayerName: String,
+        body: String,
+        mode: String,
+    ) {
+        val channelId = ensurePrayerChannel(context, mode)
+        val notificationId = 450000 + prayerKey.hashCode().toLong().toInt().and(0xFFFF)
+        val openIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            notificationId,
+            openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = NotificationCompat.Builder(context, channelId)
+            .setContentTitle("آن أوان صلاة $prayerName")
+            .setContentText(body)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setOngoing(false)
+            .setWhen(System.currentTimeMillis())
+            .build()
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(notificationId, notification)
+    }
+
+    private fun ensurePrayerChannel(context: Context, mode: String): String {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return "beep_channel"
+        val channelId = when (mode) {
+            "silent" -> "prayer_silent_channel"
+            "vibrate_only" -> "prayer_vibrate_channel"
+            else -> "beep_channel"
+        }
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (manager.getNotificationChannel(channelId) == null) {
+            val importance = if (mode == "silent") NotificationManager.IMPORTANCE_LOW else NotificationManager.IMPORTANCE_DEFAULT
+            val channel = NotificationChannel(channelId, "إشعارات مواقيت الصلاة", importance).apply {
+                description = "إشعار واحد عند دخول وقت الصلاة"
+                enableVibration(mode == "vibrate_only")
+                if (mode == "silent") setSound(null, null)
+                if (mode == "vibrate_only") vibrationPattern = longArrayOf(0, 500, 200, 500)
+                setShowBadge(true)
+            }
+            manager.createNotificationChannel(channel)
+        }
+        return channelId
     }
 
     /**

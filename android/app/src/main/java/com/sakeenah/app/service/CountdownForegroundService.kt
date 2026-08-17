@@ -82,17 +82,10 @@ class CountdownForegroundService : Service() {
 
     private val handler = Handler(Looper.getMainLooper())
     private var wakeLock: PowerManager.WakeLock? = null
+    private var reminderExpired = false
 
-    private val updateRunnable = object : Runnable {
-        override fun run() {
-            updateNotification()
-            if (System.currentTimeMillis() < prayerTimeMs) {
-                handler.postDelayed(this, 1000) // Update every second
-            } else {
-                // Time reached — stop service and trigger prayer alarm
-                onCountdownComplete()
-            }
-        }
+    private val expireRunnable = Runnable {
+        onCountdownComplete()
     }
 
     override fun onCreate() {
@@ -101,39 +94,54 @@ class CountdownForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        prayerKey = intent?.getStringExtra(EXTRA_PRAYER_KEY) ?: ""
-        prayerName = intent?.getStringExtra(EXTRA_PRAYER_NAME) ?: ""
-        prayerTimeMs = intent?.getLongExtra(EXTRA_PRAYER_TIME_MS, 0L) ?: 0L
+        val incomingPrayerKey = intent?.getStringExtra(EXTRA_PRAYER_KEY) ?: ""
+        val incomingPrayerName = intent?.getStringExtra(EXTRA_PRAYER_NAME) ?: ""
+        val incomingPrayerTimeMs = intent?.getLongExtra(EXTRA_PRAYER_TIME_MS, 0L) ?: 0L
 
-        if (prayerKey.isEmpty() || prayerTimeMs == 0L) {
+        if (incomingPrayerKey.isEmpty() || incomingPrayerTimeMs <= 0L) {
             stopSelf()
             return START_NOT_STICKY
         }
 
-        // Acquire partial wake lock to keep CPU awake
+        // A duplicate alarm for the same logical event must not restart or
+        // republish the notification while the existing event is active.
+        if (!reminderExpired && prayerKey == incomingPrayerKey && prayerTimeMs == incomingPrayerTimeMs) {
+            return START_NOT_STICKY
+        }
+
+        prayerKey = incomingPrayerKey
+        prayerName = incomingPrayerName
+        prayerTimeMs = incomingPrayerTimeMs
+        reminderExpired = false
+        handler.removeCallbacks(expireRunnable)
+        wakeLock?.release()
+        wakeLock = null
+
+        val remainingMs = prayerTimeMs - System.currentTimeMillis()
+        if (remainingMs <= 0L) {
+            onCountdownComplete()
+            return START_NOT_STICKY
+        }
+
+        // Keep the CPU available only for the bounded reminder window. The
+        // notification itself uses Android's absolute chronometer timestamp.
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, WAKE_LOCK_TAG).apply {
             setReferenceCounted(false)
-            acquire(11 * 60 * 1000L) // 11 minutes max (with 1 min buffer)
+            acquire(remainingMs.coerceAtMost(11 * 60 * 1000L))
         }
 
-        // Start as foreground service with the notification
         val notificationId = getNotificationId(prayerKey)
         val notification = buildNotification()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            // Android 14+ — specialUse type for exact-time services
-            startForeground(notificationId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(notificationId, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         } else {
             startForeground(notificationId, notification)
         }
 
-        // Start the second-by-second update loop
-        handler.post(updateRunnable)
-
-        return START_NOT_STICKY // Don't restart if killed (alarm will re-trigger)
+        handler.postDelayed(expireRunnable, remainingMs)
+        return START_NOT_STICKY
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -163,7 +171,7 @@ class CountdownForegroundService : Service() {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setContentIntent(pendingIntent)
-            .setOngoing(true) // Cannot be dismissed
+            .setOngoing(false)
             .setAutoCancel(false)
             .setWhen(prayerTimeMs)
             .setUsesChronometer(true)
@@ -171,30 +179,31 @@ class CountdownForegroundService : Service() {
             .setVibrate(longArrayOf(0, 300, 200, 300))
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            builder.setTimeoutAfter(10 * 60 * 1000) // 10 minutes
+            builder.setTimeoutAfter((prayerTimeMs - System.currentTimeMillis()).coerceAtLeast(1L))
         }
 
         return builder.build()
     }
 
-    private fun updateNotification() {
-        val notificationId = getNotificationId(prayerKey)
-        val notification = buildNotification()
-
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.notify(notificationId, notification)
-    }
-
     private fun onCountdownComplete() {
-        // Countdown finished — prayer time reached
+        if (reminderExpired) return
+        reminderExpired = true
+        handler.removeCallbacks(expireRunnable)
+
+        val notificationId = getNotificationId(prayerKey)
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(notificationId)
+
         wakeLock?.release()
         wakeLock = null
-        handler.removeCallbacks(updateRunnable)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
+        Log.d(TAG, "Reminder expired for $prayerName at $prayerTimeMs")
         stopSelf()
-
-        // Trigger the main adhan notification via AlarmReceiver
-        // In a full implementation, this would send an intent to show the adhan notification
-        Log.d(TAG, "Countdown complete for $prayerName — prayer time reached")
     }
 
     private fun ensureChannelExists() {
@@ -222,9 +231,17 @@ class CountdownForegroundService : Service() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+        handler.removeCallbacks(expireRunnable)
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.cancel(getNotificationId(prayerKey))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+        } else {
+            @Suppress("DEPRECATION")
+            stopForeground(true)
+        }
         wakeLock?.release()
         wakeLock = null
-        handler.removeCallbacks(updateRunnable)
+        super.onDestroy()
     }
 }

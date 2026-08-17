@@ -424,7 +424,42 @@ export const SettingsScreen = React.memo(function SettingsScreen({
           </div>
         </div>
 
-        {/* ── SECTION 3: SUNNAH REMINDERS ── */}
+        {/* ── SECTION 3: PRAYER REMINDERS ── */}
+        <div className="cut-crystal-panel rounded-[26px] p-5 space-y-4 shadow-md">
+          <div className="flex items-center gap-2 mb-2 border-b border-[#e6dccf]/40 pb-3">
+            <span className="text-[12px] font-bold text-[#b88a4f]">
+              منبهات الصلاة
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors duration-300 ${isPrayerReminderEnabled ? "bg-[#b88a4f]/10 text-[#b88a4f]" : "bg-[#e6dccf]/20 text-[#7f6a55]"}`}>
+                <Bell size={18} strokeWidth={2} />
+              </div>
+              <div className="text-right">
+                <p className="text-[14px] font-bold text-[#2b1a10]">إشعار وقت الصلاة</p>
+                <p className="text-[11.5px] text-[#7f6a55] font-bold">تنبيه عند دخول وقت الأذان</p>
+              </div>
+            </div>
+            <Switch checked={isPrayerReminderEnabled} onChange={onTogglePrayerReminder} />
+          </div>
+
+          <div className="flex items-center justify-between border-t border-[#e6dccf]/35 pt-4">
+            <div className="flex items-center gap-3">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition-colors duration-300 ${isPrePrayerReminderEnabled ? "bg-[#b88a4f]/10 text-[#b88a4f]" : "bg-[#e6dccf]/20 text-[#7f6a55]"}`}>
+                <Bell size={18} strokeWidth={2} />
+              </div>
+              <div className="text-right">
+                <p className="text-[14px] font-bold text-[#2b1a10]">تذكير قبل الصلاة</p>
+                <p className="text-[11.5px] text-[#7f6a55] font-bold">تنبيه قبل الأذان بعشر دقائق</p>
+              </div>
+            </div>
+            <Switch checked={isPrePrayerReminderEnabled} onChange={onTogglePrePrayerReminder} />
+          </div>
+        </div>
+
+        {/* ── SECTION 4: SUNNAH REMINDERS ── */}
         <div className="cut-crystal-panel rounded-[26px] p-5 space-y-4 shadow-md">
           <div className="flex items-center gap-2 mb-2 border-b border-[#e6dccf]/40 pb-3">
             <span className="text-[12px] font-bold text-[#b88a4f]">

@@ -6,7 +6,7 @@ import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
 import com.getcapacitor.annotation.CapacitorPlugin
 import com.sakeenah.app.util.AlarmScheduler
-import com.sakeenah.app.util.BatteryOptimizationHelper
+import com.sakeenah.app.util.PrayerScheduleEntry
 import com.sakeenah.app.util.MuezzinHelper
 import com.sakeenah.app.util.PrayerPreferencesReader
 import com.sakeenah.app.util.PrayerAlarmStore
@@ -19,14 +19,10 @@ import android.util.Log
  * native Android Exact Alarms that survive Doze Mode and App Standby.
  *
  * Methods:
- * - schedulePrayer: Schedule a single prayer (pre-prayer + prayer time)
  * - scheduleAllPrayers: Schedule all prayers for today
  * - cancelAll: Cancel all scheduled alarms
  * - canScheduleExactAlarms: Check if SCHEDULE_EXACT_ALARM permission is granted
  * - requestExactAlarmPermission: Open settings to grant the permission
- * - isBatteryOptimizationEnabled: Check if battery optimization is active
- * - requestIgnoreBatteryOptimization: Request battery optimization bypass
- * - openAutoStartSettings: Open manufacturer-specific auto-start settings
  */
 @CapacitorPlugin(name = "PrayerAlarm")
 class PrayerAlarmPlugin : Plugin() {
@@ -36,52 +32,10 @@ class PrayerAlarmPlugin : Plugin() {
     }
 
     private lateinit var scheduler: AlarmScheduler
-    private lateinit var batteryHelper: BatteryOptimizationHelper
 
     override fun load() {
         super.load()
         scheduler = AlarmScheduler(context)
-        batteryHelper = BatteryOptimizationHelper(context)
-    }
-
-    /**
-     * Schedule a single prayer alarm.
-     *
-     * Expected parameters:
-     * {
-     *   "prayerKey": "fajr",
-     *   "prayerName": "الفجر",
-     *   "prayerTimeMs": 1754400000000
-     * }
-     */
-    @PluginMethod
-    fun schedulePrayer(call: PluginCall) {
-        try {
-            val prayerKey = call.getString("prayerKey") ?: ""
-            val prayerName = call.getString("prayerName") ?: ""
-            val prayerTimeMs = call.getLong("prayerTimeMs") ?: 0L
-
-            if (prayerKey.isEmpty() || prayerName.isEmpty() || prayerTimeMs == 0L) {
-                call.reject("Missing required parameters")
-                return
-            }
-
-            scheduler.schedulePrayer(prayerKey, prayerName, prayerTimeMs)
-            PrayerAlarmStore.upsert(
-                context,
-                PrayerAlarmStore.Entry(prayerKey, prayerName, prayerTimeMs)
-            )
-            Log.d(TAG, "Scheduled prayer: $prayerName at $prayerTimeMs")
-
-            call.resolve(JSObject().apply {
-                put("success", true)
-                put("prayerKey", prayerKey)
-                put("prayerName", prayerName)
-            })
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to schedule prayer", e)
-            call.reject("Failed to schedule prayer: ${e.message}")
-        }
     }
 
     /**
@@ -99,15 +53,17 @@ class PrayerAlarmPlugin : Plugin() {
     fun scheduleAllPrayers(call: PluginCall) {
         try {
             val prayersArray = call.getArray("prayers")
-            val prayers = mutableListOf<Triple<String, String, Long>>()
+            val prayers = mutableListOf<PrayerScheduleEntry>()
 
             for (i in 0 until (prayersArray?.length() ?: 0)) {
                 val prayer = prayersArray?.getJSONObject(i)
                 val key = prayer?.getString("key") ?: ""
                 val name = prayer?.getString("name") ?: ""
                 val timeMs = prayer?.getLong("timeMs") ?: 0L
+                val schedulePrePrayer = prayer?.getBoolean("schedulePrePrayer", true) ?: true
+                val schedulePrayerTime = prayer?.getBoolean("schedulePrayerTime", true) ?: true
                 if (key.isNotEmpty() && name.isNotEmpty() && timeMs > 0) {
-                    prayers.add(Triple(key, name, timeMs))
+                    prayers.add(PrayerScheduleEntry(key, name, timeMs, schedulePrePrayer, schedulePrayerTime))
                 }
             }
 
@@ -115,11 +71,23 @@ class PrayerAlarmPlugin : Plugin() {
                 call.reject("No valid prayers provided")
                 return
             }
+            if (!scheduler.canScheduleExactAlarms()) {
+                call.reject("Exact alarm capability is not enabled")
+                return
+            }
 
             scheduler.scheduleAllPrayers(prayers)
             PrayerAlarmStore.replace(
                 context,
-                prayers.map { (key, name, timeMs) -> PrayerAlarmStore.Entry(key, name, timeMs) }
+                prayers.map { prayer ->
+                    PrayerAlarmStore.Entry(
+                        prayer.key,
+                        prayer.name,
+                        prayer.timeMs,
+                        prayer.schedulePrePrayer,
+                        prayer.schedulePrayerTime,
+                    )
+                }
             )
             Log.d(TAG, "Scheduled ${prayers.size} prayers")
 
@@ -206,48 +174,6 @@ class PrayerAlarmPlugin : Plugin() {
             Log.e(TAG, "Failed to open app settings", e)
             call.reject("Failed to open app settings: ${e.message}")
         }
-    }
-
-    /**
-     * Check if battery optimization is enabled for this app.
-     * Returns true if the app WILL be killed by the system.
-     */
-    @PluginMethod
-    fun isBatteryOptimizationEnabled(call: PluginCall) {
-        val isEnabled = batteryHelper.isBatteryOptimizationEnabled()
-        Log.d(TAG, "Battery optimization enabled: $isEnabled")
-
-        call.resolve(JSObject().apply {
-            put("enabled", isEnabled)
-        })
-    }
-
-    /**
-     * Request battery optimization bypass.
-     * Opens system settings for user approval.
-     */
-    @PluginMethod
-    fun requestIgnoreBatteryOptimization(call: PluginCall) {
-        val success = batteryHelper.requestIgnoreBatteryOptimization()
-        Log.d(TAG, "Battery optimization bypass requested: $success")
-
-        call.resolve(JSObject().apply {
-            put("success", success)
-        })
-    }
-
-    /**
-     * Open manufacturer-specific auto-start settings.
-     * Required for Xiaomi, OPPO, Vivo, Samsung.
-     */
-    @PluginMethod
-    fun openAutoStartSettings(call: PluginCall) {
-        val success = batteryHelper.openAutoStartSettings()
-        Log.d(TAG, "Auto-start settings opened: $success")
-
-        call.resolve(JSObject().apply {
-            put("success", success)
-        })
     }
 
     /**
@@ -349,19 +275,6 @@ class PrayerAlarmPlugin : Plugin() {
         } catch (e: Exception) {
             call.reject("Failed to check shouldPlayAdhan: ${e.message}")
         }
-    }
-
-    /**
-     * Check if running on an aggressive manufacturer (Xiaomi, OPPO, Vivo, Samsung, Huawei).
-     */
-    @PluginMethod
-    fun isAggressiveManufacturer(call: PluginCall) {
-        val isAggressive = batteryHelper.isAggressiveManufacturer()
-        Log.d(TAG, "Aggressive manufacturer: $isAggressive")
-
-        call.resolve(JSObject().apply {
-            put("isAggressive", isAggressive)
-        })
     }
 
     /**

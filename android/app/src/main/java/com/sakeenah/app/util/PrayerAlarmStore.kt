@@ -17,6 +17,8 @@ object PrayerAlarmStore {
         val key: String,
         val name: String,
         val timeMs: Long,
+        val schedulePrePrayer: Boolean = true,
+        val schedulePrayerTime: Boolean = true,
     )
 
     @Synchronized
@@ -29,6 +31,8 @@ object PrayerAlarmStore {
                     put("key", entry.key)
                     put("name", entry.name)
                     put("timeMs", entry.timeMs)
+                    put("schedulePrePrayer", entry.schedulePrePrayer)
+                    put("schedulePrayerTime", entry.schedulePrayerTime)
                 })
             }
         preferences(context).edit().putString(ENTRIES_KEY, json.toString()).apply()
@@ -63,8 +67,10 @@ object PrayerAlarmStore {
                     val key = item.optString("key")
                     val name = item.optString("name")
                     val timeMs = item.optLong("timeMs", 0L)
+                    val schedulePrePrayer = item.optBoolean("schedulePrePrayer", true)
+                    val schedulePrayerTime = item.optBoolean("schedulePrayerTime", true)
                     if (key.isNotBlank() && name.isNotBlank() && timeMs > 0L) {
-                        add(Entry(key, name, timeMs))
+                        add(Entry(key, name, timeMs, schedulePrePrayer, schedulePrayerTime))
                     }
                 }
             }

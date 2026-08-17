@@ -12,22 +12,21 @@ const NativePrayerAlarm = registerPlugin<Record<string, (args: Record<string, un
  * - Survives Doze Mode and Deep Sleep
  * - Survives App Standby Buckets
  * - Survives device reboots (via BootReceiver)
- * - 24-Hour Refresh Chain prevents Android from archiving the app
- * - Battery Optimization Bypass for long-term reliability (> 1 week)
+ * - 24-Hour Refresh Chain keeps the next event persisted across reboot
  *
  * Usage:
  * - Call scheduleAllPrayers() when app starts or prayer times change
  * - Call requestExactAlarmPermission() on Android 12+ (first run)
- * - Call requestIgnoreBatteryOptimization() for long-term reliability
- * - Call openAutoStartSettings() on Xiaomi/OPPO/Vivo devices
  */
 
 type PrayerKey = 'fajr' | 'dhuhr' | 'asr' | 'maghrib' | 'isha';
 
-interface PrayerSchedule {
+export interface PrayerSchedule {
   key: PrayerKey;
   name: string;
   timeMs: number;
+  schedulePrePrayer?: boolean;
+  schedulePrayerTime?: boolean;
 }
 
 class PrayerAlarmServiceImpl {
@@ -98,30 +97,6 @@ class PrayerAlarmServiceImpl {
   }
 
   /**
-   * Schedule a single prayer alarm.
-   *
-   * @param prayerKey Prayer key (fajr, dhuhr, asr, maghrib, isha)
-   * @param prayerName Arabic name (e.g., "الفجر")
-   * @param prayerTimeMs Prayer time in milliseconds (epoch)
-   * @returns true if scheduled successfully
-   */
-  async schedulePrayer(prayerKey: PrayerKey, prayerName: string, prayerTimeMs: number): Promise<boolean> {
-    if (!this.isNative) return false;
-
-    try {
-      const result = await this.callPlugin('schedulePrayer', {
-        prayerKey,
-        prayerName,
-        prayerTimeMs,
-      });
-      return result?.success ?? false;
-    } catch (e) {
-      console.warn('PrayerAlarmService.schedulePrayer failed:', e);
-      return false;
-    }
-  }
-
-  /**
    * Cancel ALL scheduled prayer alarms.
    * Use this before rescheduling (e.g., when location changes).
    */
@@ -182,80 +157,6 @@ class PrayerAlarmServiceImpl {
       return result?.success ?? false;
     } catch (e) {
       console.warn('PrayerAlarmService.openAppSettings failed:', e);
-      return false;
-    }
-  }
-
-  /**
-   * Check if battery optimization is enabled for this app.
-   * If true, the app WILL be killed by the system after a few days.
-   *
-   * @returns true if battery optimization is ACTIVE (bad)
-   */
-  async isBatteryOptimizationEnabled(): Promise<boolean> {
-    if (!this.isNative) return false;
-
-    try {
-      const result = await this.callPlugin('isBatteryOptimizationEnabled');
-      return result?.enabled ?? false;
-    } catch (e) {
-      console.warn('PrayerAlarmService.isBatteryOptimizationEnabled failed:', e);
-      return false;
-    }
-  }
-
-  /**
-   * Request battery optimization bypass.
-   * Opens system settings for user to approve.
-   * Once approved, the app is whitelisted permanently.
-   *
-   * @returns true if the settings page was opened
-   */
-  async requestIgnoreBatteryOptimization(): Promise<boolean> {
-    if (!this.isNative) return true;
-
-    try {
-      const result = await this.callPlugin('requestIgnoreBatteryOptimization');
-      return result?.success ?? false;
-    } catch (e) {
-      console.warn('PrayerAlarmService.requestIgnoreBatteryOptimization failed:', e);
-      return false;
-    }
-  }
-
-  /**
-   * Open manufacturer-specific auto-start settings.
-   * CRITICAL for Xiaomi (MIUI), OPPO (ColorOS), Vivo (FuntouchOS), Samsung.
-   * Without this, the app will be killed even with Battery Optimization Bypass.
-   *
-   * @returns true if the settings page was opened
-   */
-  async openAutoStartSettings(): Promise<boolean> {
-    if (!this.isNative) return false;
-
-    try {
-      const result = await this.callPlugin('openAutoStartSettings');
-      return result?.success ?? false;
-    } catch (e) {
-      console.warn('PrayerAlarmService.openAutoStartSettings failed:', e);
-      return false;
-    }
-  }
-
-  /**
-   * Check if running on an aggressive manufacturer known for killing apps.
-   * Affected: Xiaomi, OPPO, Vivo, Samsung, Huawei.
-   *
-   * @returns true if on an aggressive manufacturer
-   */
-  async isAggressiveManufacturer(): Promise<boolean> {
-    if (!this.isNative) return false;
-
-    try {
-      const result = await this.callPlugin('isAggressiveManufacturer');
-      return result?.isAggressive ?? false;
-    } catch (e) {
-      console.warn('PrayerAlarmService.isAggressiveManufacturer failed:', e);
       return false;
     }
   }

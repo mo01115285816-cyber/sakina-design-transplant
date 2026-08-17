@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.sakeenah.app.util.AlarmScheduler
+import com.sakeenah.app.util.PrayerScheduleEntry
 import com.sakeenah.app.util.PrayerAlarmStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +42,7 @@ class BootReceiver : BroadcastReceiver() {
                 scheduler.cancelAllPrayers()
                 scheduler.scheduleAllPrayers(
                     entries.map { entry ->
-                        Triple(entry.key, entry.name, entry.timeMs)
+                        PrayerScheduleEntry(entry.key, entry.name, entry.timeMs, entry.schedulePrePrayer, entry.schedulePrayerTime)
                     }
                 )
                 Log.i(TAG, "Restored ${entries.size} persisted prayer alarms after boot")

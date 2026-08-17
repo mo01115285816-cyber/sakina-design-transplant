@@ -26,6 +26,14 @@ import java.util.Calendar
  * - 24-Hour Refresh Chain: reschedules next day's alarms at Isha and Fajr
  * - Deterministic request codes to avoid duplicate/cancel issues
  */
+data class PrayerScheduleEntry(
+    val key: String,
+    val name: String,
+    val timeMs: Long,
+    val schedulePrePrayer: Boolean,
+    val schedulePrayerTime: Boolean,
+)
+
 class AlarmScheduler(private val context: Context) {
 
     companion object {
@@ -64,7 +72,13 @@ class AlarmScheduler(private val context: Context) {
      * @param prayerName Arabic name (e.g., "الفجر")
      * @param prayerTimeMs Prayer time in milliseconds (epoch)
      */
-    fun schedulePrayer(prayerKey: String, prayerName: String, prayerTimeMs: Long) {
+    private fun schedulePrayer(
+        prayerKey: String,
+        prayerName: String,
+        prayerTimeMs: Long,
+        schedulePrePrayer: Boolean = true,
+        schedulePrayerTime: Boolean = true,
+    ) {
         val prayerIndex = getPrayerIndex(prayerKey)
         val calendar = Calendar.getInstance().apply {
             timeInMillis = prayerTimeMs
@@ -73,7 +87,7 @@ class AlarmScheduler(private val context: Context) {
 
         // 1. Schedule pre-prayer alarm (10 minutes before)
         val prePrayerTimeMs = prayerTimeMs - (PRE_PRAYER_MINUTES * 60 * 1000)
-        if (prePrayerTimeMs > System.currentTimeMillis()) {
+        if (schedulePrePrayer && prePrayerTimeMs > System.currentTimeMillis()) {
             scheduleExactAlarm(
                 requestCode = getRequestCode(dayOfYear, prayerIndex, isPrePrayer = true),
                 triggerTimeMs = prePrayerTimeMs,
@@ -85,8 +99,8 @@ class AlarmScheduler(private val context: Context) {
             Log.d(TAG, "Scheduled pre-prayer alarm for $prayerName at ${formatTime(prePrayerTimeMs)}")
         }
 
-        // 2. Schedule prayer time alarm
-        if (prayerTimeMs > System.currentTimeMillis()) {
+        // 2. Schedule prayer time alarm only when the user enabled it.
+        if (schedulePrayerTime && prayerTimeMs > System.currentTimeMillis()) {
             scheduleExactAlarm(
                 requestCode = getRequestCode(dayOfYear, prayerIndex, isPrePrayer = false),
                 triggerTimeMs = prayerTimeMs,
@@ -101,18 +115,24 @@ class AlarmScheduler(private val context: Context) {
 
     /**
      * Schedule ALL prayers for a specific date.
-     * Call this from BootReceiver and DailyRescheduler.
+     * Call this from BootReceiver after device restart.
      *
      * @param prayers List of (prayerKey, prayerName, prayerTimeMs) tuples
      */
-    fun scheduleAllPrayers(prayers: List<Triple<String, String, Long>>) {
+    fun scheduleAllPrayers(prayers: List<PrayerScheduleEntry>) {
         // Cancel all existing alarms first (to avoid duplicates)
         cancelAllPrayers()
 
-        for ((prayerKey, prayerName, prayerTimeMs) in prayers) {
-            schedulePrayer(prayerKey, prayerName, prayerTimeMs)
+        for (prayer in prayers) {
+            schedulePrayer(
+                prayer.key,
+                prayer.name,
+                prayer.timeMs,
+                prayer.schedulePrePrayer,
+                prayer.schedulePrayerTime,
+            )
         }
-        Log.d(TAG, "Scheduled ${prayers.size} prayers (${prayers.size * 2} alarms total)")
+        Log.d(TAG, "Reconciled ${prayers.size} prayer events")
     }
 
     /**
@@ -139,13 +159,13 @@ class AlarmScheduler(private val context: Context) {
     }
 
     /**
-     * Cancel ALL scheduled alarms (for rescheduling).
-     * Scans ±1 day range to cover edge cases.
+     * Cancel ALL scheduled alarms (for reconciliation).
+     * Scans the full day-of-year range to cover stale edge cases.
      */
     fun cancelAllPrayers() {
-        val today = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
-
-        for (day in (today - 1)..(today + 1)) {
+        // Request codes are keyed by day-of-year; scan the entire valid range
+        // so Jan 1/Dec 31 and stale restored alarms are also cleared.
+        for (day in 0..366) {
             for (prayerIndex in PRAYER_KEYS.indices) {
                 for (isPrePrayer in listOf(true, false)) {
                     val requestCode = getRequestCode(day, prayerIndex, isPrePrayer)

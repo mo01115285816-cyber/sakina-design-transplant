@@ -2,35 +2,202 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import type { AllPrayersPreferences, PrayerSettingsId, PrayerNotificationMode } from '@/types/prayer-settings';
 import { prayerKeyToSettingsId } from '@/types/prayer-settings';
+import { PrayerAlarmService } from './PrayerAlarmService';
+import type { PrayerSchedule } from './PrayerAlarmService';
+
+type ScheduledPrayer = {
+  key: string;
+  name: string;
+  timeMs: number;
+  schedulePrePrayer?: boolean;
+};
 
 export class PrayerNotificationsService {
+  private static scheduleQueue: Promise<void> = Promise.resolve();
+  private static scheduleVersion = 0;
+
   static isSupported(): boolean {
     return Capacitor.isPluginAvailable('LocalNotifications');
   }
 
-  // 1. طلب الإذن (يُستدعى عند بدء التطبيق)
-  static async requestPermission(): Promise<boolean> {
-    if (!this.isSupported()) {
-      console.log('Local Notifications are not supported on this platform.');
-      return false;
-    }
+  static async getPermissionStatus(): Promise<'granted' | 'denied' | 'prompt'> {
     try {
-      const current = await LocalNotifications.checkPermissions();
-      if (current.display === 'granted') return true;
-      if (current.display === 'denied') return false;
+      if (this.isSupported()) {
+        const current = await LocalNotifications.checkPermissions();
+        if (current.display === 'granted') return 'granted';
+        if (current.display === 'denied') return 'denied';
+        return 'prompt';
+      }
+      if (typeof Notification !== 'undefined') {
+        if (Notification.permission === 'granted') return 'granted';
+        if (Notification.permission === 'denied') return 'denied';
+      }
+      return 'prompt';
+    } catch (e) {
+      console.warn('Failed to check notification permissions:', e);
+      return 'denied';
+    }
+  }
 
-      const result = await LocalNotifications.requestPermissions();
-      return result.display === 'granted';
+  // طلب الإذن لا يُستدعى إلا من onboarding أو إجراء صريح من المستخدم.
+  static async requestPermission(): Promise<boolean> {
+    try {
+      const current = await this.getPermissionStatus();
+      if (current === 'granted') return true;
+      if (this.isSupported()) {
+        const result = await LocalNotifications.requestPermissions();
+        return result.display === 'granted';
+      }
+      if (typeof Notification !== 'undefined' && current === 'prompt') {
+        return (await Notification.requestPermission()) === 'granted';
+      }
+      return false;
     } catch (e) {
       console.warn('Failed to request notification permissions:', e);
       return false;
     }
   }
 
+  private static deterministicNotificationId(kind: 'pre' | 'prayer' | 'secondary', prayer: ScheduledPrayer): number {
+    const input = `${kind}:${prayer.key}:${prayer.timeMs}`;
+    let hash = 2166136261;
+    for (let index = 0; index < input.length; index += 1) {
+      hash ^= input.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return 50000 + (hash >>> 0) % 1800000000;
+  }
+
+  /**
+   * Serialize and reconcile the complete daily schedule. The latest run wins;
+   * all platforms use one logical identity per prayer event.
+   */
+  static async syncPrayerSchedule({
+    prayers,
+    prayerPrefs,
+    prayerTimeNotificationsEnabled,
+    prePrayerRemindersEnabled,
+    secondaryReminders,
+  }: {
+    prayers: ScheduledPrayer[];
+    prayerPrefs: AllPrayersPreferences;
+    prayerTimeNotificationsEnabled: boolean;
+    prePrayerRemindersEnabled: boolean;
+    secondaryReminders?: { mulk?: string; baqarah?: string };
+  }): Promise<{ ok: boolean; exactAlarmRequired?: boolean }> {
+    const version = ++this.scheduleVersion;
+    this.scheduleQueue = this.scheduleQueue.then(async () => {
+      if (version !== this.scheduleVersion) return;
+
+      await this.clearAllScheduled();
+      const futurePrayers = prayers.filter((prayer) => prayer.timeMs > Date.now());
+      if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+        const canSchedule = await PrayerAlarmService.canScheduleExactAlarms();
+        if (!canSchedule) return;
+
+        const nativePrayers: PrayerSchedule[] = futurePrayers.map((prayer) => {
+          const settingsId = prayerKeyToSettingsId(prayer.key);
+          const enabled = settingsId ? prayerPrefs[settingsId]?.enabled ?? true : true;
+          return {
+            ...prayer,
+            key: prayer.key as PrayerSchedule['key'],
+            schedulePrayerTime: prayerTimeNotificationsEnabled && enabled,
+            schedulePrePrayer: prePrayerRemindersEnabled,
+          };
+        });
+
+        if (version !== this.scheduleVersion || nativePrayers.length === 0) return;
+        await PrayerAlarmService.scheduleAllPrayers(nativePrayers);
+
+        if (this.isSupported()) {
+          const secondary = this.buildSecondaryNotifications(secondaryReminders);
+          if (secondary.length > 0 && version === this.scheduleVersion) {
+            await LocalNotifications.schedule({ notifications: secondary as any });
+          }
+        }
+        return;
+      }
+
+      if (!this.isSupported()) return;
+      const notifications = futurePrayers.flatMap((prayer) => {
+        const reminderTime = new Date(prayer.timeMs - 10 * 60 * 1000);
+        const items: Array<Record<string, unknown>> = [];
+        if (prePrayerRemindersEnabled && reminderTime.getTime() > Date.now()) {
+          items.push({
+            id: this.deterministicNotificationId('pre', prayer),
+            title: `أوشك الميقات • صلاة ${prayer.name}`,
+            body: 'تهيأ بوضوئك، متبقي على الأذان.',
+            schedule: { at: reminderTime },
+            sound: null,
+            channelId: 'beep_channel',
+            actionTypeId: 'PRAYER_REMINDER',
+          });
+        }
+        const settingsId = prayerKeyToSettingsId(prayer.key);
+        const enabled = settingsId ? prayerPrefs[settingsId]?.enabled ?? true : true;
+        if (prayerTimeNotificationsEnabled && enabled) {
+          items.push({
+            id: this.deterministicNotificationId('prayer', prayer),
+            title: `آن أوان صلاة ${prayer.name}`,
+            body: 'حان الآن وقت الصلاة. تقبل الله طاعاتكم.',
+            schedule: { at: new Date(prayer.timeMs) },
+            sound: null,
+            channelId: 'beep_channel',
+            actionTypeId: 'PRAYER_TIME',
+          });
+        }
+        return items;
+      });
+      notifications.push(...this.buildSecondaryNotifications(secondaryReminders));
+      if (version !== this.scheduleVersion || notifications.length === 0) return;
+      await LocalNotifications.schedule({ notifications: notifications as any });
+    }).catch((error) => {
+      console.warn('Prayer schedule reconciliation failed:', error);
+    });
+
+    await this.scheduleQueue;
+    const exactAlarmRequired = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
+      ? !(await PrayerAlarmService.canScheduleExactAlarms())
+      : false;
+    return { ok: !exactAlarmRequired, exactAlarmRequired };
+  }
+
+  private static buildSecondaryNotifications(secondary?: { mulk?: string; baqarah?: string }): Array<Record<string, unknown>> {
+    const notifications: Array<Record<string, unknown>> = [];
+    if (secondary?.mulk) {
+      const targetDate = this.calculateNextOccurrence(secondary.mulk);
+      notifications.push({
+        id: 888881,
+        title: 'تذكير سورة الملك',
+        body: 'حان الآن وقت قراءة سورة الملك المنجية من عذاب القبر.',
+        schedule: { at: targetDate },
+        sound: 'beep.wav',
+        channelId: 'beep_channel',
+        actionTypeId: 'MULK_REMINDER',
+      });
+    }
+    if (secondary?.baqarah) {
+      const targetDate = this.calculateNextOccurrence(secondary.baqarah);
+      notifications.push({
+        id: 888882,
+        title: 'تذكير سورة البقرة',
+        body: 'حان الآن وقت قراءة سورة البقرة المباركة.',
+        schedule: { at: targetDate },
+        sound: 'beep.wav',
+        channelId: 'beep_channel',
+        actionTypeId: 'BAQARAH_REMINDER',
+      });
+    }
+    return notifications;
+  }
+
   // 2. إلغاء جميع الإشعارات المجدولة لتفادي التكرار
   static async clearAllScheduled() {
-    if (!this.isSupported()) return;
     try {
+      if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android') {
+        await PrayerAlarmService.cancelAll();
+      }
+      if (!this.isSupported()) return;
       const pending = await LocalNotifications.getPending();
       if (pending.notifications.length > 0) {
         await LocalNotifications.cancel({ notifications: pending.notifications });
@@ -71,54 +238,6 @@ export class PrayerNotificationsService {
         };
       default:
         return { channelId: 'beep_channel', sound: 'beep.wav' };
-    }
-  }
-
-  /**
-   * 3. جدولة تذكير قبل الصلاة (10 دقائق) — ALWAYS enabled
-   * On native Android: Uses PrePrayerReminderPlugin for live Chronometer countdown
-   * On web: Falls back to static LocalNotification
-   */
-  static async schedulePrePrayerReminder(
-    prayerName: string,
-    prayerTime: Date,
-    _verseText: string,
-    _prayerPrefs?: AllPrayersPreferences,
-    prayerKey?: string
-  ) {
-    if (!this.isSupported()) return;
-
-    const reminderTime = new Date(prayerTime.getTime() - 10 * 60 * 1000);
-    if (reminderTime.getTime() <= Date.now()) return;
-
-    // Use the native Chronometer plugin on Android (live countdown)
-    if (prayerKey) {
-      try {
-        const { PrayerAlarmService } = await import('./PrayerAlarmService');
-        const scheduled = await PrayerAlarmService.schedulePrayer(prayerKey as any, prayerName, prayerTime.getTime());
-        if (scheduled) return; // Success on native, no need for fallback
-      } catch (e) {
-        console.warn(`PrePrayerReminder plugin failed, falling back to static:`, e);
-      }
-    }
-
-    // Fallback: static notification for web or if plugin fails
-    try {
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: Math.floor(Math.random() * 1000000) + 500000,
-            title: `أوشك الميقات • صلاة ${prayerName}`,
-            body: 'تهيأ بوضوئك، متبقي على الأذان.',
-            schedule: { at: reminderTime },
-            sound: null,
-            channelId: 'beep_channel',
-            actionTypeId: 'PRAYER_REMINDER',
-          }
-        ]
-      });
-    } catch (e) {
-      console.warn(`Failed to schedule pre-prayer reminder for ${prayerName}:`, e);
     }
   }
 
@@ -180,84 +299,7 @@ export class PrayerNotificationsService {
     return texts[randomIndex];
   }
 
-  /**
-   * 4. إشعار عند موعد الصلاة — with per-prayer mode support
-   */
-  static async schedulePrayerTime(
-    prayerName: string,
-    prayerTime: Date,
-    _verseText: string,
-    prayerPrefs?: AllPrayersPreferences,
-    prayerKey?: string
-  ) {
-    if (!this.isSupported()) return;
-
-    // Resolve preference for this prayer
-    let mode: PrayerNotificationMode = 'beep';
-    let enabled = true;
-
-    if (prayerPrefs && prayerKey) {
-      const settingsId = prayerKeyToSettingsId(prayerKey);
-      if (settingsId && prayerPrefs[settingsId]) {
-        mode = prayerPrefs[settingsId].mode;
-        enabled = prayerPrefs[settingsId].enabled;
-      }
-    }
-
-    // If disabled: don't schedule
-    if (!enabled) return;
-
-    const bodyText = prayerKey ? this.getRandomPrayerText(prayerKey) : '';
-    const notificationTitle = `آن أوان صلاة ${prayerName}`;
-
-    // If silent mode: still schedule (shows notification silently)
-    if (mode === 'silent') {
-      if (prayerTime.getTime() <= Date.now()) return;
-      try {
-        await LocalNotifications.schedule({
-          notifications: [
-            {
-              id: Math.floor(Math.random() * 1000000) + 1000000,
-              title: notificationTitle,
-              body: bodyText,
-              schedule: { at: prayerTime },
-              sound: null,
-              channelId: 'beep_channel',
-              actionTypeId: 'PRAYER_TIME',
-            }
-          ]
-        });
-      } catch (e) {
-        console.warn(`Failed to schedule silent prayer time for ${prayerName}:`, e);
-      }
-      return;
-    }
-
-    if (prayerTime.getTime() <= Date.now()) return;
-
-    const config = this.resolveNotificationConfig(mode, enabled);
-
-    try {
-      await LocalNotifications.schedule({
-        notifications: [
-          {
-            id: Math.floor(Math.random() * 1000000) + 1000000,
-            title: notificationTitle,
-            body: bodyText,
-            schedule: { at: prayerTime },
-            sound: config.sound,
-            channelId: config.channelId,
-            actionTypeId: 'PRAYER_TIME',
-            ...config.extra,
-          }
-        ]
-      });
-    } catch (e) {
-      console.warn(`Failed to schedule prayer time notification for ${prayerName}:`, e);
-    }
-  }
-
-  // 5. إشعار تجريبي فوري لتسهيل التحقق والتحكم
+  // إشعار تجريبي فوري لتسهيل التحقق والتحكم
   static async scheduleTestNotification(): Promise<boolean> {
     if (!this.isSupported()) {
       // Browser Web Fallback
@@ -380,7 +422,11 @@ export class PrayerNotificationsService {
       await LocalNotifications.schedule({
         notifications: [
           {
-            id: Math.floor(Math.random() * 1000000),
+            id: this.deterministicNotificationId('secondary', {
+              key: prayerId,
+              name: prayerName,
+              timeMs: prayerTime.getTime(),
+            }),
             title: `حان الآن وقت ${prayerName}`,
             body: `حان الآن وقت ${prayerName}. تقبل الله طاعاتكم.`,
             schedule: { at: prayerTime },

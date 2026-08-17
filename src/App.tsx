@@ -32,7 +32,6 @@ import {
   calculateSecondaryPrayerTimes,
   formatPrayerDate,
   getLocalTimeMinutes,
-  getLocalNowForCountdown,
 } from "@/utils/prayerTimes";
 import type { PrayerItem } from "@/utils/prayerTimes";
 import ManualLocationDialog from "@/components/ManualLocationDialog";
@@ -50,6 +49,11 @@ import { PrayerCardSpeakerIcon } from "@/components/PrayerCardSpeakerIcon";
 import { WeatherDisplay } from "@/components/WeatherDisplay";
 import { HadithCard } from "@/components/HadithCard";
 import { PrayerNotificationsService } from "@/services/PrayerNotificationsService";
+import {
+  createPrayerReminderEvent,
+  getReminderRemainingSeconds,
+  getReminderState,
+} from "@/services/prayer-reminder-state";
 import BatteryOptimizationModal from "@/components/BatteryOptimizationModal";
 import type { AllPrayersPreferences, PrayerSettingsId } from "@/types/prayer-settings";
 import { loadPrayerPreferences, savePrayerPreferences, prayerKeyToSettingsId } from "@/types/prayer-settings";
@@ -154,6 +158,7 @@ export default function App() {
   const [showAzkarCounter, setShowAzkarCounter] = useState(false);
   const [showAsmaAlHusna, setShowAsmaAlHusna] = useState(false);
   const [showBatteryModal, setShowBatteryModal] = useState(false);
+  const [permissionRevision, setPermissionRevision] = useState(0);
   const [azkarCounterType, setAzkarCounterType] =
     useState<AzkarCounterType>("morning");
   const [hisnCategory, setHisnCategory] = useState<string>("");
@@ -167,6 +172,7 @@ export default function App() {
   const [activePrayerSettings, setActivePrayerSettings] = useState<PrayerSettingsId | null>(null);
   const [isSecondaryTimesExpanded, setIsSecondaryTimesExpanded] = useState(false);
 
+  const [locationPermissionFlowDone, setLocationPermissionFlowDone] = useState(false);
   const [isAutoLocation, setIsAutoLocation] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem("app_isAutoLocation");
@@ -237,7 +243,14 @@ export default function App() {
     }
   });
 
-  const [isPrePrayerReminderEnabled, setIsPrePrayerReminderEnabled] = useState<boolean>(true);
+  const [isPrePrayerReminderEnabled, setIsPrePrayerReminderEnabled] = useState<boolean>(() => {
+    try {
+      const saved = localStorage.getItem("app_isPrePrayerReminderEnabled");
+      return saved !== null ? saved === "true" : true;
+    } catch {
+      return true;
+    }
+  });
 
   const [isPrayerReminderEnabled, setIsPrayerReminderEnabled] =
     useState<boolean>(() => {
@@ -322,34 +335,28 @@ export default function App() {
     };
   }, []);
 
-  // Check battery optimization on mount — show modal if needed
+  // Check only capabilities required by the prayer scheduler. Battery
+  // optimization exemption and vendor auto-start remain optional OS settings.
   useEffect(() => {
-    async function checkBatteryOptimization() {
+    async function checkPrayerCapabilities() {
       try {
-        const { PrayerAlarmService } = await import('@/services/PrayerAlarmService');
         const isNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
-        
-        if (!isNative) return;
+        if (!isNative || !locationPermissionFlowDone) return;
 
-        // Check if battery optimization is enabled
-        const batteryEnabled = await PrayerAlarmService.isBatteryOptimizationEnabled();
-        
-        // Check if user has already seen and dismissed the modal
-        const hasSeenModal = localStorage.getItem('sakeenah_battery_modal_seen');
-
-        // Show modal if battery optimization is enabled AND user hasn't permanently dismissed
-        if (batteryEnabled && hasSeenModal !== 'permanent') {
+        const notificationStatus = await PrayerNotificationsService.getPermissionStatus();
+        const { PrayerAlarmService } = await import('@/services/PrayerAlarmService');
+        const exactAlarmAvailable = await PrayerAlarmService.canScheduleExactAlarms();
+        if (notificationStatus !== 'granted' || !exactAlarmAvailable) {
           setShowBatteryModal(true);
         }
-      } catch (e) {
-        console.warn('Battery optimization check failed:', e);
+      } catch (error) {
+        console.warn('Prayer capability check failed:', error);
       }
     }
 
-    // Delay check to let splash screen show first
-    const timer = setTimeout(checkBatteryOptimization, 3000);
+    const timer = setTimeout(checkPrayerCapabilities, 3000);
     return () => clearTimeout(timer);
-  }, []);
+  }, [locationPermissionFlowDone, permissionRevision]);
 
   // Preload QCF fonts for all app verses (splash, home prayer reflections, settings)
   // at startup so verses render instantly with no flash.
@@ -398,6 +405,19 @@ export default function App() {
     ],
   );
 
+  const tomorrowSchedule = useMemo<PrayerItem[]>(
+    () => calculatePrayerTimes(new Date(now.getTime() + 24 * 60 * 60 * 1000), cityLat, cityLon, calcMethod, asrSchool),
+    [
+      now.getDate(),
+      now.getMonth(),
+      now.getFullYear(),
+      cityLat,
+      cityLon,
+      calcMethod,
+      asrSchool,
+    ],
+  );
+
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
@@ -413,60 +433,61 @@ export default function App() {
   }, [activeTab]);
 
   useEffect(() => {
-    let isMounted = true;
-    async function initNotifications() {
+    let disposed = false;
+
+    const reconcileNotifications = async () => {
       try {
-        const granted = await PrayerNotificationsService.requestPermission();
-        if (!isMounted) return;
-        
-        // Always clear old scheduled notifications first
-        await PrayerNotificationsService.clearAllScheduled();
+        // Keep permission acquisition separate from location acquisition so
+        // Android never receives competing system dialogs.
+        const permissionStatus = await PrayerNotificationsService.getPermissionStatus();
+        const granted = permissionStatus === 'granted';
+        if (disposed) return;
 
-        if (granted) {
-          // Schedule notifications for each prayer except sunrise
-          for (const prayer of prayerSchedule) {
-            if (prayer.key === "sunrise" || !prayer.date) continue;
+        const prayers = [...prayerSchedule, ...tomorrowSchedule]
+          .filter((prayer) => prayer.key !== "sunrise" && prayer.date)
+          .map((prayer) => ({
+            key: prayer.key,
+            name: prayer.name,
+            timeMs: prayer.date!.getTime(),
+          }))
+          .filter((prayer, index, all) => all.findIndex((candidate) => candidate.key === prayer.key && candidate.timeMs === prayer.timeMs) === index);
 
-            const reflection = prayerReflections[prayer.key];
-            const verseText = reflection 
-              ? (reflection.isQuran ? `﴿ ${reflection.text} ﴾ - ${reflection.source}` : `« ${reflection.text} » - ${reflection.source}`)
-              : "";
-
-            // Schedule pre-prayer reminder (ALWAYS enabled — mandatory 10-minute reminder)
-            await PrayerNotificationsService.schedulePrePrayerReminder(prayer.name, prayer.date, verseText, prayerPrefs, prayer.key);
-            
-            // Schedule prayer time adhan if enabled
-            if (isPrayerReminderEnabled) {
-              await PrayerNotificationsService.schedulePrayerTime(prayer.name, prayer.date, verseText, prayerPrefs, prayer.key);
-            }
-          }
-
-          // Schedule Surah Al-Mulk reminder if enabled
-          if (isMulkReminderEnabled) {
-            await PrayerNotificationsService.scheduleMulkReminder(mulkReminderTime);
-          }
-
-          // Schedule Surah Al-Baqarah reminder if enabled
-          if (isBaqarahReminderEnabled) {
-            await PrayerNotificationsService.scheduleBaqarahReminder(baqarahReminderTime);
-          }
+        if (!granted) {
+          await PrayerNotificationsService.clearAllScheduled();
+          return;
         }
+
+        await PrayerNotificationsService.syncPrayerSchedule({
+          prayers,
+          prayerPrefs,
+                    prayerTimeNotificationsEnabled: isPrayerReminderEnabled,
+          prePrayerRemindersEnabled: isPrePrayerReminderEnabled,
+          secondaryReminders:
+ {
+            mulk: isMulkReminderEnabled ? mulkReminderTime : undefined,
+            baqarah: isBaqarahReminderEnabled ? baqarahReminderTime : undefined,
+          },
+        });
       } catch (error) {
         console.warn("Notification scheduling failed:", error);
       }
-    }
-    initNotifications();
+    };
+
+    void reconcileNotifications();
     return () => {
-      isMounted = false;
+      disposed = true;
     };
   }, [
     prayerSchedule,
+    tomorrowSchedule,
     isPrayerReminderEnabled,
+    isPrePrayerReminderEnabled,
     isMulkReminderEnabled,
     mulkReminderTime,
     isBaqarahReminderEnabled,
     baqarahReminderTime,
-    prayerPrefs
+    prayerPrefs,
+    permissionRevision,
   ]);
 
   const dateStrings = useMemo(() => {
@@ -487,8 +508,6 @@ export default function App() {
   /* ── Computed state ── */
   const state = useMemo(() => {
     const nowMinutes = getLocalTimeMinutes(now, cityLat, cityLon);
-    const localNow = getLocalNowForCountdown(now, cityLat, cityLon);
-
     // 1. Core Logic: Exclude Sunrise from current/next state machine
     const mandatorySchedule = prayerSchedule.filter((p) => p.key !== "sunrise");
     const fajrMinutes = mandatorySchedule[0].minutes;
@@ -518,8 +537,25 @@ export default function App() {
     const elapsed = Math.max(0, nowPosition - currentStart);
     const progress = Math.min(1, elapsed / periodDuration);
 
-    const countdownSeconds = getCountdownSeconds(localNow, next.minutes);
+    const nextPrayerTarget = (() => {
+      const sameDayTarget = next.date;
+      if (sameDayTarget && sameDayTarget.getTime() > now.getTime()) return sameDayTarget;
+
+      const tomorrowSchedule = calculatePrayerTimes(
+        new Date(now.getTime() + 24 * 60 * 60 * 1000),
+        cityLat,
+        cityLon,
+        calcMethod,
+        asrSchool,
+      );
+      return tomorrowSchedule.find((prayer) => prayer.key === next.key)?.date
+        ?? (sameDayTarget ? new Date(sameDayTarget.getTime() + 24 * 60 * 60 * 1000) : now);
+    })();
+    const countdownSeconds = getCountdownSeconds(now, nextPrayerTarget);
     const countdownLabel = formatCountdown(countdownSeconds);
+    const reminderEvent = createPrayerReminderEvent(next.key, nextPrayerTarget.getTime());
+    const reminderState = getReminderState(reminderEvent, now.getTime());
+    const reminderRemainingSeconds = getReminderRemainingSeconds(reminderEvent, now.getTime());
 
     // 4. Unified Data Flow: Augment original schedule with statuses
     const augmentedSchedule = prayerSchedule.map((prayer) => {
@@ -546,6 +582,8 @@ export default function App() {
       next,
       progress,
       countdownLabel,
+      reminderState,
+      reminderRemainingSeconds,
       hijriDate: dateStrings.hijriDate,
       gregorianDate: dateStrings.gregorianDate,
       background: backgrounds[current.key],
@@ -773,15 +811,35 @@ export default function App() {
       setIsAutoLocation(false);
       setLocationError("تعذر تحديد موقعك الآن. استخدم الموقع المحفوظ أو اختر موقعًا يدويًا، ويمكنك فتح إعدادات الموقع للمحاولة مرة أخرى.");
     }
-  }, [applyDetectedLocation, handleCitySelected, requestLocationPermission]);
+    }, [applyDetectedLocation, handleCitySelected, requestLocationPermission]);
 
-  // Request the required foreground permissions together on first launch, then locate.
+  const refreshLocationAfterResume = useCallback(async () => {
+    try {
+      const permission = await Geolocation.checkPermissions();
+      const granted = permission.location === "granted" || permission.coarseLocation === "granted";
+      if (!granted) return;
+
+      const position = await Geolocation.getCurrentPosition({
+        enableHighAccuracy: false,
+        timeout: 8000,
+        maximumAge: 300000,
+        enableLocationFallback: true,
+      });
+      await applyDetectedLocation(position.coords.latitude, position.coords.longitude);
+    } catch (error) {
+      console.warn("Foreground location refresh failed:", error);
+    }
+  }, [applyDetectedLocation]);
+
+  // Location is requested on first launch. Notification permission is handled
+  // by the dedicated capability onboarding, not in parallel with GPS.
   useEffect(() => {
-    if (!isAutoLocation) return;
-    void Promise.allSettled([
-      handleRetryGPS(),
-      PrayerNotificationsService.requestPermission(),
-    ]);
+    if (!isAutoLocation) {
+      setLocationPermissionFlowDone(true);
+      return;
+    }
+    setLocationPermissionFlowDone(false);
+    void handleRetryGPS().finally(() => setLocationPermissionFlowDone(true));
   }, [handleRetryGPS, isAutoLocation]);
 
   // Refresh location after returning from background so travel/timezone changes apply immediately.
@@ -791,7 +849,7 @@ export default function App() {
     let disposed = false;
     let listener: { remove: () => Promise<void> } | null = null;
     void CapacitorApp.addListener("appStateChange", ({ isActive }) => {
-      if (!disposed && isActive) void handleRetryGPS();
+      if (!disposed && isActive) void refreshLocationAfterResume();
     }).then((handle) => {
       if (disposed) void handle.remove();
       else listener = handle;
@@ -803,7 +861,7 @@ export default function App() {
       disposed = true;
       if (listener) void listener.remove();
     };
-  }, [handleRetryGPS, isAutoLocation]);
+  }, [refreshLocationAfterResume, isAutoLocation]);
 
   // Keep prayer times aligned with movement while auto-location is enabled.
   useEffect(() => {
@@ -876,7 +934,11 @@ export default function App() {
       "app_isPrayerReminderEnabled",
       isPrayerReminderEnabled.toString(),
     );
-  }, [isPrayerReminderEnabled]);
+    localStorage.setItem(
+      "app_isPrePrayerReminderEnabled",
+      isPrePrayerReminderEnabled.toString(),
+    );
+  }, [isPrayerReminderEnabled, isPrePrayerReminderEnabled]);
 
   useEffect(() => {
     localStorage.setItem(
@@ -949,7 +1011,12 @@ export default function App() {
       <div dir="rtl" className="min-h-screen w-full overflow-x-hidden bg-[#ece7de] text-[#2b1a10]">
       {/* ── Battery Optimization Modal ── */}
       {showBatteryModal && (
-        <BatteryOptimizationModal onDismiss={() => setShowBatteryModal(false)} />
+        <BatteryOptimizationModal
+          onDismiss={(refresh = false) => {
+            setShowBatteryModal(false);
+            if (refresh) setPermissionRevision((revision) => revision + 1);
+          }}
+        />
       )}
 
       {/* ── Azkar Counter Overlay (full screen) ── */ }

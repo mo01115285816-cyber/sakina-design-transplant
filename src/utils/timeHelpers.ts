@@ -1,4 +1,4 @@
-import type { PrayerItem } from "@/utils/prayerTimes";
+import type { PrayerItem } from "./prayerTimes";
 
 export function getDayOfYear(date: Date): number {
   const start = new Date(date.getFullYear(), 0, 0);
@@ -13,11 +13,13 @@ export function getCurrentPrayerIndex(nowMinutes: number, schedule: PrayerItem[]
   return schedule.length - 1;
 }
 
-export function getCountdownSeconds(localNow: Date, targetMinutes: number) {
-  const target = new Date(localNow);
-  target.setUTCHours(Math.floor(targetMinutes / 60), targetMinutes % 60, 0, 0);
-  if (target <= localNow) target.setUTCDate(target.getUTCDate() + 1);
-  return Math.max(0, Math.floor((target.getTime() - localNow.getTime()) / 1000));
+/**
+ * Derive the countdown from two absolute timestamps. The caller must provide
+ * a target that belongs to the desired prayer event; ticks are never the
+ * source of truth.
+ */
+export function getCountdownSeconds(now: Date, target: Date): number {
+  return Math.ceil((target.getTime() - now.getTime()) / 1000);
 }
 
 export function formatCountdown(totalSeconds: number) {
