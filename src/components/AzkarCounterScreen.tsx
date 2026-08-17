@@ -25,38 +25,29 @@ const titleMap: Record<string, string> = {
   post_prayer: "أذكار بعد الصلاة",
 };
 
-// Animation variants for Apple-style fluid vertical sliding cards
+// Short, deterministic motion for zikr navigation. Only transform and opacity
+// are animated so the card stays crisp and avoids expensive blur/paint work.
 const cardVariants = {
   enter: (direction: "up" | "down") => ({
-    y: direction === "up" ? 360 : -360,
-    opacity: 0,
-    scale: 0.94,
-    filter: "blur(2px)",
+    y: direction === "up" ? 72 : -72,
+    opacity: 0.82,
+    scale: 0.99,
   }),
   center: {
     y: 0,
     opacity: 1,
     scale: 1,
-    filter: "blur(0px)",
-    transition: {
-      type: "spring" as const,
-      stiffness: 220,
-      damping: 24,
-      mass: 0.8,
-    },
   },
   exit: (direction: "up" | "down") => ({
-    y: direction === "up" ? -360 : 360,
+    y: direction === "up" ? -72 : 72,
     opacity: 0,
-    scale: 0.94,
-    filter: "blur(2px)",
-    transition: {
-      type: "spring" as const,
-      stiffness: 220,
-      damping: 24,
-      mass: 0.8,
-    },
+    scale: 0.99,
   }),
+};
+
+const cardMotionTransition = {
+  duration: 0.16,
+  ease: [0.23, 1, 0.32, 1] as const,
 };
 
 export default function AzkarCounterScreen({
@@ -176,17 +167,6 @@ export default function AzkarCounterScreen({
     triggerToast(
       nextVal ? "تم تفعيل الانتقال التلقائي" : "تم إيقاف الانتقال التلقائي",
     );
-
-    // If transitioning ON and current zikr is already completed, schedule immediate jump
-    if (nextVal && isComplete && !isLast) {
-      if (transitionTimerRef.current) {
-        clearTimeout(transitionTimerRef.current);
-      }
-      transitionTimerRef.current = setTimeout(() => {
-        setDirection("up");
-        setCurrentIndex((prev) => prev + 1);
-      }, 500);
-    }
   };
 
   // Helper to trigger a beautiful temporary toast message
@@ -202,7 +182,7 @@ export default function AzkarCounterScreen({
     }
   }, [toastMessage]);
 
-  // Reset count when index changes
+  // Reset the current item state when navigation changes.
   useEffect(() => {
     setCurrentCount(0);
     setShowSource(false);
@@ -211,6 +191,29 @@ export default function AzkarCounterScreen({
       transitionTimerRef.current = null;
     }
   }, [currentIndex]);
+
+  // One cancellable auto-advance path. This also handles enabling auto mode
+  // while the current zikr is already complete.
+  useEffect(() => {
+    if (!autoTransition || !isComplete || isLast) return;
+
+    if (transitionTimerRef.current) {
+      clearTimeout(transitionTimerRef.current);
+    }
+
+    transitionTimerRef.current = setTimeout(() => {
+      setDirection("up");
+      setCurrentIndex((prev) => prev + 1);
+      transitionTimerRef.current = null;
+    }, 350);
+
+    return () => {
+      if (transitionTimerRef.current) {
+        clearTimeout(transitionTimerRef.current);
+        transitionTimerRef.current = null;
+      }
+    };
+  }, [autoTransition, isComplete, isLast]);
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -302,15 +305,7 @@ export default function AzkarCounterScreen({
     setCurrentCount(nextCount);
     if (nextCount >= item.count) {
       playCompleteFeedback();
-      if (autoTransition && !isLast) {
-        if (transitionTimerRef.current) {
-          clearTimeout(transitionTimerRef.current);
-        }
-        transitionTimerRef.current = setTimeout(() => {
-          setDirection("up");
-          setCurrentIndex((prev) => prev + 1);
-        }, 700);
-      }
+      // Auto-advance is scheduled by the single cancellable effect above.
     } else {
       playClickFeedback();
     }
@@ -350,7 +345,7 @@ export default function AzkarCounterScreen({
       initial={{ opacity: 0, y: "100%" }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: "100%" }}
-      transition={{ type: "spring", damping: 28, stiffness: 220 }}
+      transition={cardMotionTransition}
       dir="rtl"
       className="fixed inset-0 z-50 flex flex-col bg-[#ece7de] md:max-w-[430px] md:mx-auto md:shadow-[0_24px_64px_rgba(43,26,16,0.3)] md:my-6 md:rounded-[40px] md:border md:border-white/20 overflow-hidden"
     >
@@ -409,15 +404,9 @@ export default function AzkarCounterScreen({
         </button>
 
         {/* Card Stack Deck Frame */}
-        <div className="relative w-full h-[390px] flex items-center justify-center">
-          {/* Layered Card 1 (Bottom stacked) */}
-          <div className="absolute top-2 bottom-[-10px] inset-x-5 -z-10 cut-crystal-satin rounded-[28px] scale-[0.96] origin-bottom transition-all duration-300 pointer-events-none" />
-
-          {/* Layered Card 2 (Bottom stacked further) */}
-          <div className="absolute top-4 bottom-[-20px] inset-x-10 -z-20 cut-crystal-satin rounded-[28px] scale-[0.92] origin-bottom transition-all duration-300 pointer-events-none" />
-
-          {/* Active Sliding Card */}
-          <AnimatePresence custom={direction}>
+        <div className="relative flex h-[390px] w-full items-center justify-center">
+          {/* One active card only: no stacked layers to split during a swipe. */}
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
             <motion.div
               key={currentIndex}
               custom={direction}
@@ -425,20 +414,21 @@ export default function AzkarCounterScreen({
               initial="enter"
               animate="center"
               exit="exit"
+              transition={cardMotionTransition}
               onClick={() => handleTap()}
               drag="y"
               dragConstraints={{ top: 0, bottom: 0 }}
-              dragElastic={0.6}
+              dragElastic={0.25}
               onDragEnd={(_event, info) => {
                 const offsetY = info.offset.y;
                 const velocityY = info.velocity.y;
-                if (offsetY < -100 || velocityY < -500) {
+                if (offsetY < -72 || velocityY < -420) {
                   handleNext();
-                } else if (offsetY > 100 || velocityY > 500) {
+                } else if (offsetY > 72 || velocityY > 420) {
                   handlePrev();
                 }
               }}
-              className="absolute inset-0 w-full h-full cut-crystal-satin p-6 md:p-8 rounded-[28px] shadow-lg flex flex-col justify-between cursor-pointer select-none overflow-hidden touch-none"
+              className="absolute inset-0 flex h-full w-full select-none flex-col justify-between overflow-hidden rounded-[28px] cut-crystal-satin p-6 shadow-lg will-change-transform cursor-pointer touch-none md:p-8"
               style={{
                 touchAction: "none",
               }}
@@ -579,18 +569,23 @@ export default function AzkarCounterScreen({
 
         {/* Auto Transition Toggle */}
         <button
+          type="button"
+          aria-pressed={autoTransition}
           onClick={(e) => {
             e.stopPropagation();
             toggleAutoTransition();
           }}
-          className={`px-5 py-2.5 cut-crystal-capsule font-bold text-[12.5px] shadow-sm flex items-center justify-center gap-2 ${
+          className={`flex items-center justify-center gap-2 rounded-[24px] border px-5 py-2.5 text-[12.5px] font-bold shadow-[0_4px_14px_rgba(43,26,16,0.08)] transition-colors duration-150 active:scale-[0.98] ${
             autoTransition
-              ? "bg-[#b88a4f] border-[#b88a4f] text-white shadow-[#b88a4f]/15"
-              : "text-[#7f6a55] hover:text-[#2b1a10]"
+              ? "border-[#b88a4f] bg-[#b88a4f] text-white"
+              : "border-[#d8c9b8] bg-[#f7f2ea] text-[#7f6a55] hover:border-[#b88a4f] hover:text-[#2b1a10]"
           }`}
         >
-          <div
-            className={`h-1.5 w-1.5 rounded-full ${autoTransition ? "bg-white animate-pulse" : "bg-[#7f6a55]"}`}
+          <span
+            aria-hidden="true"
+            className={`h-2 w-2 rounded-full transition-colors duration-150 ${
+              autoTransition ? "bg-white" : "bg-[#b88a4f]"
+            }`}
           />
           <span>
             {autoTransition
