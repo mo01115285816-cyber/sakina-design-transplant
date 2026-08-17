@@ -318,11 +318,11 @@ export default function App() {
 
   // Check only capabilities required by the prayer scheduler. Battery
   // optimization exemption and vendor auto-start remain optional OS settings.
+  // On Android this also verifies exact alarms; on the web that capability is not applicable.
   useEffect(() => {
     async function checkPrayerCapabilities() {
       try {
-        const isNative = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android';
-        if (!isNative || !locationPermissionFlowDone) return;
+        if (!locationPermissionFlowDone) return;
 
         const notificationStatus = await PrayerNotificationsService.getPermissionStatus();
         const { PrayerAlarmService } = await import('@/services/PrayerAlarmService');

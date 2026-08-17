@@ -80,8 +80,12 @@ export default function BatteryOptimizationModal({
   const currentRequiredStep = steps[currentStep];
 
   useEffect(() => {
-    if (statusLoaded && steps.length === 0) onDismiss(true);
-    else if (currentStep >= steps.length) setCurrentStep(steps.length - 1);
+    if (!statusLoaded) return;
+    if (steps.length === 0) {
+      onDismiss(true);
+      return;
+    }
+    if (currentStep < 0 || currentStep >= steps.length) setCurrentStep(0);
   }, [currentStep, onDismiss, statusLoaded, steps.length]);
 
   const advanceAfterVerification = useCallback(async (stepId: PermissionStep['id']) => {

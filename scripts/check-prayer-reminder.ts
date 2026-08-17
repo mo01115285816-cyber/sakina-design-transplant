@@ -32,6 +32,7 @@ const prayerAlarmService = readFileSync(new URL('../src/services/PrayerAlarmServ
 const countdownService = readFileSync(new URL('../android/app/src/main/java/com/sakeenah/app/service/CountdownForegroundService.kt', import.meta.url), 'utf8');
 const scheduler = readFileSync(new URL('../android/app/src/main/java/com/sakeenah/app/util/AlarmScheduler.kt', import.meta.url), 'utf8');
 const settings = readFileSync(new URL('../src/components/SettingsScreen.tsx', import.meta.url), 'utf8');
+const permissionModal = readFileSync(new URL('../src/components/BatteryOptimizationModal.tsx', import.meta.url), 'utf8');
 
 assert(!app.includes('schedulePrePrayerReminder('), 'App must not call the legacy per-prayer scheduler');
 assert(!app.includes('schedulePrayerTime('), 'App must not create a second prayer-time notification path');
@@ -41,6 +42,10 @@ assert(app.includes('prePrayerRemindersEnabled: true'), 'Ten-minute reminders mu
 assert(!app.includes('isPrayerReminderEnabled'), 'Global prayer notification toggle must not return to App');
 assert(!app.includes('isPrePrayerReminderEnabled'), 'Global pre-prayer toggle must not return to App');
 assert(!settings.includes('منبهات الصلاة'), 'Global prayer notification card must not appear in Settings');
+assert(app.includes('if (!locationPermissionFlowDone) return;'), 'First-launch capability onboarding must wait for location flow');
+assert(!app.includes('if (!isNative || !locationPermissionFlowDone) return;'), 'Notification onboarding must not be Android-only');
+assert(permissionModal.includes('if (!statusLoaded) return;'), 'Permission modal must not dismiss while status is loading');
+assert(permissionModal.includes('currentStep < 0 || currentStep >= steps.length'), 'Permission modal must recover an invalid step index');
 assert(prayerAlarmService.includes('schedulePrayerTime?: boolean'), 'Native schedule contract must carry prayer-time enablement');
 assert(!notificationService.includes('id: Math.floor(Math.random()'), 'Notification IDs must never be random');
 assert(!prayerAlarmService.includes('isBatteryOptimizationEnabled'), 'PrayerAlarmService must not expose unused battery optimization APIs');
