@@ -53,6 +53,22 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   return btoa(binary);
 }
 
+/**
+ * Capacitor Filesystem.getUri() returns a file:// URI, while the Android Zip
+ * plugin consumes an absolute filesystem path through java.io.File.
+ */
+function nativePathFromUri(uri: string): string {
+  try {
+    const parsed = new URL(uri);
+    if (parsed.protocol === 'file:') {
+      return decodeURIComponent(parsed.pathname);
+    }
+  } catch {
+    // Keep the original value so the native plugin can report its real error.
+  }
+  return uri;
+}
+
 export const QcfFontStorage = {
   getPlatform,
 
@@ -176,8 +192,8 @@ export const QcfFontStorage = {
       });
 
       await Zip.unzip({
-        source: zipFileUri.uri,
-        destination: targetDirUri.uri,
+        source: nativePathFromUri(zipFileUri.uri),
+        destination: nativePathFromUri(targetDirUri.uri),
       });
 
       onProgress?.(92, 'التحقق من سلامة جودة الحروف وعلامات التجويد...');
