@@ -3,12 +3,12 @@ import type { CalculationMethod, AsrSchool } from "@/utils/locationDetection";
 import { APP_VERSES } from "./appVerses";
 
 export const backgrounds: Record<PrayerKey, string> = {
-  fajr: "./images/prayers/fajr.jpg",
-  sunrise: "./images/prayers/sunrise.jpg",
-  dhuhr: "./images/prayers/dhuhr.jpg",
-  asr: "./images/prayers/asr.jpg",
-  maghrib: "./images/prayers/maghrib.jpg",
-  isha: "./images/prayers/isha.jpg",
+  fajr: "/images/prayers/fajr.webp",
+  sunrise: "/images/prayers/sunrise.jpg",
+  dhuhr: "/images/prayers/dhuhr.png",
+  asr: "/images/prayers/asr.webp",
+  maghrib: "/images/prayers/maghrib.webp",
+  isha: "/images/prayers/isha.webp",
 };
 
 interface Reflection {
