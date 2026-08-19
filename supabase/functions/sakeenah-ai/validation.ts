@@ -41,6 +41,16 @@ export function validateChatRequest(value: unknown, id: string): { messages: Cha
     throw new SecurityError("Conversation is too large", 413, id);
   }
 
+  if (messages[0]?.role !== "user") {
+    throw new SecurityError("Conversation must begin with a user message", 400, id);
+  }
+
+  for (let index = 1; index < messages.length; index += 1) {
+    if (messages[index].role === messages[index - 1].role) {
+      throw new SecurityError("Conversation roles must alternate", 400, id);
+    }
+  }
+
   return { messages, stream: body.stream === true };
 }
 

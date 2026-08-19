@@ -14,6 +14,7 @@ import {
 } from "./security.ts";
 import type { ChatMessage } from "./contracts.ts";
 import { validateChatRequest } from "./validation.ts";
+import { getSystemInstructionCache } from "./system-instruction-cache.ts";
 
 function formatMessagesForGemini(messages: ChatMessage[]) {
   return messages.map((message) => ({
@@ -22,11 +23,47 @@ function formatMessagesForGemini(messages: ChatMessage[]) {
   }));
 }
 
+function safeErrorDetails(error: unknown): { name: string; message: string; status?: string; code?: string } {
+  const candidate = error as { name?: unknown; message?: unknown; status?: unknown; code?: unknown };
+  const rawMessage = candidate && typeof candidate.message === "string"
+    ? candidate.message
+    : String(error);
+  const message = rawMessage
+    .replace(/AIza[A-Za-z0-9_-]{20,}/g, "[redacted-key]")
+    .replace(/([?&](?:key|api_key)=)[^&\\s]+/gi, "$1[redacted]")
+    .slice(0, 240);
+  return {
+    name: typeof candidate?.name === "string" ? candidate.name : "UnknownError",
+    message,
+    ...(candidate?.status !== undefined ? { status: String(candidate.status).slice(0, 40) } : {}),
+    ...(candidate?.code !== undefined ? { code: String(candidate.code).slice(0, 40) } : {}),
+  };
+}
+
+async function getGeminiGenerationConfig(ai: ReturnType<typeof getGeminiClient>): Promise<Record<string, unknown>> {
+  const cachedContent = await getSystemInstructionCache(ai);
+  if (cachedContent) {
+    console.info(JSON.stringify({ event: "sakeenah_ai_context_mode", mode: "explicit_cache" }));
+    return { cachedContent, temperature: 0.1 };
+  }
+
+  console.info(JSON.stringify({ event: "sakeenah_ai_context_mode", mode: "direct_fallback" }));
+  return {
+    systemInstruction: SAKEENAH_SYSTEM_INSTRUCTION,
+    temperature: 0.1,
+  };
+}
+
 function errorResponse(request: Request, error: unknown, id: string): Response {
   if (error instanceof SecurityError) {
     return jsonResponse(request, { error: error.message }, error.status, id);
   }
-  console.error(JSON.stringify({ event: "sakeenah_ai_error", request_id: id, error: "provider_or_runtime_error" }));
+  console.error(JSON.stringify({
+    event: "sakeenah_ai_error",
+    request_id: id,
+    error: "provider_or_runtime_error",
+    details: safeErrorDetails(error),
+  }));
   return jsonResponse(request, { error: "Failed to generate AI response" }, 500, id);
 }
 
@@ -51,10 +88,7 @@ function streamResponse(request: Request, messages: ChatMessage[], id: string): 
         const responseStream = await ai.models.generateContentStream({
           model: "gemini-3.5-flash",
           contents: formatMessagesForGemini(messages),
-          config: {
-            systemInstruction: SAKEENAH_SYSTEM_INSTRUCTION,
-            temperature: 0.1,
-          },
+          config: await getGeminiGenerationConfig(ai),
         });
 
         for await (const chunk of responseStream) {
@@ -62,10 +96,14 @@ function streamResponse(request: Request, messages: ChatMessage[], id: string): 
           if (text) send(JSON.stringify({ text }));
         }
         send("[DONE]");
-      } catch {
+      } catch (error) {
         send(JSON.stringify({ error: "Failed to generate stream response" }));
         send("[DONE]");
-        console.error(JSON.stringify({ event: "sakeenah_ai_stream_error", request_id: id }));
+        console.error(JSON.stringify({
+          event: "sakeenah_ai_stream_error",
+          request_id: id,
+          details: safeErrorDetails(error),
+        }));
       } finally {
         controller.close();
       }
@@ -93,10 +131,7 @@ Deno.serve(async (request: Request) => {
     const response = await ai.models.generateContent({
       model: "gemini-3.5-flash",
       contents: formatMessagesForGemini(messages),
-      config: {
-        systemInstruction: SAKEENAH_SYSTEM_INSTRUCTION,
-        temperature: 0.1,
-      },
+      config: await getGeminiGenerationConfig(ai),
     });
     return jsonResponse(request, { text: response.text?.trim() || "" }, 200, id);
   } catch (error) {
