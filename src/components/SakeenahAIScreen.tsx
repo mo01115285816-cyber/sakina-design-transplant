@@ -1,12 +1,23 @@
-import React, { useState, useRef, useEffect, useCallback, startTransition, useMemo } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { getCurrentSession } from "@/services/auth-service";
 import type { AuthUser } from "@/services/auth-service";
+import {
+  createSakeenahConversation,
+  deleteSakeenahConversation,
+  listSakeenahConversations,
+  loadSakeenahMessages,
+  type StoredConversation,
+} from "@/services/sakeenah-ai-storage";
 import { supabaseKey, supabaseUrl } from "@/services/supabase-client";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowUp,
-  RefreshCw,
   ChevronRight,
+  MessageCirclePlus,
+  PanelLeftOpen,
+  X,
+  Trash2,
+  Loader2,
   ChevronDown,
   ChevronUp,
   AlertCircle,
@@ -265,10 +276,101 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
   const [longMsgs, setLongMsgs] = useState<Set<string>>(new Set());
   const [expandedMsgs, setExpandedMsgs] = useState<Set<string>>(new Set());
   const [welcomeLineIndex] = useState(getInitialWelcomeLineIndex);
+  const [conversations, setConversations] = useState<StoredConversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isConversationsLoading, setIsConversationsLoading] = useState(true);
+  const [isConversationLoading, setIsConversationLoading] = useState(false);
+  const [storageError, setStorageError] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem("sakeenah_ai_welcome_line_index", String(welcomeLineIndex));
   }, [welcomeLineIndex]);
+
+  const refreshConversations = useCallback(async () => {
+    const next = await listSakeenahConversations();
+    setConversations(next);
+    return next;
+  }, []);
+
+  const openConversation = useCallback(async (conversationId: string) => {
+    if (isLoading) return;
+    setIsConversationLoading(true);
+    setStorageError(null);
+    try {
+      const storedMessages = await loadSakeenahMessages(conversationId);
+      setMessages(storedMessages.map((message) => ({
+        id: message.id,
+        role: message.role,
+        content: message.content,
+        timestamp: message.timestamp,
+        isNew: false,
+        isStreaming: false,
+      })));
+      setActiveConversationId(conversationId);
+      setIsDrawerOpen(false);
+      cancelEditingUserMessage();
+    } catch (error) {
+      console.error("Failed to load Sakeenah conversation", error);
+      setStorageError("تعذر فتح هذه المحادثة حاليًا.");
+    } finally {
+      setIsConversationLoading(false);
+    }
+  }, [isLoading]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setIsConversationsLoading(true);
+    void refreshConversations()
+      .then(async (next) => {
+        if (cancelled || !next[0]) return;
+        const storedMessages = await loadSakeenahMessages(next[0].id);
+        if (cancelled) return;
+        setActiveConversationId(next[0].id);
+        setMessages(storedMessages.map((message) => ({
+          id: message.id,
+          role: message.role,
+          content: message.content,
+          timestamp: message.timestamp,
+          isNew: false,
+          isStreaming: false,
+        })));
+      })
+      .catch((error) => {
+        console.error("Failed to load Sakeenah conversations", error);
+        if (!cancelled) setStorageError("تعذر تحميل المحادثات المحفوظة.");
+      })
+      .finally(() => {
+        if (!cancelled) setIsConversationsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshConversations]);
+
+  const startNewConversation = useCallback(() => {
+    if (isLoading) return;
+    setMessages([]);
+    setActiveConversationId(null);
+    setStorageError(null);
+    cancelEditingUserMessage();
+    setIsDrawerOpen(false);
+  }, [isLoading]);
+
+  const handleDeleteConversation = useCallback(async (conversationId: string) => {
+    if (isLoading) return;
+    try {
+      await deleteSakeenahConversation(conversationId);
+      const next = await refreshConversations();
+      if (activeConversationId === conversationId) {
+        if (next[0]) await openConversation(next[0].id);
+        else startNewConversation();
+      }
+    } catch (error) {
+      console.error("Failed to delete Sakeenah conversation", error);
+      setStorageError("تعذر حذف المحادثة حاليًا.");
+    }
+  }, [activeConversationId, isLoading, openConversation, refreshConversations, startNewConversation]);
 
   const userName = useMemo(() => {
     const label = String(user.user_metadata?.full_name ?? user.user_metadata?.name ?? user.email?.split("@")[0] ?? "صديق سكينة").trim();
@@ -498,10 +600,13 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
     const aiMsgId = Math.random().toString();
 
     try {
-      const history = historyMessages.map((m) => ({
-        role: m.role,
-        content: m.content
-      }));
+      let conversationId = activeConversationId;
+      if (!conversationId) {
+        const created = await createSakeenahConversation(trimmed.slice(0, 56));
+        conversationId = created.id;
+        setActiveConversationId(created.id);
+        setConversations((prev) => [created, ...prev.filter((item) => item.id !== created.id)]);
+      }
 
       const normalizedSupabaseUrl = supabaseUrl?.replace(/\/$/, "");
       if (!normalizedSupabaseUrl || !supabaseKey) {
@@ -520,7 +625,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
           apikey: supabaseKey,
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ messages: history, stream: true }),
+        body: JSON.stringify({ conversationId, message: trimmed, stream: true }),
       });
 
       if (!res.ok) {
@@ -589,6 +694,8 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
           msg.id === aiMsgId ? { ...msg, isStreaming: false } : msg
         )
       );
+      setStorageError(null);
+      await refreshConversations();
 
     } catch (error) {
       console.error("Sakeenah AI error:", error);
@@ -646,11 +753,6 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
     void handleSendMessage(editingContent, messageId);
   };
 
-  const clearChat = () => {
-    setMessages([]);
-    cancelEditingUserMessage();
-  };
-
   return (
     <div dir="rtl" className="mx-auto w-full max-w-[390px] px-5 pt-0 pb-4 font-sans bg-[#ece7de] h-screen relative flex flex-col overflow-hidden">
       
@@ -666,25 +768,35 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
 
       {/* ── FLOATING TOP HEADER ── */}
       <div className="absolute top-6 left-5 right-5 flex items-center justify-between z-[45] pointer-events-none">
-        {/* Right Element (in RTL): Title Capsule */}
-        <div className="cut-crystal-capsule px-5 h-10 rounded-full shadow-md flex items-center justify-center gap-1.5 pointer-events-auto transition-all duration-300">
-          <span className="text-[14.5px] font-display font-black whitespace-nowrap pt-0.5">سَكِينَة AI</span>
+        <div className="flex items-center gap-2 pointer-events-auto">
+          <div className="cut-crystal-capsule px-5 h-10 rounded-full shadow-md flex items-center justify-center gap-1.5 transition-all duration-300">
+            <span className="text-[14.5px] font-display font-black whitespace-nowrap pt-0.5">سَكِينَة AI</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsDrawerOpen(true)}
+            className="w-10 h-10 cut-crystal-capsule rounded-full shadow-md text-[#2b1a10] hover:text-[#b88a4f] hover:border-[#b88a4f]/40 hover:bg-white flex items-center justify-center active:scale-[0.95] transition-all duration-300 cursor-pointer"
+            aria-label="فتح المحادثات المحفوظة"
+            title="المحادثات المحفوظة"
+          >
+            <PanelLeftOpen size={17} strokeWidth={2.2} />
+          </button>
         </div>
 
-        {/* Left Elements: Controls */}
         <div className="flex items-center gap-2 pointer-events-auto">
           {messages.length > 0 && (
             <button
-              onClick={clearChat}
-              className="w-10 h-10 cut-crystal-capsule rounded-full shadow-md text-[#7f6a55] hover:text-red-600 hover:border-red-200 hover:bg-white flex items-center justify-center active:scale-[0.95] transition-all duration-300 cursor-pointer"
-              aria-label="مسح المحادثة"
-              title="مسح المحادثة"
+              type="button"
+              onClick={startNewConversation}
+              className="w-10 h-10 cut-crystal-capsule rounded-full shadow-md text-[#7f6a55] hover:text-[#b88a4f] hover:border-[#b88a4f]/40 hover:bg-white flex items-center justify-center active:scale-[0.95] transition-all duration-300 cursor-pointer"
+              aria-label="بدء محادثة جديدة"
+              title="محادثة جديدة"
             >
-              <RefreshCw size={14} />
+              <MessageCirclePlus size={17} strokeWidth={2.1} />
             </button>
           )}
-
           <button
+            type="button"
             onClick={onBack}
             className="w-10 h-10 cut-crystal-capsule rounded-full shadow-md text-[#2b1a10] hover:text-[#b88a4f] hover:border-[#b88a4f]/40 hover:bg-white flex items-center justify-center active:scale-[0.95] transition-all duration-300 cursor-pointer"
             aria-label="رجوع"
@@ -693,6 +805,109 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
           </button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {isDrawerOpen && (
+          <>
+            <motion.button
+              type="button"
+              aria-label="إغلاق قائمة المحادثات"
+              className="fixed inset-0 z-[55] bg-[#2b1a10]/18 backdrop-blur-[2px] cursor-default"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsDrawerOpen(false)}
+            />
+            <motion.aside
+              dir="rtl"
+              className="fixed top-4 bottom-4 right-3 z-[60] flex w-[min(320px,calc(100vw-24px))] flex-col overflow-hidden rounded-[32px] border border-[#b88a4f]/25 bg-[#ece7de] shadow-[0_24px_70px_-20px_rgba(43,26,16,0.42)]"
+              initial={{ opacity: 0, x: 24, scale: 0.98 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 24, scale: 0.98 }}
+              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+            >
+              <div className="flex items-center justify-between border-b border-[#b88a4f]/15 px-5 py-4">
+                <div>
+                  <p className="text-[15px] font-display font-black text-[#2b1a10]">المحادثات</p>
+                  <p className="mt-0.5 text-[10px] font-bold text-[#7f6a55]">محفوظة بأمان لحسابك</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDrawerOpen(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-[#7f6a55] transition-colors hover:bg-white hover:text-[#2b1a10] cursor-pointer"
+                  aria-label="إغلاق"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={startNewConversation}
+                className="mx-4 mt-4 flex h-11 items-center justify-center gap-2 rounded-full bg-[#b88a4f] px-4 text-[12px] font-display font-black text-[#fff9f1] shadow-sm transition-all hover:bg-[#a0753e] active:scale-[0.98] cursor-pointer"
+              >
+                <MessageCirclePlus size={16} />
+                <span>محادثة جديدة</span>
+              </button>
+
+              <div className="flex-1 overflow-y-auto px-3 pb-4 pt-4 hide-scrollbar">
+                {isConversationsLoading || isConversationLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-10 text-[12px] font-bold text-[#7f6a55]">
+                    <Loader2 size={16} className="animate-spin text-[#b88a4f]" />
+                    <span>جارٍ تحميل المحادثات</span>
+                  </div>
+                ) : conversations.length === 0 ? (
+                  <div className="px-5 py-10 text-center text-[12px] font-bold leading-6 text-[#7f6a55]">
+                    لا توجد محادثات محفوظة بعد.
+                    <br />ابدأ سؤالًا جديدًا وستظهر هنا.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {conversations.map((conversation) => (
+                      <div
+                        key={conversation.id}
+                        className={`group flex items-center gap-1 rounded-[22px] border px-3 py-2 transition-all ${
+                          conversation.id === activeConversationId
+                            ? "border-[#b88a4f]/40 bg-[#f7f2ea] shadow-sm"
+                            : "border-transparent hover:border-[#b88a4f]/20 hover:bg-[#f7f2ea]/70"
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => void openConversation(conversation.id)}
+                          className="min-w-0 flex-1 text-right cursor-pointer"
+                        >
+                          <span className="block truncate text-[12px] font-display font-black text-[#2b1a10]">
+                            {conversation.title}
+                          </span>
+                          <span className="mt-1 block text-[10px] font-bold text-[#7f6a55]">
+                            {conversation.lastMessageAt.toLocaleDateString("ar-EG", { day: "numeric", month: "short" })}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteConversation(conversation.id)}
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#7f6a55]/60 opacity-0 transition-all group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 cursor-pointer"
+                          aria-label={`حذف ${conversation.title}`}
+                          title="حذف المحادثة"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+      {storageError && (
+        <div className="absolute left-5 right-5 top-[72px] z-[40] rounded-full border border-[#b88a4f]/20 bg-[#f7f2ea] px-4 py-2 text-center text-[10px] font-bold text-[#7f6a55] shadow-sm">
+          {storageError}
+        </div>
+      )}
 
       {/* ── MAIN CHAT AREA / EMPTY STATE ── */}
       <div className="flex-1 flex flex-col justify-between relative z-10 overflow-hidden">

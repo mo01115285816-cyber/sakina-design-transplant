@@ -2,6 +2,7 @@ import {
   MAX_CHAT_MESSAGE_CHARS,
   MAX_CHAT_MESSAGES,
   MAX_CHAT_TOTAL_CHARS,
+  MAX_CONVERSATION_ID_CHARS,
   MAX_REFLECTION_FIELD_CHARS,
   type ChatMessage,
   type ChatRequest,
@@ -9,49 +10,22 @@ import {
 } from "./contracts.ts";
 import { SecurityError } from "./security.ts";
 
-export function validateChatRequest(value: unknown, id: string): { messages: ChatMessage[]; stream: boolean } {
+export function validateChatRequest(value: unknown, id: string): { conversationId: string; message: string; stream: boolean } {
   if (!value || typeof value !== "object") {
-    throw new SecurityError("Missing or invalid messages parameter", 400, id);
+    throw new SecurityError("Missing or invalid conversation request", 400, id);
   }
   const body = value as ChatRequest;
-  if (!Array.isArray(body.messages) || body.messages.length === 0 || body.messages.length > MAX_CHAT_MESSAGES) {
-    throw new SecurityError("Missing or invalid messages parameter", 400, id);
+  if (typeof body.conversationId !== "string" || body.conversationId.trim().length === 0 || body.conversationId.length > MAX_CONVERSATION_ID_CHARS) {
+    throw new SecurityError("Missing or invalid conversation", 400, id);
   }
-
-  let totalChars = 0;
-  const messages = body.messages.map((raw) => {
-    if (!raw || typeof raw !== "object") {
-      throw new SecurityError("Missing or invalid messages parameter", 400, id);
-    }
-    const message = raw as Record<string, unknown>;
-    const role = message.role;
-    const content = message.content;
-    if ((role !== "user" && role !== "assistant") || typeof content !== "string") {
-      throw new SecurityError("Missing or invalid messages parameter", 400, id);
-    }
-    const normalized = content.trim();
-    if (!normalized || normalized.length > MAX_CHAT_MESSAGE_CHARS) {
-      throw new SecurityError("Message is empty or too large", 400, id);
-    }
-    totalChars += normalized.length;
-    return { role, content: normalized } as ChatMessage;
-  });
-
-  if (totalChars > MAX_CHAT_TOTAL_CHARS) {
-    throw new SecurityError("Conversation is too large", 413, id);
+  if (typeof body.message !== "string") {
+    throw new SecurityError("Missing or invalid message", 400, id);
   }
-
-  if (messages[0]?.role !== "user") {
-    throw new SecurityError("Conversation must begin with a user message", 400, id);
+  const message = body.message.trim();
+  if (!message || message.length > MAX_CHAT_MESSAGE_CHARS) {
+    throw new SecurityError("Message is empty or too large", 400, id);
   }
-
-  for (let index = 1; index < messages.length; index += 1) {
-    if (messages[index].role === messages[index - 1].role) {
-      throw new SecurityError("Conversation roles must alternate", 400, id);
-    }
-  }
-
-  return { messages, stream: body.stream === true };
+  return { conversationId: body.conversationId.trim(), message, stream: body.stream === true };
 }
 
 function requiredText(value: unknown, field: string, id: string, max = MAX_REFLECTION_FIELD_CHARS): string {

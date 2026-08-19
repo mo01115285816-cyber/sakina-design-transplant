@@ -12,6 +12,7 @@ import {
   streamHeaders,
   consumeRateLimit,
 } from "./security.ts";
+import { loadConversationContext, saveAssistantMessage, saveUserMessage } from "./conversations.ts";
 import type { ChatMessage } from "./contracts.ts";
 import { validateChatRequest } from "./validation.ts";
 import { getSystemInstructionCache } from "./system-instruction-cache.ts";
@@ -67,33 +68,60 @@ function errorResponse(request: Request, error: unknown, id: string): Response {
   return jsonResponse(request, { error: "Failed to generate AI response" }, 500, id);
 }
 
-function streamResponse(request: Request, messages: ChatMessage[], id: string): Response {
+async function generateAnswer(messages: ChatMessage[]): Promise<string> {
+  if (!hasGeminiApiKey()) return OFFLINE_FALLBACK_TEXT;
+  const ai = getGeminiClient();
+  const response = await ai.models.generateContent({
+    model: "gemini-3.5-flash",
+    contents: formatMessagesForGemini(messages),
+    config: await getGeminiGenerationConfig(ai),
+  });
+  return response.text?.trim() || "";
+}
+
+function streamResponse(
+  request: Request,
+  user: Awaited<ReturnType<typeof requireUser>>,
+  conversationId: string,
+  message: string,
+  id: string,
+): Response {
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const send = (payload: string) => controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+      let assistantText = "";
       try {
+        const context = await loadConversationContext(user, conversationId, message, id);
+        await saveUserMessage(user, conversationId, message, id);
+
         if (!hasGeminiApiKey()) {
           const words = OFFLINE_FALLBACK_TEXT.split(" ");
           for (let index = 0; index < words.length; index += 1) {
             const chunkWord = `${index === 0 ? "" : " "}${words[index]}`;
+            assistantText += chunkWord;
             send(JSON.stringify({ text: chunkWord }));
             await new Promise((resolve) => setTimeout(resolve, 80));
           }
-          send("[DONE]");
-          return;
+        } else {
+          const ai = getGeminiClient();
+          const responseStream = await ai.models.generateContentStream({
+            model: "gemini-3.5-flash",
+            contents: formatMessagesForGemini(context.messages),
+            config: await getGeminiGenerationConfig(ai),
+          });
+
+          for await (const chunk of responseStream) {
+            const text = chunk.text;
+            if (text) {
+              assistantText += text;
+              send(JSON.stringify({ text }));
+            }
+          }
         }
 
-        const ai = getGeminiClient();
-        const responseStream = await ai.models.generateContentStream({
-          model: "gemini-3.5-flash",
-          contents: formatMessagesForGemini(messages),
-          config: await getGeminiGenerationConfig(ai),
-        });
-
-        for await (const chunk of responseStream) {
-          const text = chunk.text;
-          if (text) send(JSON.stringify({ text }));
+        if (assistantText.trim()) {
+          await saveAssistantMessage(user, context.conversation, message, assistantText.trim(), context.messageCount, id);
         }
         send("[DONE]");
       } catch (error) {
@@ -121,19 +149,19 @@ Deno.serve(async (request: Request) => {
     const user = await requireUser(request, id);
     await consumeRateLimit(id, user.accessToken);
     const body = await readJson(request, id);
-    const { messages, stream } = validateChatRequest(body, id);
+    const { conversationId, message, stream } = validateChatRequest(body, id);
 
-    if (stream) return streamResponse(request, messages, id);
+    if (stream) {
+      return streamResponse(request, user, conversationId, message, id);
+    }
 
-    if (!hasGeminiApiKey()) return jsonResponse(request, { text: OFFLINE_FALLBACK_TEXT }, 200, id);
-
-    const ai = getGeminiClient();
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: formatMessagesForGemini(messages),
-      config: await getGeminiGenerationConfig(ai),
-    });
-    return jsonResponse(request, { text: response.text?.trim() || "" }, 200, id);
+    const context = await loadConversationContext(user, conversationId, message, id);
+    await saveUserMessage(user, conversationId, message, id);
+    const text = await generateAnswer(context.messages);
+    if (text) {
+      await saveAssistantMessage(user, context.conversation, message, text, context.messageCount, id);
+    }
+    return jsonResponse(request, { text }, 200, id);
   } catch (error) {
     return errorResponse(request, error, id);
   }
