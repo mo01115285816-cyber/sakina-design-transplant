@@ -24,6 +24,9 @@ import androidx.core.content.ContextCompat
 import android.content.pm.ServiceInfo
 import com.sakeenah.app.MainActivity
 import java.io.File
+import java.io.BufferedInputStream
+import java.io.BufferedOutputStream
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
@@ -44,8 +47,9 @@ import kotlin.math.min
 class RadioCaptureService : Service() {
 
     private data class RecordingOutput(
-        val uri: Uri?,
-        val file: File?,
+        var uri: Uri?,
+        var file: File?,
+        val tempFile: File,
         val displayName: String,
         val mimeType: String,
         val output: OutputStream,
@@ -201,20 +205,31 @@ class RadioCaptureService : Service() {
             }
 
             if (success && output != null) {
-                finalizeOutput(output)
-                sendResult(
-                    receiver = pendingStopReceiver,
-                    success = true,
-                    stationId = stationId,
-                    stationName = stationName,
-                    fileName = output.displayName,
-                    mimeType = output.mimeType,
-                    uri = output.uri,
-                    file = output.file,
-                    durationMs = System.currentTimeMillis() - activeStartedAt,
-                    reason = "manual",
-                    bytes = bytesWritten,
-                )
+                try {
+                    finalizeOutput(output)
+                    sendResult(
+                        receiver = pendingStopReceiver,
+                        success = true,
+                        stationId = stationId,
+                        stationName = stationName,
+                        fileName = output.displayName,
+                        mimeType = output.mimeType,
+                        uri = output.uri,
+                        file = output.file,
+                        durationMs = System.currentTimeMillis() - activeStartedAt,
+                        reason = "manual",
+                        bytes = bytesWritten,
+                    )
+                } catch (error: Exception) {
+                    discardOutput(output)
+                    sendResult(
+                        receiver = pendingStopReceiver,
+                        success = false,
+                        stationId = stationId,
+                        stationName = stationName,
+                        error = error.message ?: "تعذر تثبيت ملف التسجيل.",
+                    )
+                }
             } else {
                 discardOutput(output)
                 sendResult(
@@ -249,47 +264,115 @@ class RadioCaptureService : Service() {
     }
 
     private fun openOutput(displayName: String, mimeType: String): RecordingOutput {
+        val directory = File(filesDir, "radio-captures")
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw IllegalStateException("تعذر إنشاء مساحة مؤقتة آمنة للتسجيل")
+        }
+        val tempFile = File.createTempFile("capture-", ".part", directory)
+        val stream = BufferedOutputStream(
+            FileOutputStream(tempFile),
+            COPY_BUFFER_SIZE,
+        )
+        return RecordingOutput(
+            uri = null,
+            file = tempFile,
+            tempFile = tempFile,
+            displayName = displayName,
+            mimeType = mimeType,
+            output = stream,
+        )
+    }
+
+    private fun finalizeOutput(output: RecordingOutput) {
+        val tempFile = output.tempFile
+        if (!tempFile.exists() || tempFile.length() < MINIMUM_VALID_BYTES) {
+            throw IllegalStateException("ملف التسجيل المؤقت غير صالح أو فارغ")
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val values = ContentValues().apply {
-                put(MediaStore.Audio.Media.DISPLAY_NAME, displayName)
-                put(MediaStore.Audio.Media.MIME_TYPE, mimeType)
+                put(MediaStore.Audio.Media.DISPLAY_NAME, output.displayName)
+                put(MediaStore.Audio.Media.MIME_TYPE, output.mimeType)
                 put(MediaStore.Audio.Media.RELATIVE_PATH, Environment.DIRECTORY_MUSIC + "/Sakina")
                 put(MediaStore.Audio.Media.IS_PENDING, 1)
             }
             val uri = contentResolver.insert(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI, values)
                 ?: throw IllegalStateException("تعذر إنشاء ملف التسجيل في Music/Sakina")
-            val stream = contentResolver.openOutputStream(uri)
-                ?: throw IllegalStateException("تعذر فتح ملف التسجيل للكتابة")
-            return RecordingOutput(uri, null, displayName, mimeType, stream)
+            try {
+                copyFileToUri(tempFile, uri)
+                contentResolver.update(
+                    uri,
+                    ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) },
+                    null,
+                    null,
+                )
+                output.uri = uri
+                output.file = null
+            } catch (error: Exception) {
+                contentResolver.delete(uri, null, null)
+                throw error
+            } finally {
+                tempFile.delete()
+            }
+        } else {
+            val directory = File(
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
+                "Sakina",
+            )
+            if (!directory.exists() && !directory.mkdirs()) {
+                throw IllegalStateException("تعذر إنشاء مجلد Music/Sakina")
+            }
+            val finalFile = File(directory, output.displayName)
+            val destinationPart = File(directory, "${output.displayName}.part")
+            try {
+                copyFile(tempFile, destinationPart)
+                if (!destinationPart.renameTo(finalFile)) {
+                    throw IllegalStateException("تعذر تثبيت ملف التسجيل في Music/Sakina")
+                }
+                output.file = finalFile
+                MediaScannerConnection.scanFile(this, arrayOf(finalFile.absolutePath), arrayOf(output.mimeType), null)
+            } finally {
+                destinationPart.delete()
+                tempFile.delete()
+            }
         }
-
-        val directory = File(
-            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC),
-            "Sakina",
-        )
-        if (!directory.exists() && !directory.mkdirs()) {
-            throw IllegalStateException("تعذر إنشاء مجلد Music/Sakina")
-        }
-        val file = File(directory, displayName)
-        return RecordingOutput(null, file, displayName, mimeType, FileOutputStream(file))
     }
 
-    private fun finalizeOutput(output: RecordingOutput) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && output.uri != null) {
-            contentResolver.update(
-                output.uri,
-                ContentValues().apply { put(MediaStore.Audio.Media.IS_PENDING, 0) },
-                null,
-                null,
-            )
-        } else if (output.file != null) {
-            MediaScannerConnection.scanFile(this, arrayOf(output.file.absolutePath), arrayOf(output.mimeType), null)
+    private fun copyFileToUri(source: File, uri: Uri) {
+        val descriptor = contentResolver.openFileDescriptor(uri, "w")
+            ?: throw IllegalStateException("تعذر فتح ملف Music/Sakina للنسخ")
+        try {
+            BufferedInputStream(FileInputStream(source), COPY_BUFFER_SIZE).use { input ->
+                FileOutputStream(descriptor.fileDescriptor).use { rawOutput ->
+                    BufferedOutputStream(rawOutput, COPY_BUFFER_SIZE).use { output ->
+                        input.copyTo(output, COPY_BUFFER_SIZE)
+                        output.flush()
+                    }
+                    rawOutput.fd.sync()
+                }
+            }
+        } finally {
+            descriptor.close()
+        }
+    }
+
+    private fun copyFile(source: File, target: File) {
+        BufferedInputStream(FileInputStream(source), COPY_BUFFER_SIZE).use { input ->
+            FileOutputStream(target).use { rawOutput ->
+                BufferedOutputStream(rawOutput, COPY_BUFFER_SIZE).use { output ->
+                    input.copyTo(output, COPY_BUFFER_SIZE)
+                    output.flush()
+                    rawOutput.fd.sync()
+                }
+            }
         }
     }
 
     private fun discardOutput(output: RecordingOutput?) {
-        if (output?.uri != null) contentResolver.delete(output.uri, null, null)
+        val uri = output?.uri
+        if (uri != null) contentResolver.delete(uri, null, null)
         output?.file?.delete()
+        output?.tempFile?.delete()
     }
 
     private fun sendResult(
@@ -434,7 +517,8 @@ class RadioCaptureService : Service() {
         private const val CONNECT_TIMEOUT_MS = 15_000
         private const val READ_TIMEOUT_MS = 20_000
         private const val BUFFER_SIZE = 16 * 1024
-        private const val FLUSH_INTERVAL_BYTES = 256 * 1024
+        private const val FLUSH_INTERVAL_BYTES = 1024 * 1024
+        private const val COPY_BUFFER_SIZE = 256 * 1024
         private const val MINIMUM_VALID_BYTES = 8 * 1024
 
         fun start(context: Context, streamUrl: String, stationId: String, stationName: String, receiver: ResultReceiver) {
