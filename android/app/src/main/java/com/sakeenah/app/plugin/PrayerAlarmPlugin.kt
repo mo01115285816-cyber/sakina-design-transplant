@@ -60,8 +60,8 @@ class PrayerAlarmPlugin : Plugin() {
                 val key = prayer?.getString("key") ?: ""
                 val name = prayer?.getString("name") ?: ""
                 val timeMs = prayer?.getLong("timeMs") ?: 0L
-                val schedulePrePrayer = prayer?.getBoolean("schedulePrePrayer", true) ?: true
-                val schedulePrayerTime = prayer?.getBoolean("schedulePrayerTime", true) ?: true
+                val schedulePrePrayer = prayer?.optBoolean("schedulePrePrayer", true) ?: true
+                val schedulePrayerTime = prayer?.optBoolean("schedulePrayerTime", true) ?: true
                 if (key.isNotEmpty() && name.isNotEmpty() && timeMs > 0) {
                     prayers.add(PrayerScheduleEntry(key, name, timeMs, schedulePrePrayer, schedulePrayerTime))
                 }

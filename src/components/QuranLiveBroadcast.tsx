@@ -6,9 +6,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Loader2,
+  Circle,
+  Square,
 } from "lucide-react";
 import { RadioStation } from "@/types/radio";
 import { radioStations } from "@/data/radioStations";
+import type { RadioCaptureState } from "@/services/radioCaptureService";
 
 interface Props {
   // Global Audio Ref & state controls provided by parent (QuranTabScreen)
@@ -17,6 +20,9 @@ interface Props {
   isPlayingRadio: boolean;
   onPlayRadio: (radio: RadioStation) => void;
   onPauseRadio: () => void;
+  radioCaptureState: RadioCaptureState;
+  onToggleRadioCapture: () => void;
+  radioCaptureNotice: string | null;
 }
 
 export default function QuranLiveBroadcast({
@@ -25,6 +31,9 @@ export default function QuranLiveBroadcast({
   isPlayingRadio,
   onPlayRadio,
   onPauseRadio,
+  radioCaptureState,
+  onToggleRadioCapture,
+  radioCaptureNotice,
 }: Props) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
@@ -121,14 +130,58 @@ export default function QuranLiveBroadcast({
 
   const isActiveAndPlaying =
     currentPlayingRadio?.id === activeStation.id && isPlayingRadio;
+  const isLiveReady = isActiveAndPlaying && !isLoading;
+  const showCaptureControl = isLiveReady || radioCaptureState === "recording" || radioCaptureState === "saving";
 
   return (
     <div id="live-broadcast-section" className="w-full mb-6 relative" dir="rtl">
-      {/* Title */}
-      <h2 className="text-[20px] font-bold text-[#2b1a10] mb-3.5 flex items-center gap-2 px-1">
-        <span>البث الصوتي</span>
-        <span className="w-1.5 h-1.5 rounded-full bg-[#80a390]"></span>
-      </h2>
+      {/* Title + capture control: hidden until a station is actually playing. */}
+      <div className="mb-3.5 flex min-h-8 items-center gap-2 px-1">
+        <h2 className="flex items-center gap-2 text-[20px] font-bold text-[#2b1a10]">
+          <span>البث الصوتي</span>
+          <span className="h-1.5 w-1.5 rounded-full bg-[#80a390]"></span>
+        </h2>
+        <div className="mr-auto flex items-center gap-2">
+          {showCaptureControl && (
+            <button
+              type="button"
+              onClick={(event) => {
+                event.stopPropagation();
+                onToggleRadioCapture();
+              }}
+              disabled={radioCaptureState === "saving"}
+              aria-label={radioCaptureState === "recording" ? "إيقاف وحفظ تسجيل البث" : "تسجيل البث"}
+              className={`inline-flex h-7 items-center gap-1.5 rounded-full border px-2.5 text-[10px] font-black shadow-sm transition-[background-color,color,border-color,transform] duration-150 active:scale-95 disabled:cursor-wait disabled:opacity-70 ${
+                radioCaptureState === "recording"
+                  ? "border-[#8f3c35]/35 bg-[#8f3c35] text-white"
+                  : radioCaptureState === "saving"
+                    ? "border-[#b88a4f]/30 bg-[#f7f2ea] text-[#8f765d]"
+                    : "border-[#b88a4f]/45 bg-[#b88a4f] text-white"
+              }`}
+            >
+              {radioCaptureState === "saving" ? (
+                <Loader2 size={11} className="animate-spin" />
+              ) : radioCaptureState === "recording" ? (
+                <Square size={9} fill="currentColor" />
+              ) : (
+                <Circle size={9} fill="currentColor" />
+              )}
+              <span>
+                {radioCaptureState === "saving"
+                  ? "جاري الحفظ"
+                  : radioCaptureState === "recording"
+                    ? "إيقاف وحفظ"
+                    : "تسجيل البث"}
+              </span>
+            </button>
+          )}
+          {radioCaptureNotice && (
+            <span role="status" className="hidden max-w-[150px] truncate text-[10px] font-bold text-[#7f6a55] sm:inline">
+              {radioCaptureNotice}
+            </span>
+          )}
+        </div>
+      </div>
 
       {/* Main Beautiful Card */}
       <div className="relative z-20">
@@ -259,10 +312,11 @@ export default function QuranLiveBroadcast({
               </div>
             </div>
 
-            {/* Micro Live Wavebars on the far left (Appears ONLY when audio is actively playing) */}
-            <div className="shrink-0 flex items-center justify-center pl-1 min-w-[28px]">
-              <AnimatePresence>
-                {isActiveAndPlaying && !isLoading && (
+                          {/* Micro Live Wavebars on the far left (only when playback is ready). */}
+              <div className="shrink-0 flex items-center justify-center pl-1 min-w-[28px]">
+                <AnimatePresence>
+                  {isLiveReady && (
+
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}

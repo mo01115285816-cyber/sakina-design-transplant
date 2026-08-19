@@ -16,6 +16,7 @@ import { QuranOfflineService } from "@/services/QuranOfflineService";
 import { RadioMediaService } from "@/services/RadioMediaService";
 import { QuranMediaService } from "@/services/QuranMediaService";
 import { publicAssetUrl } from "@/utils/publicAssetUrl";
+import { RadioCaptureService, type RadioCaptureState } from "@/services/radioCaptureService";
 
 interface Props {
   onBack?: () => void;
@@ -35,6 +36,8 @@ const QuranTabScreen = React.memo(function QuranTabScreen({ onBack, onHideNavCha
 
   // Radio states
   const [currentPlayingRadio, setCurrentPlayingRadio] = useState<RadioStation | null>(null);
+  const [radioCaptureState, setRadioCaptureState] = useState<RadioCaptureState>(() => RadioCaptureService.getState());
+  const [radioCaptureNotice, setRadioCaptureNotice] = useState<string | null>(null);
   
   // Audio Player Engine States
   const [playingSurahId, setPlayingSurahId] = useState<number | null>(null);
@@ -79,6 +82,7 @@ const QuranTabScreen = React.memo(function QuranTabScreen({ onBack, onHideNavCha
 
   // Keep refs to avoid stale closures in event listeners and Media Session handlers
   const handleAudioEndedRef = useRef<() => void>(() => {});
+  const radioCaptureStateRef = useRef<RadioCaptureState>(RadioCaptureService.getState());
   const stateRef = useRef({
     playlist,
     playingSurahId,
@@ -89,6 +93,17 @@ const QuranTabScreen = React.memo(function QuranTabScreen({ onBack, onHideNavCha
     selectedMoshaf,
     playbackRate,
   });
+
+  useEffect(() => {
+    const unsubscribe = RadioCaptureService.subscribe((nextState) => {
+      radioCaptureStateRef.current = nextState;
+      setRadioCaptureState(nextState);
+    });
+    return () => {
+      unsubscribe();
+      void RadioCaptureService.stop("screen-closed");
+    };
+  }, []);
 
   useEffect(() => {
     handleAudioEndedRef.current = handleAudioEnded;
@@ -165,6 +180,44 @@ const QuranTabScreen = React.memo(function QuranTabScreen({ onBack, onHideNavCha
     }
   }, []);
 
+  const stopRadioCapture = useCallback(async (reason: string) => {
+    if (radioCaptureStateRef.current === "idle") return null;
+    try {
+      const result = await RadioCaptureService.stop(reason);
+      if (result) {
+        setRadioCaptureNotice(`تم حفظ ${result.fileName}`);
+        window.setTimeout(() => setRadioCaptureNotice(null), 4500);
+      }
+      return result;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "تعذر حفظ تسجيل البث.";
+      setRadioCaptureNotice(message);
+      window.setTimeout(() => setRadioCaptureNotice(null), 5000);
+      return null;
+    }
+  }, []);
+
+  const toggleRadioCapture = useCallback(async () => {
+    const station = stateRef.current.currentPlayingRadio;
+    if (!station || !stateRef.current.isPlaying) return;
+
+    if (radioCaptureStateRef.current === "recording") {
+      await stopRadioCapture("manual");
+      return;
+    }
+
+    if (radioCaptureStateRef.current !== "idle") return;
+
+    try {
+      await RadioCaptureService.start(station, audioRef.current);
+      setRadioCaptureNotice(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "تعذر بدء تسجيل البث.";
+      setRadioCaptureNotice(message);
+      window.setTimeout(() => setRadioCaptureNotice(null), 5000);
+    }
+  }, [stopRadioCapture]);
+
   // Play a specific surah
   const playSurah = useCallback((surahId: number, allSurahs: number[]) => {
     const { selectedReciter: reciter, selectedMoshaf: moshaf, playbackRate: currentRate } = stateRef.current;
@@ -174,7 +227,8 @@ const QuranTabScreen = React.memo(function QuranTabScreen({ onBack, onHideNavCha
       clearTimeout(playTimeoutRef.current);
     }
 
-    // Stop any active radio
+    // Stop any active radio and finalize any active radio capture before Quran playback.
+    void stopRadioCapture("switch-to-quran");
     setCurrentPlayingRadio(null);
 
     // IMMEDIATE STATE UPDATE FOR FAST TRANSITION
@@ -208,29 +262,33 @@ const QuranTabScreen = React.memo(function QuranTabScreen({ onBack, onHideNavCha
         }
       }
     }, 10);
-  }, [safePlay]);
+  }, [safePlay, stopRadioCapture]);
 
   // Play/Pause Live Radio
-  const playRadio = useCallback((radio: RadioStation) => {
+  const playRadio = useCallback(async (radio: RadioStation) => {
     if (!audioRef.current) return;
 
     if (playTimeoutRef.current) {
       clearTimeout(playTimeoutRef.current);
     }
 
-    // Stop any active surah
+    // Stop any active surah. Switching stations finalizes the previous capture automatically.
     setPlayingSurahId(null);
+    if (stateRef.current.currentPlayingRadio?.id !== radio.id) {
+      await stopRadioCapture("station-switch");
+    }
 
     setCurrentPlayingRadio(radio);
     setIsPlaying(true); // immediate feedback
 
     audioRef.current.src = radio.url;
     safePlay();
-  }, [safePlay]);
+  }, [safePlay, stopRadioCapture]);
 
   const pauseRadio = useCallback(() => {
+    void stopRadioCapture("playback-paused");
     safePause();
-  }, [safePause]);
+  }, [safePause, stopRadioCapture]);
 
   const handleTogglePlay = useCallback(() => {
     const { currentPlayingRadio, playingSurahId, isPlaying: currentIsPlaying } = stateRef.current;
@@ -238,6 +296,7 @@ const QuranTabScreen = React.memo(function QuranTabScreen({ onBack, onHideNavCha
 
     if (currentPlayingRadio !== null) {
       if (currentIsPlaying) {
+        void stopRadioCapture("playback-paused");
         safePause();
       } else {
         if (playTimeoutRef.current) {
@@ -259,7 +318,7 @@ const QuranTabScreen = React.memo(function QuranTabScreen({ onBack, onHideNavCha
       setIsPlaying(true);
       safePlay();
     }
-  }, [safePlay, safePause]);
+  }, [safePlay, safePause, stopRadioCapture]);
 
   const handleNext = useCallback(() => {
     const { playlist: currentPlaylist, playingSurahId: currentPlayingId, repeatMode: currentRepeat } = stateRef.current;
@@ -437,6 +496,7 @@ const QuranTabScreen = React.memo(function QuranTabScreen({ onBack, onHideNavCha
           if (audioRef.current) {
             audioRef.current.pause();
           }
+          void stopRadioCapture("sleep-timer");
           setIsPlaying(false);
           return null;
         }
@@ -445,7 +505,7 @@ const QuranTabScreen = React.memo(function QuranTabScreen({ onBack, onHideNavCha
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timerMinutesRemaining, isPlaying]);
+  }, [timerMinutesRemaining, isPlaying, stopRadioCapture]);
 
 
   const handleSeek = (time: number) => {
@@ -492,6 +552,9 @@ const QuranTabScreen = React.memo(function QuranTabScreen({ onBack, onHideNavCha
                 selectedMoshaf={selectedMoshaf}
                 audioRef={audioRef}
                 currentPlayingRadio={currentPlayingRadio}
+                radioCaptureState={radioCaptureState}
+                onToggleRadioCapture={toggleRadioCapture}
+                radioCaptureNotice={radioCaptureNotice}
                 onPlayRadio={playRadio}
                 onPauseRadio={pauseRadio}
                 onModeChange={setQuranMode}
@@ -646,6 +709,7 @@ const QuranTabScreen = React.memo(function QuranTabScreen({ onBack, onHideNavCha
                 {/* Close player completely */}
                 <button
                   onClick={() => {
+                    void stopRadioCapture("player-closed");
                     safePause();
                     setPlayingSurahId(null);
                     setCurrentPlayingRadio(null);

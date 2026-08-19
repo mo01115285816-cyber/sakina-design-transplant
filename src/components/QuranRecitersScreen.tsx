@@ -15,6 +15,7 @@ import {
 import type { Reciter, Moshaf } from "@/types/quran";
 import QuranLiveBroadcast from "./QuranLiveBroadcast";
 import { RadioStation } from "@/types/radio";
+import type { RadioCaptureState } from "@/services/radioCaptureService";
 
 // Robust offline fallback list of popular reciters to guarantee instant loading and prevent any blank/empty screen
 const FALLBACK_RECITERS: Reciter[] = [
@@ -217,6 +218,9 @@ interface Props {
   currentPlayingRadio: RadioStation | null;
   onPlayRadio: (radio: RadioStation) => void;
   onPauseRadio: () => void;
+  radioCaptureState: RadioCaptureState;
+  onToggleRadioCapture: () => void;
+  radioCaptureNotice: string | null;
   onModeChange?: (mode: "listening" | "reading") => void;
 }
 
@@ -233,6 +237,9 @@ export default function QuranRecitersScreen({
   currentPlayingRadio,
   onPlayRadio,
   onPauseRadio,
+  radioCaptureState,
+  onToggleRadioCapture,
+  radioCaptureNotice,
   onModeChange,
 }: Props) {
   const [reciters, setReciters] = useState<Reciter[]>(FALLBACK_RECITERS);
@@ -495,6 +502,9 @@ export default function QuranRecitersScreen({
           isPlayingRadio={currentPlayingRadio !== null && isPlaying}
           onPlayRadio={onPlayRadio}
           onPauseRadio={onPauseRadio}
+          radioCaptureState={radioCaptureState}
+          onToggleRadioCapture={onToggleRadioCapture}
+          radioCaptureNotice={radioCaptureNotice}
         />
 
         {isLoading && reciters.length === 0 ? (
