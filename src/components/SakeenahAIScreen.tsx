@@ -321,21 +321,9 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
   useEffect(() => {
     let cancelled = false;
     setIsConversationsLoading(true);
+    setMessages([]);
+    setActiveConversationId(null);
     void refreshConversations()
-      .then(async (next) => {
-        if (cancelled || !next[0]) return;
-        const storedMessages = await loadSakeenahMessages(next[0].id);
-        if (cancelled) return;
-        setActiveConversationId(next[0].id);
-        setMessages(storedMessages.map((message) => ({
-          id: message.id,
-          role: message.role,
-          content: message.content,
-          timestamp: message.timestamp,
-          isNew: false,
-          isStreaming: false,
-        })));
-      })
       .catch((error) => {
         console.error("Failed to load Sakeenah conversations", error);
         if (!cancelled) setStorageError("تعذر تحميل المحادثات المحفوظة.");
@@ -768,10 +756,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
 
       {/* ── FLOATING TOP HEADER ── */}
       <div className="absolute top-6 left-5 right-5 flex items-center justify-between z-[45] pointer-events-none">
-        <div className="flex items-center gap-2 pointer-events-auto">
-          <div className="cut-crystal-capsule px-5 h-10 rounded-full shadow-md flex items-center justify-center gap-1.5 transition-all duration-300">
-            <span className="text-[14.5px] font-display font-black whitespace-nowrap pt-0.5">سَكِينَة AI</span>
-          </div>
+        <div className="pointer-events-auto">
           <button
             type="button"
             onClick={() => setIsDrawerOpen(true)}
@@ -784,6 +769,9 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
         </div>
 
         <div className="flex items-center gap-2 pointer-events-auto">
+          <div className="cut-crystal-capsule px-5 h-10 rounded-full shadow-md flex items-center justify-center gap-1.5 transition-all duration-300">
+            <span className="text-[14.5px] font-display font-black whitespace-nowrap pt-0.5">سَكِينَة AI</span>
+          </div>
           {messages.length > 0 && (
             <button
               type="button"
@@ -820,7 +808,12 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
             />
             <motion.aside
               dir="rtl"
-              className="fixed top-4 bottom-4 right-3 z-[60] flex w-[min(320px,calc(100vw-24px))] flex-col overflow-hidden rounded-[32px] border border-[#b88a4f]/25 bg-[#ece7de] shadow-[0_24px_70px_-20px_rgba(43,26,16,0.42)]"
+              className="fixed top-4 bottom-4 left-0 z-[60] flex w-[min(286px,calc(100vw-16px))] flex-col overflow-hidden rounded-r-[30px] rounded-l-none border border-l-0 border-[#b88a4f]/25 shadow-[0_24px_70px_-20px_rgba(43,26,16,0.42)]"
+              style={{
+                background: "linear-gradient(145deg, rgba(253,252,251,0.78), rgba(236,231,222,0.64))",
+                backdropFilter: "blur(28px) saturate(165%)",
+                WebkitBackdropFilter: "blur(28px) saturate(165%)",
+              }}
               initial={{ opacity: 0, x: 24, scale: 0.98 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 24, scale: 0.98 }}
