@@ -808,15 +808,15 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
             />
             <motion.aside
               dir="rtl"
-              className="fixed top-4 bottom-4 left-0 z-[60] flex w-[min(286px,calc(100vw-16px))] flex-col overflow-hidden rounded-r-[30px] rounded-l-none border border-l-0 border-[#b88a4f]/25 shadow-[0_24px_70px_-20px_rgba(43,26,16,0.42)]"
+              className="fixed top-4 bottom-4 right-0 left-auto z-[60] flex w-[min(286px,calc(100vw-16px))] flex-col overflow-hidden rounded-l-[30px] rounded-r-none border border-r-0 border-[#b88a4f]/25 shadow-[0_24px_70px_-20px_rgba(43,26,16,0.42)]"
               style={{
                 background: "linear-gradient(145deg, rgba(253,252,251,0.78), rgba(236,231,222,0.64))",
                 backdropFilter: "blur(28px) saturate(165%)",
                 WebkitBackdropFilter: "blur(28px) saturate(165%)",
               }}
-              initial={{ opacity: 0, x: 24, scale: 0.98 }}
+              initial={{ opacity: 0, x: -24, scale: 0.98 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 24, scale: 0.98 }}
+              exit={{ opacity: 0, x: -24, scale: 0.98 }}
               transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
             >
               <div className="flex items-center justify-between border-b border-[#b88a4f]/15 px-5 py-4">
