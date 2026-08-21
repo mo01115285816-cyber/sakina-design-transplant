@@ -70,6 +70,12 @@ const welcomeLines: WelcomeLine[] = [
   { title: "في أي أمر شرعي نبدأ معًا؟", subtitle: "مساحة هادئة للتعلّم والتدبّر وحسن الفهم." },
 ];
 
+const SAKEENAH_GLASS_SURFACE_STYLE: React.CSSProperties = {
+  background: "linear-gradient(145deg, rgba(255,255,255,0.28), rgba(184,138,79,0.18))",
+  backdropFilter: "blur(28px) saturate(165%)",
+  WebkitBackdropFilter: "blur(28px) saturate(165%)",
+};
+
 const getInitialWelcomeLineIndex = () => {
   const previous = Number.parseInt(localStorage.getItem("sakeenah_ai_welcome_line_index") ?? "-1", 10);
   return Number.isInteger(previous) && previous >= 0
@@ -936,11 +942,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
             <motion.aside
               dir="rtl"
               className="fixed inset-y-0 right-0 left-auto z-[60] flex w-[min(286px,calc(100vw-16px))] flex-col overflow-hidden rounded-l-[30px] rounded-r-none border border-r-0 border-white/45 shadow-[0_24px_70px_-20px_rgba(43,26,16,0.42)]"
-              style={{
-                background: "linear-gradient(145deg, rgba(255,255,255,0.28), rgba(184,138,79,0.18))",
-                backdropFilter: "blur(28px) saturate(165%)",
-                WebkitBackdropFilter: "blur(28px) saturate(165%)",
-              }}
+              style={SAKEENAH_GLASS_SURFACE_STYLE}
               initial={{ opacity: 0, x: 18, scale: 0.995 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 18, scale: 0.995 }}
@@ -1021,7 +1023,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
                               animate={{ opacity: 1, scale: 1, y: 0 }}
                               exit={{ opacity: 0, scale: 0.96, y: -4 }}
                               transition={{ duration: 0.12 }}
-                              className="cut-crystal-panel absolute left-2 top-10 z-[70] w-[184px] overflow-hidden rounded-[20px] p-1.5"
+                              className="absolute left-2 top-10 z-[70] w-[184px] overflow-hidden rounded-[20px] border border-white/45 p-1.5 shadow-[0_16px_36px_rgba(43,26,16,0.18)]" style={SAKEENAH_GLASS_SURFACE_STYLE}
                             >
                               <button type="button" onClick={() => void handleShareConversation(conversation)} className="flex h-9 w-full items-center gap-2 rounded-[14px] px-3 text-right text-[11px] font-bold text-[#2b1a10] transition hover:bg-[#f5ebd9] cursor-pointer">
                                 <Share2 size={14} className="text-[#b88a4f]" />
@@ -1035,8 +1037,8 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
                                 <Pencil size={14} className="text-[#b88a4f]" />
                                 <span>إعادة التسمية</span>
                               </button>
-                              <button type="button" onClick={() => { setOpenConversationMenuId(null); setDeleteTarget(conversation); }} className="flex h-9 w-full items-center gap-2 rounded-[14px] px-3 text-right text-[11px] font-bold text-red-700 transition hover:bg-red-50 cursor-pointer">
-                                <Trash2 size={14} />
+                              <button type="button" onClick={() => { setOpenConversationMenuId(null); setDeleteTarget(conversation); }} className="flex h-9 w-full items-center gap-2 rounded-[14px] px-3 text-right text-[11px] font-bold text-[#2b1a10] transition hover:bg-[#f5ebd9] cursor-pointer">
+                                <Trash2 size={14} className="text-[#b88a4f]" />
                                 <span>حذف</span>
                               </button>
                             </motion.div>
@@ -1055,7 +1057,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
       <AnimatePresence>
         {shareResult && (
           <motion.div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2b1a10]/20 px-5 backdrop-blur-[3px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div dir="rtl" className="cut-crystal-panel w-full max-w-[360px] rounded-[28px] border border-[#b88a4f]/25 p-5" initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }}>
+            <motion.div dir="rtl" className="w-full max-w-[360px] rounded-[28px] border border-white/45 p-5 shadow-[0_24px_70px_-20px_rgba(43,26,16,0.42)]" style={SAKEENAH_GLASS_SURFACE_STYLE} initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[15px] font-display font-black text-[#2b1a10]">تم إنشاء رابط المشاركة</p>
@@ -1063,7 +1065,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
                 </div>
                 <button type="button" onClick={() => setShareResult(null)} className="flex h-8 w-8 items-center justify-center rounded-full text-[#7f6a55] hover:bg-[#f5ebd9] cursor-pointer" aria-label="إغلاق"><X size={16} /></button>
               </div>
-              <div className="cut-crystal-panel mt-4 flex items-center gap-2 rounded-[18px] border-[#b88a4f]/20 p-2">
+              <div className="mt-4 flex items-center gap-2 rounded-[18px] border border-white/45 p-2 shadow-[0_12px_28px_-16px_rgba(43,26,16,0.28)]" style={SAKEENAH_GLASS_SURFACE_STYLE}>
                 <input readOnly value={shareResult.result.url} className="min-w-0 flex-1 bg-transparent px-2 text-left text-[10px] font-bold text-[#2b1a10] outline-none" dir="ltr" aria-label="رابط مشاركة المحادثة" />
                 <button type="button" onClick={() => void navigator.clipboard?.writeText(shareResult.result.url)} className="flex h-9 shrink-0 items-center gap-1 rounded-full bg-[#b88a4f] px-3 text-[11px] font-black text-white hover:bg-[#a0753e] cursor-pointer"><Copy size={13} />نسخ</button>
               </div>
@@ -1076,7 +1078,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
         )}
         {renameTarget && (
           <motion.div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2b1a10]/20 px-5 backdrop-blur-[3px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.form dir="rtl" onSubmit={(event) => { event.preventDefault(); void handleRenameConversation(); }} className="cut-crystal-panel w-full max-w-[360px] rounded-[28px] border border-[#b88a4f]/25 p-5" initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }}>
+            <motion.form dir="rtl" onSubmit={(event) => { event.preventDefault(); void handleRenameConversation(); }} className="w-full max-w-[360px] rounded-[28px] border border-white/45 p-5 shadow-[0_24px_70px_-20px_rgba(43,26,16,0.42)]" style={SAKEENAH_GLASS_SURFACE_STYLE} initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }}>
               <p className="text-[16px] font-display font-black text-[#2b1a10]">إعادة تسمية المحادثة</p>
               <input autoFocus value={renameValue} onChange={(event) => setRenameValue(event.target.value)} maxLength={160} className="cut-crystal-input mt-4 h-11 w-full rounded-[18px] px-4 text-right text-[13px] font-bold text-[#2b1a10] outline-none focus:border-[#b88a4f]" aria-label="اسم المحادثة الجديد" />
               <div className="mt-4 flex gap-2">
@@ -1088,7 +1090,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
         )}
         {deleteTarget && (
           <motion.div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2b1a10]/25 px-5 backdrop-blur-[3px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div dir="rtl" className="cut-crystal-panel w-full max-w-[360px] rounded-[28px] border border-[#8f3c35]/35 p-5" initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }}>
+            <motion.div dir="rtl" className="w-full max-w-[360px] rounded-[28px] border border-white/45 p-5 shadow-[0_24px_70px_-20px_rgba(43,26,16,0.42)]" style={SAKEENAH_GLASS_SURFACE_STYLE} initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }}>
               <div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#8f3c35] to-[#6f2d29] text-white shadow-sm"><Trash2 size={18} /></div><div><p className="text-[16px] font-display font-black text-[#2b1a10]">حذف المحادثة نهائيًا؟</p><p className="mt-2 text-[12px] font-bold leading-6 text-[#7f6a55]">سيتم حذف المحادثة وجميع رسائلها ورابط مشاركتها نهائيًا. لا يمكن التراجع عن هذا الإجراء.</p></div></div>
               <div className="mt-5 flex gap-2"><button type="button" onClick={() => setDeleteTarget(null)} disabled={actionLoading} className="h-10 flex-1 rounded-full border border-[#d8c9b8] text-[12px] font-black text-[#7f6a55] hover:bg-[#f5ebd9] cursor-pointer">إلغاء</button><button type="button" onClick={() => void handleDeleteConversation(deleteTarget.id)} disabled={actionLoading} className="h-10 flex-1 rounded-full border border-[#8f3c35]/35 bg-gradient-to-br from-[#8f3c35] to-[#6f2d29] text-[12px] font-black text-white shadow-[0_10px_22px_-12px_rgba(111,45,41,0.9)] transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[0.97] disabled:opacity-50 cursor-pointer">{actionLoading ? "جارٍ الحذف..." : "حذف نهائي"}</button></div>
             </motion.div>
