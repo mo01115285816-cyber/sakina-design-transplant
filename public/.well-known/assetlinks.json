@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.sakeenah.app",
+      "sha256_cert_fingerprints": [
+        "D1:3E:9C:2E:17:45:15:18:3B:F8:29:BE:F9:E7:51:2E:DC:32:90:7B:F4:AD:9A:0B:EA:E4:15:21:90:A3:D0:81"
+      ]
+    }
+  }
+]

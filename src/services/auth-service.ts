@@ -157,3 +157,36 @@ export function listenForNativeAuthCallback(
     void listenerPromise.then((listener) => listener.remove());
   };
 }
+
+
+export function extractSharedConversationToken(url?: string): string | null {
+  if (!url) return null;
+  try {
+    const parsed = new URL(url);
+    const match = parsed.pathname.match(/^\/shared\/chat\/([A-Za-z0-9_-]{32,96})\/?$/);
+    return match?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export function listenForNativeSharedConversationLink(
+  onToken: (token: string) => void,
+): () => void {
+  if (!Capacitor.isNativePlatform()) return () => undefined;
+
+  let disposed = false;
+  const processUrl = (url: string | undefined) => {
+    if (disposed) return;
+    const token = extractSharedConversationToken(url);
+    if (token) onToken(token);
+  };
+
+  const listenerPromise = App.addListener("appUrlOpen", ({ url }) => processUrl(url));
+  void App.getLaunchUrl().then(({ url }) => processUrl(url));
+
+  return () => {
+    disposed = true;
+    void listenerPromise.then((listener) => listener.remove());
+  };
+}

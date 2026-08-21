@@ -9,6 +9,7 @@ type ConversationRow = {
   last_message_at: string;
   created_at: string;
   updated_at: string;
+  pinned_at: string | null;
 };
 
 type MessageRow = {
@@ -26,6 +27,7 @@ export type StoredConversation = {
   lastMessageAt: Date;
   createdAt: Date;
   updatedAt: Date;
+  pinnedAt: Date | null;
 };
 
 export type StoredMessage = {
@@ -43,6 +45,7 @@ function toConversation(row: ConversationRow): StoredConversation {
     lastMessageAt: new Date(row.last_message_at),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
+    pinnedAt: row.pinned_at ? new Date(row.pinned_at) : null,
   };
 }
 
@@ -59,7 +62,8 @@ function toMessage(row: MessageRow): StoredMessage {
 export async function listSakeenahConversations(): Promise<StoredConversation[]> {
   const { data, error } = await getSupabaseClient()
     .from("ai_conversations")
-    .select("id,user_id,title,context_summary,summary_updated_at,last_message_at,created_at,updated_at")
+    .select("id,user_id,title,context_summary,summary_updated_at,last_message_at,created_at,updated_at,pinned_at")
+    .order("pinned_at", { ascending: false, nullsFirst: false })
     .order("last_message_at", { ascending: false })
     .limit(100);
 
@@ -78,7 +82,7 @@ export async function createSakeenahConversation(title = "محادثة جديد�
       user_id: userData.user.id,
       title: title.trim().slice(0, 160) || "محادثة جديدة",
     })
-    .select("id,user_id,title,context_summary,summary_updated_at,last_message_at,created_at,updated_at")
+    .select("id,user_id,title,context_summary,summary_updated_at,last_message_at,created_at,updated_at,pinned_at")
     .single();
 
   if (error) throw error;

@@ -3,6 +3,10 @@
     {
       "source": "/auth/callback",
       "destination": "/"
+    },
+    {
+      "source": "/shared/chat/:token",
+      "destination": "/"
     }
   ]
 }

@@ -18,10 +18,13 @@ import {
   getCurrentSession,
   handleAuthCallback,
   listenForNativeAuthCallback,
+  listenForNativeSharedConversationLink,
   subscribeToAuthState,
   signOut,
 } from "@/services/auth-service";
 import { dailyHadithData } from "@/data/dailyHadithData";
+import SharedSakeenahConversationPage from "@/components/SharedSakeenahConversationPage";
+import { getPublicShareTokenFromPath, forkSakeenahSharedConversation } from "@/services/sakeenah-sharing";
 import {
   detectCalcMethodByLocation,
   detectAsrSchoolByLocation,
@@ -142,7 +145,7 @@ function ScreenLoader({ label }: { label: string }) {
   );
 }
 
-export default function App() {
+function AuthenticatedApp() {
   /* ── Existing state ── */
   const [now, setNow] = useState(() => new Date());
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -151,6 +154,8 @@ export default function App() {
   /* ── NEW state ── */
   const [activeTab, setActiveTab] = useState<TabType>("main");
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [pendingSharedToken, setPendingSharedToken] = useState<string | null>(() => localStorage.getItem("sakeenah_pending_share_token"));
+  const [pendingForkConversationId, setPendingForkConversationId] = useState<string | null>(() => localStorage.getItem("sakeenah_pending_fork_conversation_id"));
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [showLocationDialog, setShowLocationDialog] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
@@ -315,6 +320,45 @@ export default function App() {
       stopAuthSubscription();
     };
   }, []);
+
+  useEffect(() => {
+    const stopSharedLinkListener = listenForNativeSharedConversationLink((token) => {
+      localStorage.setItem("sakeenah_pending_share_token", token);
+      setPendingSharedToken(token);
+    });
+    return stopSharedLinkListener;
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthReady) return;
+    if (pendingSharedToken && !currentUser) {
+      setActiveTab("sakeenah-ai");
+      return;
+    }
+    if (pendingForkConversationId && currentUser) {
+      setActiveTab("sakeenah-ai");
+    }
+  }, [currentUser, isAuthReady, pendingForkConversationId, pendingSharedToken]);
+
+  useEffect(() => {
+    if (!isAuthReady || !currentUser || !pendingSharedToken) return;
+    let cancelled = false;
+    void forkSakeenahSharedConversation(pendingSharedToken)
+      .then(({ conversationId }) => {
+        if (cancelled) return;
+        localStorage.removeItem("sakeenah_pending_share_token");
+        localStorage.setItem("sakeenah_pending_fork_conversation_id", conversationId);
+        setPendingSharedToken(null);
+        setPendingForkConversationId(conversationId);
+        setActiveTab("sakeenah-ai");
+      })
+      .catch((error) => {
+        console.error("Failed to fork shared Sakeenah conversation", error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser, isAuthReady, pendingSharedToken]);
 
   // Check only capabilities required by the prayer scheduler. Battery
   // optimization exemption and vendor auto-start remain optional OS settings.
@@ -1461,7 +1505,15 @@ export default function App() {
               </div>
             ) : currentUser ? (
               <Suspense fallback={<ScreenLoader label="جارٍ تحميل سكينة AI..." />}>
-                <SakeenahAIScreen onBack={handleBackToMain} user={currentUser} />
+                <SakeenahAIScreen
+                  onBack={handleBackToMain}
+                  user={currentUser}
+                  initialConversationId={pendingForkConversationId}
+                  onInitialConversationConsumed={() => {
+                    localStorage.removeItem("sakeenah_pending_fork_conversation_id");
+                    setPendingForkConversationId(null);
+                  }}
+                />
               </Suspense>
             ) : (
               <AuthScreen
@@ -1619,4 +1671,11 @@ export default function App() {
       </AnimatePresence>
       </div>
   );
+}
+
+
+export default function App() {
+  const sharedToken = getPublicShareTokenFromPath();
+  if (sharedToken) return <SharedSakeenahConversationPage token={sharedToken} />;
+  return <AuthenticatedApp />;
 }
