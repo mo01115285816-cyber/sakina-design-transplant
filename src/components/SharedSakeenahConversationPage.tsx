@@ -107,7 +107,7 @@ export default function SharedSakeenahConversationPage({ token }: { token: strin
 
   return (
     <main dir="rtl" className="min-h-[100dvh] overflow-hidden bg-[#ece7de] text-[#2b1a10]">
-      <div className="relative mx-auto min-h-[100dvh] w-full max-w-[390px] overflow-hidden font-sans">
+      <div className="relative min-h-[100dvh] w-full overflow-hidden font-sans">
         <div className="pointer-events-none absolute right-[-10%] top-[-20%] z-0 h-[300px] w-[300px] rounded-full bg-[#b88a4f]/5 blur-[120px]" />
         <div className="pointer-events-none absolute bottom-[-10%] left-[-10%] z-0 h-[250px] w-[250px] rounded-full bg-[#deab65]/5 blur-[100px]" />
 
@@ -126,7 +126,7 @@ export default function SharedSakeenahConversationPage({ token }: { token: strin
             <button type="button" onClick={() => void copyLink()} className="mt-3 flex h-8 items-center gap-1.5 rounded-full px-3 text-[10px] font-black text-[#7f6a55] hover:bg-[#f5ebd9] cursor-pointer">{copied ? <Check size={13} /> : <Copy size={13} />}<span>{copied ? "تم نسخ الرابط" : "نسخ رابط المحادثة"}</span></button>
           </section>
 
-          <section className="relative z-10 mt-5 space-y-4 px-5">
+          <section className="relative z-10 mx-auto mt-5 max-w-[390px] space-y-4 px-5">
             {payload.messages.map((message) => message.role === "user" ? (
               <div key={message.id} className="mr-auto max-w-[85%] rounded-[28px] border border-[#2b1a10]/20 bg-gradient-to-br from-[#2b1a10] to-[#3f281a] p-4 text-right text-[14px] font-bold leading-relaxed text-[#fff9f1] shadow-md" dir="auto">{message.content}</div>
             ) : (
