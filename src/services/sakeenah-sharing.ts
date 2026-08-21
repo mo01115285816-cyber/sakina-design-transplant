@@ -1,5 +1,5 @@
 import { getCurrentSession } from "./auth-service";
-import { supabaseKey, supabaseUrl } from "./supabase-client";
+import { getSupabaseClient, supabaseKey, supabaseUrl } from "./supabase-client";
 
 export type SharedConversationMessage = {
   id: string;
@@ -84,14 +84,42 @@ export function forkSakeenahSharedConversation(token: string) {
   return callSharing<{ conversationId: string }>("fork", { token });
 }
 
-export function renameSakeenahConversation(conversationId: string, title: string) {
-  return callSharing<{ conversation: { id: string; title: string; updated_at: string } }>("rename", { conversationId, title });
+export async function renameSakeenahConversation(conversationId: string, title: string) {
+  const normalizedTitle = title.trim().slice(0, 160);
+  if (!normalizedTitle) throw new Error("اسم المحادثة لا يمكن أن يكون فارغًا.");
+
+  const { data, error } = await getSupabaseClient()
+    .from("ai_conversations")
+    .update({ title: normalizedTitle })
+    .eq("id", conversationId)
+    .select("id,title,updated_at")
+    .single();
+
+  if (error) throw error;
+  return { conversation: data as { id: string; title: string; updated_at: string } };
 }
 
-export function pinSakeenahConversation(conversationId: string, pinned: boolean) {
-  return callSharing<{ conversation: { id: string; pinned_at: string | null } }>("pin", { conversationId, pinned });
+export async function pinSakeenahConversation(conversationId: string, pinned: boolean) {
+  const { data, error } = await getSupabaseClient()
+    .from("ai_conversations")
+    .update({ pinned_at: pinned ? new Date().toISOString() : null })
+    .eq("id", conversationId)
+    .select("id,pinned_at")
+    .single();
+
+  if (error) throw error;
+  return { conversation: data as { id: string; pinned_at: string | null } };
 }
 
-export function permanentlyDeleteSakeenahConversation(conversationId: string) {
-  return callSharing<{ deleted: true; conversationId: string }>("delete", { conversationId });
+export async function permanentlyDeleteSakeenahConversation(conversationId: string) {
+  const { data, error } = await getSupabaseClient()
+    .from("ai_conversations")
+    .delete()
+    .eq("id", conversationId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) throw new Error("المحادثة غير موجودة أو لم تعد متاحة.");
+  return { deleted: true as const, conversationId };
 }

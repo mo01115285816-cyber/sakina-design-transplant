@@ -380,6 +380,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
       const next = await refreshConversations();
       setDeleteTarget(null);
       setOpenConversationMenuId(null);
+      setStorageError(null);
       if (activeConversationId === conversationId) {
         if (next[0]) await openConversation(next[0].id);
         else startNewConversation();
@@ -454,6 +455,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
       const pinned = !conversation.pinnedAt;
       await pinSakeenahConversation(conversation.id, pinned);
       await refreshConversations();
+      setStorageError(null);
     } catch (error) {
       console.error("Failed to pin Sakeenah conversation", error);
       setStorageError("تعذر تثبيت المحادثة حاليًا.");
@@ -476,6 +478,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
       await refreshConversations();
       setRenameTarget(null);
       setRenameValue("");
+      setStorageError(null);
     } catch (error) {
       console.error("Failed to rename Sakeenah conversation", error);
       setStorageError("تعذر إعادة تسمية المحادثة حاليًا.");
@@ -1005,11 +1008,11 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
                             event.stopPropagation();
                             setOpenConversationMenuId((current) => current === conversation.id ? null : conversation.id);
                           }}
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#7f6a55]/70 transition-all hover:bg-white hover:text-[#2b1a10] cursor-pointer"
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all hover:bg-[#f5ebd9]/75 cursor-pointer ${conversation.pinnedAt ? "text-[#b88a4f]" : "text-[#7f6a55]/70 hover:text-[#2b1a10]"}`}
                           aria-label={`إجراءات ${conversation.title}`}
                           title="إجراءات المحادثة"
                         >
-                          <MoreVertical size={16} />
+                          {conversation.pinnedAt ? <Pin size={15} fill="currentColor" /> : <MoreVertical size={16} />}
                         </button>
                         <AnimatePresence>
                           {openConversationMenuId === conversation.id && (
@@ -1018,7 +1021,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
                               animate={{ opacity: 1, scale: 1, y: 0 }}
                               exit={{ opacity: 0, scale: 0.96, y: -4 }}
                               transition={{ duration: 0.12 }}
-                              className="absolute left-2 top-10 z-[70] w-[184px] overflow-hidden rounded-[20px] border border-white/50 bg-white/18 p-1.5 shadow-[0_16px_36px_rgba(43,26,16,0.18)] backdrop-blur-2xl"
+                              className="cut-crystal-panel absolute left-2 top-10 z-[70] w-[184px] overflow-hidden rounded-[20px] p-1.5"
                             >
                               <button type="button" onClick={() => void handleShareConversation(conversation)} className="flex h-9 w-full items-center gap-2 rounded-[14px] px-3 text-right text-[11px] font-bold text-[#2b1a10] transition hover:bg-[#f5ebd9] cursor-pointer">
                                 <Share2 size={14} className="text-[#b88a4f]" />
@@ -1052,7 +1055,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
       <AnimatePresence>
         {shareResult && (
           <motion.div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2b1a10]/20 px-5 backdrop-blur-[3px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div dir="rtl" className="w-full max-w-[360px] rounded-[28px] border border-[#b88a4f]/25 bg-[#fdfbf7] p-5 shadow-[0_24px_70px_rgba(43,26,16,0.28)]" initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }}>
+            <motion.div dir="rtl" className="cut-crystal-panel w-full max-w-[360px] rounded-[28px] border border-[#b88a4f]/25 p-5" initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }}>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[15px] font-display font-black text-[#2b1a10]">تم إنشاء رابط المشاركة</p>
@@ -1060,7 +1063,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
                 </div>
                 <button type="button" onClick={() => setShareResult(null)} className="flex h-8 w-8 items-center justify-center rounded-full text-[#7f6a55] hover:bg-[#f5ebd9] cursor-pointer" aria-label="إغلاق"><X size={16} /></button>
               </div>
-              <div className="mt-4 flex items-center gap-2 rounded-[18px] border border-[#e6dccf] bg-[#f7f2ea] p-2">
+              <div className="cut-crystal-panel mt-4 flex items-center gap-2 rounded-[18px] border-[#b88a4f]/20 p-2">
                 <input readOnly value={shareResult.result.url} className="min-w-0 flex-1 bg-transparent px-2 text-left text-[10px] font-bold text-[#2b1a10] outline-none" dir="ltr" aria-label="رابط مشاركة المحادثة" />
                 <button type="button" onClick={() => void navigator.clipboard?.writeText(shareResult.result.url)} className="flex h-9 shrink-0 items-center gap-1 rounded-full bg-[#b88a4f] px-3 text-[11px] font-black text-white hover:bg-[#a0753e] cursor-pointer"><Copy size={13} />نسخ</button>
               </div>
@@ -1073,9 +1076,9 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
         )}
         {renameTarget && (
           <motion.div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2b1a10]/20 px-5 backdrop-blur-[3px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.form dir="rtl" onSubmit={(event) => { event.preventDefault(); void handleRenameConversation(); }} className="w-full max-w-[360px] rounded-[28px] border border-[#b88a4f]/25 bg-[#fdfbf7] p-5 shadow-[0_24px_70px_rgba(43,26,16,0.28)]" initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }}>
+            <motion.form dir="rtl" onSubmit={(event) => { event.preventDefault(); void handleRenameConversation(); }} className="cut-crystal-panel w-full max-w-[360px] rounded-[28px] border border-[#b88a4f]/25 p-5" initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }}>
               <p className="text-[16px] font-display font-black text-[#2b1a10]">إعادة تسمية المحادثة</p>
-              <input autoFocus value={renameValue} onChange={(event) => setRenameValue(event.target.value)} maxLength={160} className="mt-4 h-11 w-full rounded-[18px] border border-[#d8c9b8] bg-[#f7f2ea] px-4 text-right text-[13px] font-bold text-[#2b1a10] outline-none focus:border-[#b88a4f]" aria-label="اسم المحادثة الجديد" />
+              <input autoFocus value={renameValue} onChange={(event) => setRenameValue(event.target.value)} maxLength={160} className="cut-crystal-input mt-4 h-11 w-full rounded-[18px] px-4 text-right text-[13px] font-bold text-[#2b1a10] outline-none focus:border-[#b88a4f]" aria-label="اسم المحادثة الجديد" />
               <div className="mt-4 flex gap-2">
                 <button type="button" onClick={() => setRenameTarget(null)} className="h-10 flex-1 rounded-full border border-[#d8c9b8] text-[12px] font-black text-[#7f6a55] hover:bg-[#f5ebd9] cursor-pointer">إلغاء</button>
                 <button type="submit" disabled={!renameValue.trim() || actionLoading} className="h-10 flex-1 rounded-full bg-[#b88a4f] text-[12px] font-black text-white disabled:opacity-50 cursor-pointer">حفظ</button>
@@ -1085,9 +1088,9 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
         )}
         {deleteTarget && (
           <motion.div className="fixed inset-0 z-[90] flex items-center justify-center bg-[#2b1a10]/25 px-5 backdrop-blur-[3px]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div dir="rtl" className="w-full max-w-[360px] rounded-[28px] border border-red-200 bg-[#fdfbf7] p-5 shadow-[0_24px_70px_rgba(43,26,16,0.28)]" initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }}>
-              <div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-50 text-red-600"><Trash2 size={18} /></div><div><p className="text-[16px] font-display font-black text-[#2b1a10]">حذف المحادثة نهائيًا؟</p><p className="mt-2 text-[12px] font-bold leading-6 text-[#7f6a55]">سيتم حذف المحادثة وجميع رسائلها ورابط مشاركتها من قاعدة البيانات نهائيًا. لا يمكن التراجع عن هذا الإجراء.</p></div></div>
-              <div className="mt-5 flex gap-2"><button type="button" onClick={() => setDeleteTarget(null)} disabled={actionLoading} className="h-10 flex-1 rounded-full border border-[#d8c9b8] text-[12px] font-black text-[#7f6a55] hover:bg-[#f5ebd9] cursor-pointer">إلغاء</button><button type="button" onClick={() => void handleDeleteConversation(deleteTarget.id)} disabled={actionLoading} className="h-10 flex-1 rounded-full bg-red-600 text-[12px] font-black text-white hover:bg-red-700 disabled:opacity-50 cursor-pointer">{actionLoading ? "جارٍ الحذف..." : "حذف نهائي"}</button></div>
+            <motion.div dir="rtl" className="cut-crystal-panel w-full max-w-[360px] rounded-[28px] border border-[#8f3c35]/35 p-5" initial={{ opacity: 0, scale: 0.96, y: 8 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.96, y: 8 }}>
+              <div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#8f3c35] to-[#6f2d29] text-white shadow-sm"><Trash2 size={18} /></div><div><p className="text-[16px] font-display font-black text-[#2b1a10]">حذف المحادثة نهائيًا؟</p><p className="mt-2 text-[12px] font-bold leading-6 text-[#7f6a55]">سيتم حذف المحادثة وجميع رسائلها ورابط مشاركتها نهائيًا. لا يمكن التراجع عن هذا الإجراء.</p></div></div>
+              <div className="mt-5 flex gap-2"><button type="button" onClick={() => setDeleteTarget(null)} disabled={actionLoading} className="h-10 flex-1 rounded-full border border-[#d8c9b8] text-[12px] font-black text-[#7f6a55] hover:bg-[#f5ebd9] cursor-pointer">إلغاء</button><button type="button" onClick={() => void handleDeleteConversation(deleteTarget.id)} disabled={actionLoading} className="h-10 flex-1 rounded-full border border-[#8f3c35]/35 bg-gradient-to-br from-[#8f3c35] to-[#6f2d29] text-[12px] font-black text-white shadow-[0_10px_22px_-12px_rgba(111,45,41,0.9)] transition-[transform,filter] duration-150 hover:brightness-110 active:scale-[0.97] disabled:opacity-50 cursor-pointer">{actionLoading ? "جارٍ الحذف..." : "حذف نهائي"}</button></div>
             </motion.div>
           </motion.div>
         )}
