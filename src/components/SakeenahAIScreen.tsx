@@ -756,7 +756,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
 
       {/* ── FLOATING TOP HEADER ── */}
       <div className="absolute top-6 left-5 right-5 flex items-center justify-between z-[45] pointer-events-none">
-        <div className="pointer-events-auto">
+        <div className="flex items-center gap-2 pointer-events-auto">
           <button
             type="button"
             onClick={() => setIsDrawerOpen(true)}
@@ -766,12 +766,12 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
           >
             <PanelLeftOpen size={17} strokeWidth={2.2} />
           </button>
-        </div>
-
-        <div className="flex items-center gap-2 pointer-events-auto">
           <div className="cut-crystal-capsule px-5 h-10 rounded-full shadow-md flex items-center justify-center gap-1.5 transition-all duration-300">
             <span className="text-[14.5px] font-display font-black whitespace-nowrap pt-0.5">سَكِينَة AI</span>
           </div>
+        </div>
+
+        <div className="flex items-center gap-2 pointer-events-auto">
           {messages.length > 0 && (
             <button
               type="button"
@@ -808,27 +808,24 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
             />
             <motion.aside
               dir="rtl"
-              className="fixed top-4 bottom-4 right-0 left-auto z-[60] flex w-[min(286px,calc(100vw-16px))] flex-col overflow-hidden rounded-l-[30px] rounded-r-none border border-r-0 border-[#b88a4f]/25 shadow-[0_24px_70px_-20px_rgba(43,26,16,0.42)]"
+              className="fixed inset-y-0 right-0 left-auto z-[60] flex w-[min(286px,calc(100vw-16px))] flex-col overflow-hidden rounded-l-[30px] rounded-r-none border border-r-0 border-[#b88a4f]/25 shadow-[0_24px_70px_-20px_rgba(43,26,16,0.42)]"
               style={{
                 background: "linear-gradient(145deg, rgba(253,252,251,0.78), rgba(236,231,222,0.64))",
                 backdropFilter: "blur(28px) saturate(165%)",
                 WebkitBackdropFilter: "blur(28px) saturate(165%)",
               }}
-              initial={{ opacity: 0, x: -24, scale: 0.98 }}
+              initial={{ opacity: 0, x: 18, scale: 0.995 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: -24, scale: 0.98 }}
-              transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              exit={{ opacity: 0, x: 18, scale: 0.995 }}
+              transition={{ duration: 0.14, ease: [0.23, 1, 0.32, 1] }}
             >
-              <div className="flex items-center justify-between border-b border-[#b88a4f]/15 px-5 py-4">
-                <div>
-                  <p className="text-[15px] font-display font-black text-[#2b1a10]">المحادثات</p>
-                  <p className="mt-0.5 text-[10px] font-bold text-[#7f6a55]">محفوظة بأمان لحسابك</p>
-                </div>
+              <div className="flex h-12 shrink-0 items-center justify-between border-b border-[#b88a4f]/15 px-4">
+                <p className="text-[14px] font-display font-black text-[#2b1a10]">سَكِينَة AI</p>
                 <button
                   type="button"
                   onClick={() => setIsDrawerOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-[#7f6a55] transition-colors hover:bg-white hover:text-[#2b1a10] cursor-pointer"
-                  aria-label="إغلاق"
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-[#7f6a55] transition-colors hover:bg-white hover:text-[#2b1a10] active:scale-95 cursor-pointer"
+                  aria-label="إغلاق قائمة المحادثات"
                 >
                   <X size={16} />
                 </button>
@@ -837,7 +834,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
               <button
                 type="button"
                 onClick={startNewConversation}
-                className="mx-4 mt-4 flex h-11 items-center justify-center gap-2 rounded-full bg-[#b88a4f] px-4 text-[12px] font-display font-black text-[#fff9f1] shadow-sm transition-all hover:bg-[#a0753e] active:scale-[0.98] cursor-pointer"
+                className="mx-3 mt-3 flex h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-[#b88a4f] px-4 text-[12px] font-display font-black text-[#fff9f1] shadow-sm transition-all hover:bg-[#a0753e] active:scale-[0.98] cursor-pointer"
               >
                 <MessageCirclePlus size={16} />
                 <span>محادثة جديدة</span>
