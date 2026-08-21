@@ -3,7 +3,6 @@ import { createClient, type SupabaseClient } from "npm:@supabase/supabase-js@2.1
 
 const MAX_BODY_BYTES = 32 * 1024;
 const MAX_TITLE_CHARS = 160;
-const MAX_PUBLIC_MESSAGES = 500;
 const PUBLIC_APP_URL = (Deno.env.get("PUBLIC_APP_URL") ?? "https://sakina-design-transplant.vercel.app").replace(/\/$/, "");
 
 class ShareError extends Error {
@@ -92,21 +91,9 @@ function isUuid(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
-function base64Url(bytes: Uint8Array) {
-  let binary = "";
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-}
-
 async function sha256Hex(value: string) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
-}
-
-async function createRawToken() {
-  const bytes = new Uint8Array(32);
-  crypto.getRandomValues(bytes);
-  return base64Url(bytes);
 }
 
 async function requireUser(request: Request, client: SupabaseClient) {
@@ -124,22 +111,6 @@ async function requireUser(request: Request, client: SupabaseClient) {
   return data.user;
 }
 
-async function getActiveShare(client: SupabaseClient, token: string) {
-  if (!/^[A-Za-z0-9_-]{32,96}$/.test(token)) throw new ShareError("share_not_found", 404, "رابط المشاركة غير صالح أو منتهي.");
-  const hash = await sha256Hex(token);
-  const { data: share, error } = await client
-    .from("ai_conversation_shares")
-    .select("id,conversation_id,owner_user_id,created_at,revoked_at,expires_at")
-    .eq("token_hash", hash)
-    .is("revoked_at", null)
-    .maybeSingle();
-  if (error || !share) throw new ShareError("share_not_found", 404, "رابط المشاركة غير صالح أو منتهي.");
-  if (share.expires_at && new Date(share.expires_at).getTime() <= Date.now()) {
-    throw new ShareError("share_not_found", 404, "رابط المشاركة غير صالح أو منتهي.");
-  }
-  return { share, hash };
-}
-
 async function publicConversation(client: SupabaseClient, token: string) {
   const tokenHash = await sha256Hex(token);
   const { data, error } = await client.rpc("get_shared_sakeenah_conversation", { p_token_hash: tokenHash });
@@ -150,30 +121,15 @@ async function publicConversation(client: SupabaseClient, token: string) {
 async function createShare(client: SupabaseClient, userId: string, body: Record<string, unknown>) {
   const conversationId = stringField(body, "conversationId", 64);
   if (!isUuid(conversationId)) throw new ShareError("invalid_input", 400, "معرّف المحادثة غير صالح.");
-  const { data: conversation, error: conversationError } = await client
-    .from("ai_conversations")
-    .select("id,user_id")
-    .eq("id", conversationId)
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (conversationError || !conversation) throw new ShareError("not_found", 404, "المحادثة غير موجودة.");
-
-  await client.from("ai_conversation_shares")
-    .update({ revoked_at: new Date().toISOString() })
-    .eq("conversation_id", conversationId)
-    .eq("owner_user_id", userId)
-    .is("revoked_at", null);
-
-  const rawToken = await createRawToken();
-  const tokenHash = await sha256Hex(rawToken);
-  const tokenPrefix = rawToken.slice(0, 10);
-  const { data: share, error } = await client
-    .from("ai_conversation_shares")
-    .insert({ conversation_id: conversationId, owner_user_id: userId, token_hash: tokenHash, token_prefix: tokenPrefix })
-    .select("id,created_at,expires_at")
-    .single();
-  if (error || !share) throw new ShareError("share_failed", 503, "تعذر إنشاء رابط المشاركة.");
-  return { shareId: share.id, token: rawToken, url: `${PUBLIC_APP_URL}/shared/chat/${encodeURIComponent(rawToken)}`, createdAt: share.created_at, expiresAt: share.expires_at };
+  const { data, error } = await client.rpc("create_sakeenah_share", {
+    p_conversation_id: conversationId,
+    p_owner_user_id: userId,
+  });
+  if (error || !data) throw new ShareError("share_failed", 503, "تعذر إنشاء رابط المشاركة.");
+  return {
+    ...data,
+    url: `${PUBLIC_APP_URL}/shared/chat/${encodeURIComponent(data.token)}`,
+  };
 }
 
 async function updateConversation(client: SupabaseClient, userId: string, action: string, body: Record<string, unknown>) {

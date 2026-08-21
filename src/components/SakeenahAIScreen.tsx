@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { Share as NativeShare } from "@capacitor/share";
+import { Capacitor } from "@capacitor/core";
 import { getCurrentSession } from "@/services/auth-service";
 import type { AuthUser } from "@/services/auth-service";
 import {
@@ -394,13 +396,36 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
     if (actionLoading) return;
     setActionLoading(true);
     setOpenConversationMenuId(null);
+    setStorageError("جاري إنشاء رابط مشاركة متاح للجميع...");
     try {
       const result = await createSakeenahConversationShare(conversation.id);
       setShareResult({ conversation, result });
-      await navigator.clipboard?.writeText(result.url).catch(() => undefined);
+      setStorageError("تم إنشاء رابط المشاركة. يمكنك مشاركته الآن.");
+
+      try {
+        if (Capacitor.isNativePlatform()) {
+          await NativeShare.share({
+            title: conversation.title,
+            text: `محادثة سكينة AI: ${conversation.title}`,
+            url: result.url,
+            dialogTitle: "مشاركة المحادثة",
+          });
+        } else if (typeof navigator.share === "function") {
+          await navigator.share({
+            title: conversation.title,
+            text: `محادثة سكينة AI: ${conversation.title}`,
+            url: result.url,
+          });
+        } else {
+          await navigator.clipboard?.writeText(result.url);
+        }
+      } catch (shareError) {
+        // إلغاء ورقة المشاركة الرسمية لا يعني فشل إنشاء الرابط؛ يبقى الرابط ظاهرًا في البطاقة.
+        console.info("Share sheet closed", shareError);
+      }
     } catch (error) {
       console.error("Failed to share Sakeenah conversation", error);
-      setStorageError("تعذر إنشاء رابط المشاركة حاليًا.");
+      setStorageError("تعذر إنشاء رابط المشاركة حاليًا. حاول مرة أخرى.");
     } finally {
       setActionLoading(false);
     }
@@ -907,9 +932,9 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
             />
             <motion.aside
               dir="rtl"
-              className="fixed inset-y-0 right-0 left-auto z-[60] flex w-[min(286px,calc(100vw-16px))] flex-col overflow-hidden rounded-l-[30px] rounded-r-none border border-r-0 border-[#b88a4f]/25 shadow-[0_24px_70px_-20px_rgba(43,26,16,0.42)]"
+              className="fixed inset-y-0 right-0 left-auto z-[60] flex w-[min(286px,calc(100vw-16px))] flex-col overflow-hidden rounded-l-[30px] rounded-r-none border border-r-0 border-white/45 shadow-[0_24px_70px_-20px_rgba(43,26,16,0.42)]"
               style={{
-                background: "linear-gradient(145deg, rgba(253,252,251,0.78), rgba(236,231,222,0.64))",
+                background: "linear-gradient(145deg, rgba(255,255,255,0.28), rgba(184,138,79,0.18))",
                 backdropFilter: "blur(28px) saturate(165%)",
                 WebkitBackdropFilter: "blur(28px) saturate(165%)",
               }}
@@ -993,7 +1018,7 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
                               animate={{ opacity: 1, scale: 1, y: 0 }}
                               exit={{ opacity: 0, scale: 0.96, y: -4 }}
                               transition={{ duration: 0.12 }}
-                              className="absolute left-2 top-10 z-[70] w-[184px] overflow-hidden rounded-[20px] border border-[#b88a4f]/20 bg-[#fdfbf7]/95 p-1.5 shadow-[0_16px_36px_rgba(43,26,16,0.18)] backdrop-blur-xl"
+                              className="absolute left-2 top-10 z-[70] w-[184px] overflow-hidden rounded-[20px] border border-white/50 bg-white/18 p-1.5 shadow-[0_16px_36px_rgba(43,26,16,0.18)] backdrop-blur-2xl"
                             >
                               <button type="button" onClick={() => void handleShareConversation(conversation)} className="flex h-9 w-full items-center gap-2 rounded-[14px] px-3 text-right text-[11px] font-bold text-[#2b1a10] transition hover:bg-[#f5ebd9] cursor-pointer">
                                 <Share2 size={14} className="text-[#b88a4f]" />
@@ -1068,11 +1093,18 @@ export const SakeenahAIScreen = React.memo(function SakeenahAIScreen({ onBack, u
         )}
       </AnimatePresence>
 
-      {storageError && (
-        <div className="absolute left-5 right-5 top-[72px] z-[40] rounded-full border border-[#b88a4f]/20 bg-[#f7f2ea] px-4 py-2 text-center text-[10px] font-bold text-[#7f6a55] shadow-sm">
-          {storageError}
-        </div>
-      )}
+      <AnimatePresence>
+        {storageError && (
+          <motion.div
+            initial={{ opacity: 0, y: -8, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: 0.98 }}
+            className="fixed bottom-6 left-5 right-5 z-[120] mx-auto max-w-[360px] rounded-[20px] border border-white/45 bg-[#ece7de]/55 px-4 py-3 text-center text-[11px] font-black text-[#2b1a10] shadow-[0_18px_42px_rgba(43,26,16,0.24)] backdrop-blur-2xl"
+          >
+            {storageError}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── MAIN CHAT AREA / EMPTY STATE ── */}
       <div className="flex-1 flex flex-col justify-between relative z-10 overflow-hidden">
