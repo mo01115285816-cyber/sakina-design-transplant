@@ -1,8 +1,10 @@
 import { Capacitor } from "@capacitor/core";
 
 const CLARITY_SCRIPT_ID = "sakeenah-clarity-script";
-// Clarity project IDs are public identifiers by design; keep the env override for deployments.
-const clarityProjectId = (import.meta.env.VITE_CLARITY_PROJECT_ID ?? "xxkk4ujgy6").trim();
+// Clarity project IDs are public identifiers by design. Keep web and Android
+// projects separate because Clarity treats them as independent projects.
+const webProjectId = (import.meta.env.VITE_CLARITY_WEB_PROJECT_ID ?? "y6d9t1c2z0").trim();
+const androidProjectId = (import.meta.env.VITE_CLARITY_ANDROID_PROJECT_ID ?? "xxkk4ujgy6").trim();
 
 interface ClarityPluginApi {
   initialize: (
@@ -38,7 +40,7 @@ function markPolicy(blocked: boolean) {
 }
 
 function loadWebClarity(): Promise<void> {
-  if (!clarityProjectId || typeof window === "undefined") return Promise.resolve();
+  if (!webProjectId || typeof window === "undefined") return Promise.resolve();
   if (window.clarity && document.getElementById(CLARITY_SCRIPT_ID)) return Promise.resolve();
   if (webLoadPromise) return webLoadPromise;
 
@@ -50,7 +52,7 @@ function loadWebClarity(): Promise<void> {
     const script = document.createElement("script");
     script.id = CLARITY_SCRIPT_ID;
     script.async = true;
-    script.src = `https://www.clarity.ms/tag/${encodeURIComponent(clarityProjectId)}`;
+    script.src = `https://www.clarity.ms/tag/${encodeURIComponent(webProjectId)}`;
     script.onload = () => resolve();
     script.onerror = () => {
       webLoadPromise = null;
@@ -89,7 +91,7 @@ function callNative(
     const failure = (message?: string) => reject(new Error(message || `${operation} failed`));
 
     if (operation === "initialize") {
-      plugin.initialize(clarityProjectId, success, failure, { isIonic: true });
+      plugin.initialize(androidProjectId, success, failure, { isIonic: true });
     } else {
       plugin[operation](success, failure);
     }
@@ -105,7 +107,7 @@ export async function syncSakeenahClarity(blocked: boolean): Promise<void> {
 
   desiredBlocked = blocked;
   markPolicy(blocked);
-  if (!clarityProjectId) return;
+  if (!webProjectId && !androidProjectId) return;
 
   if (Capacitor.isNativePlatform()) {
     const plugin = await waitForNativePlugin();
@@ -151,5 +153,5 @@ export async function syncSakeenahClarity(blocked: boolean): Promise<void> {
 }
 
 export function isSakeenahClarityConfigured(): boolean {
-  return Boolean(clarityProjectId);
+  return Boolean(webProjectId || androidProjectId);
 }
