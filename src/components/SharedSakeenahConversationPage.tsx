@@ -98,15 +98,15 @@ export default function SharedSakeenahConversationPage({ token }: { token: strin
   };
 
   if (loading) {
-    return <main dir="rtl" className="flex min-h-[100dvh] items-center justify-center bg-[#ece7de] text-[#7f6a55]"><div className="flex items-center gap-3 text-sm font-bold"><Loader2 size={20} className="animate-spin text-[#b88a4f]" />جارٍ تحميل المحادثة</div></main>;
+    return <main dir="rtl" data-clarity-mask="true" data-sakeenah-ai-surface="true" className="flex min-h-[100dvh] items-center justify-center bg-[#ece7de] text-[#7f6a55]"><div className="flex items-center gap-3 text-sm font-bold"><Loader2 size={20} className="animate-spin text-[#b88a4f]" />جارٍ تحميل المحادثة</div></main>;
   }
 
   if (error || !payload) {
-    return <main dir="rtl" className="flex min-h-[100dvh] items-center justify-center bg-[#ece7de] px-5 text-center"><div className="max-w-[420px] rounded-[30px] border border-[#b88a4f]/20 bg-[#fdfbf7] p-7 shadow-lg"><div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#f5ebd9] text-[#b88a4f]"><X size={22} /></div><h1 className="font-display text-xl font-black text-[#2b1a10]">المحادثة غير متاحة</h1><p className="mt-3 text-sm font-bold leading-7 text-[#7f6a55]">{error ?? "رابط المشاركة غير صالح أو تم إلغاؤه."}</p><a href="/" className="mt-5 inline-flex h-10 items-center justify-center rounded-full bg-[#b88a4f] px-6 text-sm font-black text-white">العودة إلى سكينة</a></div></main>;
+    return <main dir="rtl" data-clarity-mask="true" data-sakeenah-ai-surface="true" className="flex min-h-[100dvh] items-center justify-center bg-[#ece7de] px-5 text-center"><div className="max-w-[420px] rounded-[30px] border border-[#b88a4f]/20 bg-[#fdfbf7] p-7 shadow-lg"><div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#f5ebd9] text-[#b88a4f]"><X size={22} /></div><h1 className="font-display text-xl font-black text-[#2b1a10]">المحادثة غير متاحة</h1><p className="mt-3 text-sm font-bold leading-7 text-[#7f6a55]">{error ?? "رابط المشاركة غير صالح أو تم إلغاؤه."}</p><a href="/" className="mt-5 inline-flex h-10 items-center justify-center rounded-full bg-[#b88a4f] px-6 text-sm font-black text-white">العودة إلى سكينة</a></div></main>;
   }
 
   return (
-    <main dir="rtl" className="min-h-[100dvh] overflow-hidden bg-[#ece7de] text-[#2b1a10]">
+    <main dir="rtl" data-clarity-mask="true" data-sakeenah-ai-surface="true" className="min-h-[100dvh] overflow-hidden bg-[#ece7de] text-[#2b1a10]">
       <div className="relative min-h-[100dvh] w-full overflow-hidden font-sans">
         <div className="pointer-events-none absolute right-[-10%] top-[-20%] z-0 h-[300px] w-[300px] rounded-full bg-[#b88a4f]/5 blur-[120px]" />
         <div className="pointer-events-none absolute bottom-[-10%] left-[-10%] z-0 h-[250px] w-[250px] rounded-full bg-[#deab65]/5 blur-[100px]" />

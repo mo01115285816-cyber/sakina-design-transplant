@@ -32,6 +32,8 @@
     "@types/leaflet": "^1.9.21",
     "adhan": "^4.4.4",
     "clsx": "2.1.1",
+    "cordova-clarity": "^3.0.0",
+    "cordova-plugin-device": "^3.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.2.1",

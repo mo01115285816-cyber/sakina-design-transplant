@@ -52,6 +52,7 @@ import { PrayerCardSpeakerIcon } from "@/components/PrayerCardSpeakerIcon";
 import { WeatherDisplay } from "@/components/WeatherDisplay";
 import { HadithCard } from "@/components/HadithCard";
 import { PrayerNotificationsService } from "@/services/PrayerNotificationsService";
+import { syncSakeenahClarity } from "@/services/sakeenah-clarity";
 import {
   createPrayerReminderEvent,
   getReminderRemainingSeconds,
@@ -320,6 +321,10 @@ function AuthenticatedApp() {
       stopAuthSubscription();
     };
   }, []);
+
+  useEffect(() => {
+    void syncSakeenahClarity(activeTab === "sakeenah-ai");
+  }, [activeTab]);
 
   useEffect(() => {
     const stopSharedLinkListener = listenForNativeSharedConversationLink((token) => {
@@ -1498,7 +1503,11 @@ function AuthenticatedApp() {
 
         {/* TAB: SAKEENAH AI */}
         {activeTab === "sakeenah-ai" && !showAzkarCounter && (
-          <div className="block relative min-h-screen w-full overflow-x-hidden overflow-y-auto">
+          <div
+            className="block relative min-h-screen w-full overflow-x-hidden overflow-y-auto"
+            data-clarity-mask="true"
+            data-sakeenah-ai-surface="true"
+          >
             {!isAuthReady ? (
               <div className="flex min-h-screen items-center justify-center bg-[#ece7de] text-sm font-bold text-[#7f6a55]">
                 جارٍ التحقق من الجلسة...
@@ -1676,6 +1685,15 @@ function AuthenticatedApp() {
 
 export default function App() {
   const sharedToken = getPublicShareTokenFromPath();
+
+  useEffect(() => {
+    if (!sharedToken) return;
+    void syncSakeenahClarity(true);
+    return () => {
+      void syncSakeenahClarity(false);
+    };
+  }, [sharedToken]);
+
   if (sharedToken) return <SharedSakeenahConversationPage token={sharedToken} />;
   return <AuthenticatedApp />;
 }

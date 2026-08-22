@@ -20,7 +20,7 @@ dependencies {
     implementation project(':capgo-capacitor-zip')
 
 }
-
+apply from: "../../node_modules/cordova-clarity/src/android/build.gradle"
 
 if (hasProperty('postBuildExtras')) {
   postBuildExtras()
